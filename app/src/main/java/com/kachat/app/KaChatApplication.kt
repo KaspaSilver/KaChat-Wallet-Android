@@ -241,7 +241,8 @@ class KaChatApplication : Application(), Configuration.Provider {
                 startupStep(".kachat social images") { kachatSocialImages.get() }
                 // People shown as their address are asked again for a .kachat name, once a
                 // minute while the app is open (iOS 3214a2b).
-                startupStep(".kachat unnamed sweep") {
+                // KaChat Wallet has no chat contacts to name (ChatFeatures).
+                if (com.kachat.app.util.ChatFeatures.enabled) startupStep(".kachat unnamed sweep") {
                     kachatNamesRegistry.get().startUnnamedIdentitySweep(
                         isActive = {
                             ProcessLifecycleOwner.get().lifecycle.currentState
@@ -330,6 +331,12 @@ class KaChatApplication : Application(), Configuration.Provider {
                 // Immediate catch-up diff for address activity (external receipts while the app
                 // was closed, first-run silent baseline seeding), then its foreground poll loop.
                 startupStep("address activity: foreground") { addressActivityNotifier.get().onAppForeground() }
+                // KaChat Wallet: the push service watches the wallet's own addresses, and a new
+                // spending slot or Cold Storage account adds one - re-sent on foreground, skipped
+                // when nothing changed (the registration fingerprint).
+                if (!com.kachat.app.util.ChatFeatures.enabled) {
+                    startupStep("push: own addresses") { pushRegistrationManager.get().registerAsync() }
+                }
                 // A batch of gRPC connections can die silently while backgrounded/asleep (the OS
                 // tears down sockets, and each KaspadConnection's own self-reconnect can be
                 // suspended along with the rest of the app) - reconnect any that are dead right

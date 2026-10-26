@@ -283,7 +283,6 @@ fun InAppBrowserScreen(url: String, title: String, notice: String? = null, onClo
 @Composable
 fun HelpScreen(
     onBack: () -> Unit,
-    onWelcomeGuide: () -> Unit,
     onKnsGuide: () -> Unit,
 ) {
     val colors = LocalAppColors.current
@@ -308,13 +307,8 @@ fun HelpScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Column {
-                    HelpRow(
-                        androidx.compose.material.icons.Icons.Default.AutoAwesome,
-                        "Welcome Guide",
-                        androidx.compose.ui.res.stringResource(com.kachat.app.R.string.kg_welcome_body),
-                        onWelcomeGuide,
-                    )
-                    androidx.compose.material3.HorizontalDivider(color = colors.divider, thickness = 0.5.dp, modifier = Modifier.padding(start = 52.dp))
+                    // KaChat Wallet keeps only the .kachat names guide: KaChat's Welcome Guide walks
+                    // through chats, which the wallet doesn't have.
                     // .kachat's guide since 5.2 (iOS b000310).
                     HelpRow(
                         androidx.compose.material.icons.Icons.Default.Badge,

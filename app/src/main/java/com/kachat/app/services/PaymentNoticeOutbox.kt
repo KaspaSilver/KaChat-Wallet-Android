@@ -7,6 +7,7 @@ import com.google.gson.reflect.TypeToken
 import com.kachat.app.repository.ChatRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.filter
@@ -43,6 +44,12 @@ class PaymentNoticeOutbox @Inject constructor(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val listLock = Any()
     private val sending = Mutex()
+
+    // KaChat Wallet: no chats, so nothing here ever starts - every job this service launches
+    // runs on [scope], which is cancelled before the init below can launch one (ChatFeatures).
+    init {
+        if (!com.kachat.app.util.ChatFeatures.enabled) scope.cancel()
+    }
 
     init {
         // The chatting address got KAS: the notices waiting for it go out.
@@ -87,6 +94,7 @@ class PaymentNoticeOutbox @Inject constructor(
      * whose contact is gone is dropped (iOS `sendUnsentPaymentNotices`).
      */
     suspend fun sendUnsentPaymentNotices() {
+        if (!com.kachat.app.util.ChatFeatures.enabled) return
         if (!sending.tryLock()) return
         try {
             val key = currentKey() ?: return

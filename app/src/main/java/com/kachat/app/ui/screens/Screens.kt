@@ -405,53 +405,6 @@ fun ChatThreadScreen(
     // The "+" sheet's second step for Camera / Photo / Voice Message - on chain or via Nextcloud -
     // shown only while a server is connected (iOS 8b13460 ComposerSheetStep.media).
     var composerMediaStep by remember { mutableStateOf<ComposerMediaKind?>(null) }
-    // The voice-or-video half sheet behind the header's call button, and the microphone (and
-    // camera) permission ask that starting a call may need first.
-    var showCallOptions by remember { mutableStateOf(false) }
-    // The "Enable calls with this person?" half sheet - what the call button opens while calls
-    // are still off for this contact (the default).
-    var showEnableCalls by remember { mutableStateOf(false) }
-    val requestCallPermissions = rememberCallPermissionRequester()
-    var pendingCallVideo by remember { mutableStateOf<Boolean?>(null) }
-    val callSession by chatViewModel.callSession.collectAsState()
-    val callLastError by chatViewModel.callLastError.collectAsState()
-    val callContext = LocalContext.current
-    val callPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
-        val video = pendingCallVideo
-        pendingCallVideo = null
-        if (video != null && granted[android.Manifest.permission.RECORD_AUDIO] == true) {
-            conversation?.contact?.let { chatViewModel.startCall(it.copy(callsEnabled = true), video) }
-        } else if (video != null) {
-            IosToasts.error("KaChat needs the microphone to make a call.")
-        }
-    }
-    val startCallWithPermissions: (Boolean) -> Unit = { video ->
-        val needed = buildList {
-            add(android.Manifest.permission.RECORD_AUDIO)
-            if (video) add(android.Manifest.permission.CAMERA)
-        }.filter { ContextCompat.checkSelfPermission(callContext, it) != PackageManager.PERMISSION_GRANTED }
-        if (needed.isEmpty()) {
-            // Only reachable once calls are enabled for this contact - the saved row may still be
-            // on its way to the database when the prompt was just answered.
-            conversation?.contact?.let { chatViewModel.startCall(it.copy(callsEnabled = true), video) }
-        } else {
-            pendingCallVideo = video
-            callPermissionLauncher.launch(needed.toTypedArray())
-        }
-    }
-    // A start that failed before ringing ("Connect a Nextcloud with Talk...") says why.
-    // Why a call from this person did not ring - calls off, already over, nothing to host with,
-    // or another call up. Said once, as this chat opens or while it is open (iOS aa10cce).
-    val callChatNotice by chatViewModel.callChatNotice.collectAsState()
-    LaunchedEffect(callChatNotice, contactId) {
-        if (callChatNotice?.contactId != contactId) return@LaunchedEffect
-        // A beat, so the notice lands on the chat rather than on the transition into it.
-        delay(600)
-        chatViewModel.takeCallChatNotice(contactId)?.let { IosToasts.error(it) }
-    }
-    LaunchedEffect(callLastError) {
-        callLastError?.let { IosToasts.error(it) }
-    }
     var composerMenuAnchor by remember { mutableStateOf(Offset.Zero) }
     // Second-step menu after tapping "Play Chess": pick a time control (3|2, 2|1, 1|1) or a
     // casual untimed game (the pre-timer behavior).
@@ -715,26 +668,9 @@ fun ChatThreadScreen(
                     // Entry point into select mode is a message's long-press "Select" menu
                     // item, not a toolbar button.
                     // The connection dot is gone from inside a 1:1 chat (the chat list and
-                    // group chats still have it) - the call button is always there, a chat
-                    // with yourself included, as on iOS (hidden only while a call is already
-                    // up). Calls are off per contact by default, so the first tap asks "Enable
-                    // calls with this person?"; once enabled it asks voice or video. A phone
-                    // with no Nextcloud of its own asks the contact to host the call, so
-                    // either side can start one as long as one of them has Talk.
-                    val showCallButton = callSession == null
-                    if (showCallButton || activeChessGame != null) {
+                    // group chats still have it). KaChat Wallet has no calls, so no call button.
+                    if (activeChessGame != null) {
                         ToolbarGlassGroup {
-                            if (showCallButton) {
-                                ToolbarIconButton(
-                                    Icons.Default.Phone,
-                                    "Call",
-                                    onClick = {
-                                        if (conversation?.contact?.callsEnabled == true) showCallOptions = true
-                                        else showEnableCalls = true
-                                    },
-                                    iconSize = 24.dp,
-                                )
-                            }
                             if (activeChessGame != null) {
                                 // iOS: a 22pt circle of secondary at 15% holding the caption
                                 // checkerboard glyph.
@@ -756,64 +692,6 @@ fun ChatThreadScreen(
                                 }
                             }
                         }
-                    }
-                }
-            }
-            if (showEnableCalls) {
-                // The first tap on the call button for a contact: calls are off by default, and
-                // enabling them is a decision about this person (they can ring you from then on,
-                // and use your Nextcloud to host a call), so it is asked plainly before anything
-                // rings.
-                val who = conversation?.contact?.displayName ?: com.kachat.app.util.KaspaAddress.shortDisplay(contactId)
-                ActionSheetContainer(
-                    title = "Enable calls and video calls with $who?",
-                    subtitle = "They will be able to call you too. You can turn this off any time in User Info.",
-                    onDismiss = { showEnableCalls = false },
-                ) {
-                    ActionSheetRow(
-                        icon = Icons.Default.PhoneEnabled,
-                        title = "Enable calls",
-                        subtitle = "Saves this for $who and lets you call now.",
-                    ) {
-                        chatViewModel.setCallsEnabled(contactId, enabled = true)
-                        // The microphone and camera are asked for now, not in the middle of the
-                        // first call.
-                        requestCallPermissions()
-                        showEnableCalls = false
-                        // Enabled: go straight on to voice-or-video, as if the button had been
-                        // tapped on an already-enabled contact.
-                        showCallOptions = true
-                    }
-                    ActionSheetRow(
-                        icon = Icons.Default.Close,
-                        title = "Not now",
-                        subtitle = "Calls stay off for this contact.",
-                        tint = LocalAppColors.current.textSecondary,
-                    ) { showEnableCalls = false }
-                }
-            }
-            if (showCallOptions) {
-                // Voice or video - the same half-sheet shape as every other menu.
-                ActionSheetContainer(
-                    title = "Call ${conversation?.contact?.displayName ?: com.kachat.app.util.KaspaAddress.shortDisplay(contactId)}",
-                    subtitle = null,
-                    onDismiss = { showCallOptions = false },
-                ) {
-                    ActionSheetRow(
-                        icon = Icons.Default.Phone,
-                        title = "Voice call",
-                        subtitle = "Rings them in KaChat; whichever of you has Nextcloud Talk carries the call.",
-                    ) {
-                        showCallOptions = false
-                        startCallWithPermissions(false)
-                    }
-                    ActionSheetRow(
-                        icon = Icons.Default.Videocam,
-                        title = "Video call",
-                        subtitle = "Same, with your camera on from the start.",
-                    ) {
-                        showCallOptions = false
-                        startCallWithPermissions(true)
                     }
                 }
             }
@@ -3959,8 +3837,9 @@ fun ProfileScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.padding(bottom = 6.dp),
                 ) {
+                    // KaChat Wallet: this screen is the "Wallet" tab (iOS wallet 1314382).
                     Text(
-                        stringResource(R.string.profile),
+                        stringResource(R.string.wallet_title),
                         color = LocalAppColors.current.textPrimary,
                         fontWeight = FontWeight.Bold,
                         fontSize = LargeTitleSize,
@@ -4300,8 +4179,16 @@ fun ProfileScreen(
                 address?.let { viewModel.nameServices.refresh(it) }
             }
             // Reloads whenever the registry moves (a registration, sale or transfer lands).
+            val kachatCacheContext = LocalContext.current
             LaunchedEffect(address, kachatRevision) {
                 val owner = address ?: return@LaunchedEffect
+                // the saved list's count at once; the read below corrects it when it answers
+                // (KachatOwnedNamesCache, iOS wallet f4f5c0f)
+                if (kachatOwnedCount == 0 && com.kachat.app.services.kachatnames.KachatNamesService.isLaunched) {
+                    com.kachat.app.services.kachatnames.KachatOwnedNamesCache.load(kachatCacheContext, owner)?.let {
+                        kachatOwnedCount = it.names.size
+                    }
+                }
                 viewModel.watchKachatOwnedCount(owner) { kachatOwnedCount = it }
             }
             val domainsCount = kachatOwnedCount + ownedKnsDomains.size + ownedServiceNames.values.sumOf { it.size }
@@ -9389,7 +9276,6 @@ fun SettingsScreen(
             )
         }
     }
-    val showFeeEstimate by settingsViewModel.showFeeEstimate.collectAsState()
     val kaspaExplorer by chatViewModel.kaspaExplorer.collectAsState()
     val exportChatHistoryState by chatViewModel.exportState.collectAsState()
     val importChatHistoryState by chatViewModel.importState.collectAsState()
@@ -9485,12 +9371,10 @@ fun SettingsScreen(
                     // subpages - sits between Connection and Chats like iOS's settings list.
                     SettingsNavigationItem(stringResource(R.string.notifications), Icons.Outlined.NotificationsActive, onClick = { navController.navigate("settings_section/notifications") })
                     SettingsDivider(inset = IosRowTextInset)
-                    SettingsNavigationItem(stringResource(R.string.chats), Icons.Outlined.Forum, onClick = { navController.navigate("settings_section/chats") })
-                    SettingsDivider(inset = IosRowTextInset)
+                    // No Chats page: KaChat Wallet has no chats.
                     SettingsNavigationItem(stringResource(R.string.storage), Icons.Outlined.Storage, onClick = { navController.navigate("settings_section/storage") })
                     SettingsDivider(inset = IosRowTextInset)
-                    SettingsNavigationItem(stringResource(R.string.chat_history), Icons.Outlined.History, onClick = { navController.navigate("settings_section/chat_history") })
-                    SettingsDivider(inset = IosRowTextInset)
+                    // No Chat History page (export/import of chats): KaChat Wallet has no chats.
                     SettingsNavigationItem(stringResource(R.string.diagnostics), Icons.Outlined.MonitorHeart, onClick = { navController.navigate("settings_section/diagnostics") })
                     SettingsDivider(inset = IosRowTextInset)
                     SettingsActionItem(stringResource(R.string.view_seed_phrase), Icons.Outlined.Key, LocalAppColors.current.danger, labelColor = LocalAppColors.current.danger) {
@@ -9512,29 +9396,14 @@ fun SettingsScreen(
             }
 
             if (sectionKey == "customization") {
-                // iOS customizationPage: one section - the three pickers, Customize Dock, Show Fee
-                // Estimate.
+                // iOS customizationPage: one section - the three pickers.
                 SettingsFormSection(title = stringResource(R.string.customization)) {
                     // Appearance / Language / Currency are shared with the accounts screen's App
-                    // Settings (iOS AppWideCustomizationPickers); the dock and the fee estimate
-                    // belong to this account's Settings only.
+                    // Settings (iOS AppWideCustomizationPickers).
                     AppWideCustomizationPickers(walletViewModel)
-                    SettingsDivider()
-                    // The sheet above the dock (MainShell), never a page in here: the dock updates
-                    // live as it is arranged (iOS 476ea20). iOS draws this Label in the primary
-                    // colour, its symbol included.
-                    SettingsNavigationItem(
-                        stringResource(R.string.menu),
-                        Icons.AutoMirrored.Filled.FormatListBulleted,
-                        iconTint = LocalAppColors.current.textPrimary,
-                        onClick = { CustomizeDock.open() },
-                    )
-                    SettingsDivider(inset = IosRowTextInset)
-                    // Moved here from Chats: it decides whether a number is drawn on the composer,
-                    // which is a display preference, not a chat behaviour.
-                    SettingsSwitchItem(stringResource(R.string.show_fee_estimate), showFeeEstimate) { enabled ->
-                        settingsViewModel.setShowFeeEstimate(enabled)
-                    }
+                    // No Customize Dock: KaChat Wallet's tabs are fixed.
+                    // No Show Fee Estimate: it only governed the chat composers' fee label; the
+                    // wallet always shows the fee wherever KAS is sent (owner's call, iOS 1314382).
                 }
             }
 
@@ -11685,17 +11554,10 @@ private fun AddressBookSection(viewModel: ConnectionViewModel) {
 @Composable
 fun ConnectionSettingsScreen(onBack: () -> Unit, viewModel: ConnectionViewModel = hiltViewModel()) {
     val network by viewModel.network.collectAsState()
-    val indexerUrl by viewModel.indexerUrl.collectAsState()
     val knsApiUrl by viewModel.knsApiUrl.collectAsState()
     val kaspaRestApiUrl by viewModel.kaspaRestApiUrl.collectAsState()
-    val kapostIndexerUrl by viewModel.kapostIndexerUrl.collectAsState()
-    val translationServiceUrl by viewModel.translationServiceUrl.collectAsState()
-    var editingTranslationUrl by remember { mutableStateOf(false) }
-    var editingKapostIndexerUrl by remember { mutableStateOf(false) }
-    val broadcastIndexerUrl by viewModel.broadcastIndexerUrl.collectAsState()
     val pushIndexerUrl by viewModel.pushIndexerUrl.collectAsState()
     val scrollState = rememberScrollState()
-    val onMainnetSettings = network.equals("mainnet", ignoreCase = true)
 
     Scaffold(
         containerColor = LocalAppColors.current.background,
@@ -11709,12 +11571,14 @@ fun ConnectionSettingsScreen(onBack: () -> Unit, viewModel: ConnectionViewModel 
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             // One tab per kind of connection, so the page stays short as the app talks to more
-            // services: indexers, the Kaspa node, translation, name services, the block explorer
+            // services: push registration, the Kaspa node, name services, the block explorer
             // (iOS ee01f81). Every field keeps its value while you switch between them.
+            // KaChat Wallet has no Indexer tab (no chats) and no Translation tab (no KaPosts) -
+            // iOS wallet 783e13f. Their saved values are untouched: .kachat still reads the message
+            // indexer's address, at its default.
             val connectionTabs = listOf(
-                stringResource(R.string.connection_tab_indexer),
+                stringResource(R.string.connection_tab_push),
                 stringResource(R.string.connection_tab_node),
-                stringResource(R.string.connection_tab_translation),
                 stringResource(R.string.connection_tab_domains),
                 stringResource(R.string.connection_tab_explorer),
             )
@@ -11734,23 +11598,6 @@ fun ConnectionSettingsScreen(onBack: () -> Unit, viewModel: ConnectionViewModel 
             Spacer(Modifier.height(16.dp))
             when (selectedConnectionTab) {
             0 -> {
-            SettingsFormSection(title = stringResource(R.string.message_indexer), footer = stringResource(R.string.message_indexer_service_for_chat_functionality)) {
-                ConnectionUrlField(label = "Indexer URL", value = indexerUrl)
-            }
-
-            SettingsFormSection(title = stringResource(R.string.kapost_indexer), footer = stringResource(R.string.kapost_indexer_footer)) {
-                // Editable, as on iOS: someone running their own K indexer points the app at it.
-                ConnectionUrlField(
-                    label = "KaPost Indexer URL",
-                    value = kapostIndexerUrl,
-                    onClick = { editingKapostIndexerUrl = true }
-                )
-            }
-
-            SettingsFormSection(title = stringResource(R.string.broadcast_indexer), footer = stringResource(R.string.broadcast_indexer_footer)) {
-                ConnectionUrlField(label = "Public Chats Indexer URL", value = broadcastIndexerUrl)
-            }
-
             SettingsFormSection(title = "Push Registration", footer = "Used only for push registration and updates") {
                 ConnectionUrlField(label = "Push Indexer URL", value = pushIndexerUrl)
             }
@@ -11763,20 +11610,6 @@ fun ConnectionSettingsScreen(onBack: () -> Unit, viewModel: ConnectionViewModel 
             AddressBookSection(viewModel)
             }
             2 -> {
-            SettingsFormSection(title = "Translation Service", footer = "Translates KaPosts written in another language. Runs on the KaPost indexer's " +
-                        "box by default; point this at your own if you host one (see " +
-                        "TRANSLATION_SERVICE.md). Tap to change.") {
-                // Editable, unlike the read-only fields around it: the point of this setting is
-                // that someone can run their own translator and point the app at it.
-                ConnectionUrlField(
-                    label = "Translation Service URL",
-                    value = translationServiceUrl,
-                    onClick = { editingTranslationUrl = true }
-                )
-                // Same words as iOS's footer; TRANSLATION_SERVICE.md lives in the iOS repo.
-            }
-            }
-            3 -> {
             // .kachat first: it is what every address field resolves before anything else (iOS 6ac48a7).
             SettingsFormSection(title = stringResource(R.string.kn_kachat_names), footer = stringResource(R.string.kachat_names_resolved_first_footer)) {
                 val isMainnet = network.equals("mainnet", ignoreCase = true)
@@ -11810,81 +11643,6 @@ fun ConnectionSettingsScreen(onBack: () -> Unit, viewModel: ConnectionViewModel 
             Spacer(modifier = Modifier.height(100.dp))
         }
         }
-    }
-
-    if (editingKapostIndexerUrl) {
-        var draft by remember { mutableStateOf(kapostIndexerUrl) }
-        var rejected by remember { mutableStateOf(false) }
-        com.kachat.app.ui.theme.IosAlertDialog(
-            onDismissRequest = { editingKapostIndexerUrl = false },
-            containerColor = LocalAppColors.current.surface,
-            title = { Text("KaPost Indexer URL", color = LocalAppColors.current.textPrimary, fontWeight = FontWeight.Bold) },
-            text = {
-                Column {
-                    com.kachat.app.ui.theme.IosTextField(
-                        value = draft,
-                        onValueChange = { draft = it; rejected = false },
-                        singleLine = true,
-                        isError = rejected,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        if (rejected) "The URL must start with https://"
-                        // The network's default: the testnet-10 indexer on testnet (iOS 5463ab7).
-                        else "Leave blank to use ${if (onMainnetSettings) com.kachat.app.repository.AppSettingsRepository.DEFAULT_KAPOST_INDEXER_URL else com.kachat.app.repository.AppSettingsRepository.DEFAULT_TESTNET_INDEXER_URL}",
-                        color = if (rejected) Color(0xFFE57373) else LocalAppColors.current.textSecondary,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    if (viewModel.setKapostIndexerUrl(draft)) editingKapostIndexerUrl = false else rejected = true
-                }) { Text("Save", color = KaspaTeal) }
-            },
-            dismissButton = {
-                TextButton(onClick = { editingKapostIndexerUrl = false }) {
-                    Text(stringResource(R.string.cancel), color = LocalAppColors.current.textSecondary)
-                }
-            }
-        )
-    }
-
-    if (editingTranslationUrl) {
-        var draft by remember { mutableStateOf(translationServiceUrl) }
-        com.kachat.app.ui.theme.IosAlertDialog(
-            onDismissRequest = { editingTranslationUrl = false },
-            containerColor = LocalAppColors.current.surface,
-            title = { Text("Translation Service URL", color = LocalAppColors.current.textPrimary, fontWeight = FontWeight.Bold) },
-            text = {
-                Column {
-                    com.kachat.app.ui.theme.IosTextField(
-                        value = draft,
-                        onValueChange = { draft = it },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        "Leave blank to use ${com.kachat.app.repository.AppSettingsRepository.DEFAULT_TRANSLATION_SERVICE_URL}",
-                        color = LocalAppColors.current.textSecondary,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.setTranslationServiceUrl(draft)
-                    editingTranslationUrl = false
-                }) { Text("Save", color = KaspaTeal) }
-            },
-            dismissButton = {
-                TextButton(onClick = { editingTranslationUrl = false }) {
-                    Text(stringResource(R.string.cancel), color = LocalAppColors.current.textSecondary)
-                }
-            }
-        )
     }
 }
 
@@ -14014,11 +13772,6 @@ fun ChatInfoScreen(
                 ) { infoSheet = "photos" }
 
                 InfoSectionCard(
-                    title = "Calls",
-                    icon = if (conversation?.contact?.callsEnabled == true) Icons.Default.Phone else Icons.Default.PhoneDisabled,
-                ) { infoSheet = "calls" }
-
-                InfoSectionCard(
                     title = stringResource(R.string.info),
                     icon = Icons.Default.Info,
                 ) { infoSheet = "info" }
@@ -14066,39 +13819,6 @@ fun ChatInfoScreen(
     // Every section's half sheet, declared here so each can close over the locals the
     // screen builds above - AliasRow and the reveal state among them.
 
-            // Whether this person can ring you. Off means their call invites are ignored on
-            // this device (they get no answer, not a decline) and the call button disappears
-            // on your side too. Per contact, this device only.
-            if (infoSheet == "calls") {
-                ActionSheetContainer(
-                    title = "Calls",
-                    subtitle = "Off for everyone until you turn it on. While off, this contact cannot ring you or ask your Nextcloud to host a call. Calls run through Nextcloud Talk and stay inside KaChat - only one of you needs a Nextcloud.",
-                    onDismiss = { infoSheet = null },
-                ) {
-                    val callsAllowed = conversation?.contact?.callsEnabled == true
-                    val requestCallPermissions = rememberCallPermissionRequester()
-                    val setCalls: (Boolean) -> Unit = { allowed ->
-                        chatViewModel.setCallsEnabled(contactId, enabled = allowed)
-                        // Switching calls on asks for the microphone and camera there and then.
-                        if (allowed) requestCallPermissions()
-                    }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(LocalAppColors.current.surface)
-                            .clickable { setCalls(!callsAllowed) }
-                            .padding(horizontal = 14.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text("Allow calls and video calls", color = LocalAppColors.current.textPrimary, modifier = Modifier.weight(1f))
-                        com.kachat.app.ui.theme.IosSwitch(
-                            checked = callsAllowed,
-                            onCheckedChange = { allowed -> setCalls(allowed) }
-                        )
-                    }
-                }
-            }
             if (infoSheet == "address") {
                 ActionSheetContainer(
                     title = stringResource(R.string.address),

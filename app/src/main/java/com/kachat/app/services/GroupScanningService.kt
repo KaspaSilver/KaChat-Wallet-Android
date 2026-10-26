@@ -6,6 +6,7 @@ import com.kachat.app.services.grpc.KaspadConnection
 import com.kachat.app.util.GroupCipher
 import com.kachat.app.util.KaspaAddress
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -103,6 +104,12 @@ class GroupScanningService @Inject constructor(
     private val gctlPrefixHex = hexPrefix("kchat:1:gctl:")
     private val legacyGcommPrefixHex = hexPrefix("ciph_msg:1:gcomm:")
     private val legacyGctlPrefixHex = hexPrefix("ciph_msg:1:gctl:")
+
+    // KaChat Wallet: no chats, so nothing here ever starts - every job this service launches
+    // runs on [scope], which is cancelled before the init below can launch one (ChatFeatures).
+    init {
+        if (!com.kachat.app.util.ChatFeatures.enabled) scope.cancel()
+    }
 
     init {
         // Gated on the pool already having a proven-active node, not just hasActiveWallet alone -

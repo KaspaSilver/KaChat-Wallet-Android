@@ -1389,4 +1389,7 @@
     <string name="chess_no_finished_duels">まだ終了した1v1の対局がありません。</string>
     <string name="chess_no_finished_tournaments_this_month">今月はまだ終了したトーナメントがありません。</string>
     <string name="chess_no_finished_tournaments">まだ終了したトーナメントがありません。</string>
+    <string name="wallet_title">ウォレット</string>
+    <string name="connection_tab_push">プッシュ</string>
+    <string name="ab_add_address_sub">Kaspaアドレスをわかりやすい名前で保存します。</string>
 </resources>

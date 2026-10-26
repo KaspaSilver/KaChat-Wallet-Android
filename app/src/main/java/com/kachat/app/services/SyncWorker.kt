@@ -27,15 +27,26 @@ import dagger.assisted.AssistedInject
 class SyncWorker @AssistedInject constructor(
     @Assisted appContext: Context,
     @Assisted workerParams: WorkerParameters,
-    private val groupRepository: GroupRepository
+    private val groupRepository: GroupRepository,
+    private val walletService: WalletService,
+    private val addressActivityNotifier: AddressActivityNotifier,
 ) : CoroutineWorker(appContext, workerParams) {
 
     override suspend fun doWork(): Result {
         return try {
-            groupRepository.syncGroups()
+            if (com.kachat.app.util.ChatFeatures.enabled) {
+                groupRepository.syncGroups()
+            } else {
+                // KaChat Wallet: no groups or messages - refresh the balance and notify any
+                // receive to the wallet's own addresses that landed while it was closed (iOS
+                // wallet 7f789f4, BackgroundTaskManager).
+                walletService.refreshBalance()
+                walletService.refreshSpendingBalance()
+                addressActivityNotifier.runPassNow()
+            }
             Result.success()
         } catch (e: Exception) {
-            Log.w("SyncWorker", "Periodic group sync failed, will retry next cycle", e)
+            Log.w("SyncWorker", "Periodic sync failed, will retry next cycle", e)
             Result.retry()
         }
     }

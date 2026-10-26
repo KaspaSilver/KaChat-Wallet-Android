@@ -1386,4 +1386,7 @@
     <string name="chess_no_finished_duels">Noch keine beendeten 1v1-Partien.</string>
     <string name="chess_no_finished_tournaments_this_month">Diesen Monat noch keine beendeten Turniere.</string>
     <string name="chess_no_finished_tournaments">Noch keine beendeten Turniere.</string>
+    <string name="wallet_title">Wallet</string>
+    <string name="connection_tab_push">Push</string>
+    <string name="ab_add_address_sub">Speichere eine Kaspa-Adresse unter einem Namen, den du wiedererkennst.</string>
 </resources>

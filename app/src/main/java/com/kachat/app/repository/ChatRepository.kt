@@ -74,9 +74,6 @@ class ChatRepository @Inject constructor(
     // instantiation past construction time, breaking the cycle while still letting this class
     // signal message activity into it (the continuous Nextcloud sync debounce).
     private val nextcloudSyncServiceLazy: dagger.Lazy<com.kachat.app.services.NextcloudSyncService>,
-    // Lazy for the same reason: CallService sends its envelopes through WalletService, which
-    // depends on this repository. Incoming call envelopes are handed to it from the ingest.
-    private val callServiceLazy: dagger.Lazy<com.kachat.app.services.CallService>,
     // Lazy: ContactNoteService sends through WalletService, which itself depends on this.
     private val contactNotesLazy: dagger.Lazy<com.kachat.app.services.ContactNoteService>,
     private val onboardingGate: com.kachat.app.services.OnboardingGate,
@@ -124,6 +121,8 @@ class ChatRepository @Inject constructor(
             } catch (e: Exception) {
                 Log.w("ChatRepository", "Startup prune failed", e)
             }
+            // KaChat Wallet: no chats, so no message poll at all (ChatFeatures).
+            if (!com.kachat.app.util.ChatFeatures.enabled) return@launch
             // Consecutive cycles in which the indexer errored (see noteIndexerError) — drives
             // the exponential backoff below so a dead indexer doesn't get the full fan-out
             // retried at the fast cadence forever.
@@ -349,6 +348,7 @@ class ChatRepository @Inject constructor(
         myAddress: String = runCatching { walletManager.getAddress() }.getOrDefault(""),
         api: KasiaIndexerApi? = networkService.indexerApi.value,
     ) {
+        if (!com.kachat.app.util.ChatFeatures.enabled) return
         if (myAddress.isEmpty() || api == null) return
         if (!inboxSupported()) return
         if (!inboxSyncMutex.tryLock()) return
@@ -1348,6 +1348,7 @@ class ChatRepository @Inject constructor(
      * stored history and nothing newer for up to its interval (iOS 360e5d2).
      */
     suspend fun syncConversationNow(contactId: String) {
+        if (!com.kachat.app.util.ChatFeatures.enabled) return
         if (onboardingGate.isHeld) return
         val myAddress = try { walletManager.getAddress() } catch (e: Exception) { return }
         val api = networkService.indexerApi.value ?: return
@@ -1381,6 +1382,8 @@ class ChatRepository @Inject constructor(
      *  deletion of it is lifted - kept as its history floor, as iOS `ensureSelfConversation`
      *  does through `clearDeletionTombstone` (4b00a5f) - and the contact is created if missing. */
     suspend fun ensureSelfConversation(myAddress: String? = runCatching { walletManager.getAddress() }.getOrNull()) {
+        // KaChat Wallet: no "chat with yourself" (ChatFeatures).
+        if (!com.kachat.app.util.ChatFeatures.enabled) return
         val address = myAddress?.takeIf { it.isNotEmpty() } ?: return
         database.contactDao().liftDeletedContact(address, address)
         if (database.contactDao().getContact(address, address) != null) return
@@ -1388,6 +1391,7 @@ class ChatRepository @Inject constructor(
     }
 
     suspend fun syncMessages(fromPollLoop: Boolean = false) {
+        if (!com.kachat.app.util.ChatFeatures.enabled) return
         // Every other caller (pull-to-refresh, the sync worker, push handling) is held too - the
         // wizard is exclusive. The post-wizard initial sync releases the gate before running.
         if (onboardingGate.isHeld) return
@@ -1495,6 +1499,7 @@ class ChatRepository @Inject constructor(
      * the push still stores it on its next sync.
      */
     fun notePushedMessage(txId: String, sender: String) {
+        if (!com.kachat.app.util.ChatFeatures.enabled) return
         val me = runCatching { walletManager.getAddress() }.getOrNull()?.takeIf { it.isNotBlank() } ?: return
         if (txId.isBlank() || sender.isBlank() || sender.equals(me, ignoreCase = true)) return
         pushedMessageQueue.add(me, txId, sender)
@@ -1521,6 +1526,7 @@ class ChatRepository @Inject constructor(
         myAddress: String = runCatching { walletManager.getAddress() }.getOrDefault(""),
         api: KasiaIndexerApi? = networkService.indexerApi.value,
     ) {
+        if (!com.kachat.app.util.ChatFeatures.enabled) return
         if (myAddress.isEmpty() || api == null || onboardingGate.isHeld) return
         if (pushedMessageQueue.entries(myAddress).isEmpty()) return
         if (!pushedIngestMutex.tryLock()) return
@@ -2202,13 +2208,9 @@ class ChatRepository @Inject constructor(
             )
         )
 
-        // Call events (invite / answer / hang-up) ring through the chat itself. They DO stay as
-        // bubbles - the chat shows "Voice call · 4:12" the way a phone's history would - so this
-        // only hands the envelope to CallService and carries on.
+        // Call events (invite / answer / hang-up) stay as bubbles - the chat shows "Voice call ·
+        // 4:12" the way a phone's history would. KaChat Wallet has no calls, so nothing rings.
         val callEnvelope = if (contact.id != myAddress) com.kachat.app.util.CallCodec.parseOrNull(plaintext) else null
-        callEnvelope?.let { envelope ->
-            callServiceLazy.get().handleIncoming(envelope, contact.id, message.blockTime, isOutgoing = false)
-        }
         // A call from someone calls are off for (or never turned on) is ignored silently: no
         // "Incoming call" banner either (MESSAGING.md "Consent before ringing", iOS 88aa3c1).
         val unwantedCall = callEnvelope != null && com.kachat.app.util.CallCodec.isOpeningCall(callEnvelope) &&

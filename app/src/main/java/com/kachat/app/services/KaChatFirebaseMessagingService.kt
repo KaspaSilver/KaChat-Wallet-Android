@@ -40,12 +40,33 @@ class KaChatFirebaseMessagingService : FirebaseMessagingService() {
     @Inject lateinit var chatRepository: ChatRepository
     @Inject lateinit var groupRepository: com.kachat.app.repository.GroupRepository
     @Inject lateinit var settingsRepository: com.kachat.app.repository.AppSettingsRepository
-    @Inject lateinit var callService: CallService
 
     override fun onNewToken(token: String) {
         // FCM rotated the token — re-register it with the indexer (signed with the wallet key).
         Log.i(TAG, "FCM token rotated, re-registering with the push service")
         pushRegistrationManager.onTokenRefreshed(token)
+    }
+
+    /**
+     * The push service's "Received" push for one of the wallet's own addresses (`address_activity`,
+     * thread `funds:<address>`). No banner while the app is open - its own Address Activity
+     * notification already announces that receive (iOS wallet 1806a69) - and one banner per
+     * transaction either way: whichever of the two claims the txid first shows it. A tap opens
+     * that address's history, as the local notification does.
+     */
+    private suspend fun handleAddressActivity(data: Map<String, String>) {
+        val address = data["address"]?.takeIf { it.isNotBlank() } ?: return
+        val txId = data["tx_id"]?.takeIf { it.isNotBlank() } ?: return
+        if (notificationHelper.isAppInForeground) return
+        if (!notificationHelper.claimForBanner(txId)) return
+        val sompi = data["amount_sompi"]?.toLongOrNull()
+        val amount = sompi?.let { AddressActivityNotifier.formatKas(it) } ?: data["amount_kas"].orEmpty()
+        notificationHelper.showAddressActivity(
+            title = if (amount.isNotEmpty()) "Received $amount ${com.kachat.app.util.KaspaUnit.symbol}" else data["title"].orEmpty().ifEmpty { "Funds received" },
+            text = AddressActivityNotifier.shortAddress(address),
+            dedupeKey = txId,
+            address = address,
+        )
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
@@ -72,6 +93,20 @@ class KaChatFirebaseMessagingService : FirebaseMessagingService() {
                 if (com.kachat.app.util.PushNetworkFilter.isOtherNetwork(data, com.kachat.app.util.KaspaNetwork.launch)) {
                     data["tx_id"]?.takeIf { it.isNotBlank() }?.let { notificationHelper.claimWithoutNotifying(it) }
                     Log.i(TAG, "Silenced a $type push from the other network")
+                    return@runBlocking
+                }
+                // KaChat Wallet registers only for "Received KAS" on its own addresses and .kachat
+                // name events (PUSH_SERVICE.md). Anything else - a chat push the service sent before
+                // it learned this device is a wallet - is claimed and dropped, never shown.
+                if (!com.kachat.app.util.ChatFeatures.enabled) {
+                    when (type) {
+                        "name_event" -> handleNameEvent(data)
+                        "address_activity" -> handleAddressActivity(data)
+                        else -> {
+                            data["tx_id"]?.takeIf { it.isNotBlank() }?.let { notificationHelper.claimWithoutNotifying(it) }
+                            Log.i(TAG, "Ignoring a $type push: KaChat Wallet has no chats")
+                        }
+                    }
                     return@runBlocking
                 }
                 when (type) {
@@ -327,40 +362,6 @@ class KaChatFirebaseMessagingService : FirebaseMessagingService() {
         // Message Requests (NO_HANDSHAKE_MESSAGING.md §4): one "New message request" per new
         // sender, then nothing from them until accepted; nothing at all from a blocked address.
         if (applyMessageRequestRule(sender, data)) return
-
-        // A call. The chain is how a call is carried, but a closed app cannot watch the chain -
-        // this push is what wakes it, and the phone must ring, not show a banner. Hand the
-        // envelope to the call machinery, which rings exactly as it does with the app open
-        // (once per call id, only if calls are on for this contact, only while it is fresh) and
-        // posts the full-screen call notification. The invite and the request are the two that
-        // ring; everything else about a call still reads as an ordinary line in the chat.
-        val callEnvelope = plaintext?.let { com.kachat.app.util.CallCodec.parseOrNull(it) }
-        // A call from someone this phone hasn't allowed calls from ("Allow calls" off, or never
-        // turned on): ignored silently, decided here before anything waits or rings - no ring,
-        // no "Incoming call" notification (MESSAGING.md "Consent before ringing", iOS 88aa3c1).
-        if (callEnvelope != null && com.kachat.app.util.CallCodec.isOpeningCall(callEnvelope)) {
-            val allowed = runCatching { chatRepository.getContact(sender)?.callsEnabled == true }.getOrDefault(false)
-            if (!allowed) {
-                Log.i(TAG, "Call push ${callEnvelope.callId.take(8)} from ${sender.takeLast(8)} ignored: calls are off for them")
-                data["tx_id"]?.takeIf { it.isNotBlank() }?.let { notificationHelper.claimWithoutNotifying(it) }
-                return
-            }
-        }
-        if (callEnvelope != null) {
-            val sentAtMs = pushSentAtMs(data)
-            val opening = callEnvelope is com.kachat.app.util.CallEnvelope.Invite ||
-                callEnvelope is com.kachat.app.util.CallEnvelope.Request
-            if (!opening) {
-                callService.handleIncoming(callEnvelope, contactAddress = sender, blockTimeMs = sentAtMs, isOutgoing = false)
-            } else if (callService.receivePushedCall(callEnvelope, contactAddress = sender, sentAtMs = sentAtMs)) {
-                // It is ringing: the call screen is the notification.
-                data["tx_id"]?.takeIf { it.isNotBlank() }?.let { notificationHelper.claimWithoutNotifying(it) }
-                return
-            }
-            // Turned away - already over, nothing to host with, or another call in progress
-            // (calls off for this contact never get here: silent, above). It used to vanish without a trace; now the ordinary
-            // notification says a call came, and the chat it opens says why it did not ring.
-        }
 
         val text = plaintext?.let { notificationPreview(it) } ?: fallback
         notificationHelper.show(

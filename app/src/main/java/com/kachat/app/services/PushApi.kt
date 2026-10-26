@@ -80,6 +80,11 @@ data class PushRegistrationRequest(
      * registration, empty when none, as iOS does.
      */
     @SerializedName("kaposts_watch_authors") val kaPostsWatchAuthors: List<String> = emptyList(),
+    /** KaChat Wallet's own addresses, for "Received KAS" pushes (`address_activity`). */
+    @SerializedName("watch_only_addresses") val watchOnlyAddresses: List<String> = emptyList(),
+    /** The app this token belongs to. The service sends a `com.kachat.wallet` device only Received
+     *  and .kachat pushes (PUSH_SERVICE.md); FCM delivery itself doesn't use it. */
+    @SerializedName("apns_topic") val apnsTopic: String? = null,
     @SerializedName("auth") val auth: PushAuthRequest? = null,
 )
 

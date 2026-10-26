@@ -3962,7 +3962,7 @@ fun KachatTransferSheet(info: NameInfo, onClose: () -> Unit, vm: KachatLiveViewM
                     clipboard.getText()?.text?.let { input = it.trim() }
                 }
                 KachatFieldIconButton(Icons.Default.QrCodeScanner, stringResource(R.string.scan_qr)) { showScanner = true }
-                KachatFieldIconButton(Icons.Outlined.Book, stringResource(R.string.ab_address_book)) { showAddressBook = true }
+                KachatFieldIconButton(Icons.Outlined.Book, stringResource(R.string.addresses)) { showAddressBook = true }
             }
             // The name it has in your Address Book.
             val saved = remember(addressBook, target, input) { AddressBookManager.shared?.entry(target?.first ?: input) }
@@ -4042,8 +4042,13 @@ fun rememberKachatHeldCount(
     // `vm` is null for the screen's whole life where the registry isn't launched.
     val revision = vm?.registry?.revision?.collectAsState()?.value
     var count by remember { mutableStateOf<Int?>(null) }
+    val cacheContext = LocalContext.current
     LaunchedEffect(revision, walletAddress) {
         if (vm == null || !KachatNamesService.isEnabled) { count = 0; return@LaunchedEffect }
+        // the saved list's count at once; the reads below correct it when they answer (iOS wallet f4f5c0f)
+        if (count == null) {
+            com.kachat.app.services.kachatnames.KachatOwnedNamesCache.load(cacheContext, walletAddress)?.let { count = it.names.size }
+        }
         if (vm.registry.refreshedAt.value == null) vm.registry.refresh()
         val own = if (walletAddress.lowercase() == vm.actions.myAddress) {
             try {
@@ -4064,7 +4069,7 @@ fun rememberKachatHeldCount(
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
-                null
+                count
             }
             else -> 0
         }
@@ -4100,10 +4105,22 @@ fun KachatLiveDomainsTab(
     // receipt stays up when the last offer leaves the list.
     var openOffer by remember { mutableStateOf<OfferInfo?>(null) }
     var loaded by remember { mutableStateOf(vm == null) }
+    val cacheContext = LocalContext.current
 
     LaunchedEffect(revision, walletAddress) {
         val key = KachatNamesRegistry.keyOf(walletAddress)
         if (vm == null || key == null) { loaded = true; return@LaunchedEffect }
+        // The names this wallet had last time, straight away - they rarely change. The read below
+        // checks the registry and replaces them when it answers (KachatOwnedNamesCache, iOS
+        // wallet f4f5c0f).
+        if (!loaded) {
+            com.kachat.app.services.kachatnames.KachatOwnedNamesCache.load(cacheContext, walletAddress)?.let { cached ->
+                val grace = vm.registry.graceMs
+                names = cached.names.filter { it.status(grace) != Status.LAPSED }
+                myOffers = cached.offers
+                loaded = true
+            }
+        }
         if (vm.registry.refreshedAt.value == null) vm.registry.refresh()
         // A lapsed name is no longer yours: it moves to the marketplace's Available tab (and the
         // bell says so, KachatNamesNotifier). Expired names in grace stay, to be renewed (iOS e26562e).
@@ -4121,24 +4138,32 @@ fun KachatLiveDomainsTab(
         } else {
             null
         }
-        if (own != null) {
-            names = own.first
-            myOffers = own.second
+        // Only an answer replaces what is shown (and the saved copy); a failed read keeps it.
+        val held = if (own != null || walletAddress.lowercase() == vm.actions.myAddress) {
+            null
         } else {
-            names = try {
+            try {
                 vm.registry.heldNames(key)
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
-                emptyList()
+                null
             }
+        }
+        if (own != null) {
+            names = own.first
+            myOffers = own.second
+            com.kachat.app.services.kachatnames.KachatOwnedNamesCache.save(cacheContext, names, myOffers, walletAddress)
+        } else if (held != null) {
+            names = held
             myOffers = try {
                 vm.registry.myOffers(key)
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
-                emptyList()
+                myOffers
             }
+            com.kachat.app.services.kachatnames.KachatOwnedNamesCache.save(cacheContext, names, myOffers, walletAddress)
         }
         if (myOffers.isNotEmpty()) {
             // expired offers, and ones made to an earlier owner, come back on their own (iOS ba07975)

@@ -1389,4 +1389,7 @@
     <string name="chess_no_finished_duels">끝난 1v1 게임이 아직 없습니다.</string>
     <string name="chess_no_finished_tournaments_this_month">이번 달에 끝난 토너먼트가 아직 없습니다.</string>
     <string name="chess_no_finished_tournaments">끝난 토너먼트가 아직 없습니다.</string>
+    <string name="wallet_title">지갑</string>
+    <string name="connection_tab_push">푸시</string>
+    <string name="ab_add_address_sub">알아보기 쉬운 이름으로 Kaspa 주소를 저장하세요.</string>
 </resources>

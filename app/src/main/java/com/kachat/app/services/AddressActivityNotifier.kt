@@ -61,7 +61,9 @@ class AddressActivityNotifier @Inject constructor(
     private val networkService: NetworkService,
     private val settingsRepository: AppSettingsRepository,
     private val notificationHelper: NotificationHelper,
-    private val notificationCenter: GlobalNotificationCenterStore
+    private val notificationCenter: GlobalNotificationCenterStore,
+    // Lazy: WalletService is built from the chat stack, which this must not wait on at startup.
+    private val walletServiceLazy: dagger.Lazy<WalletService>,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO + com.kachat.app.util.StartupSafety.logOnlyHandler("AddressActivityNotifier"))
     private val runMutex = Mutex()
@@ -99,6 +101,35 @@ class AddressActivityNotifier @Inject constructor(
     fun onAppBackground() {
         pollJob?.cancel()
         pollJob = null
+    }
+
+    /** One pass, awaited - the periodic background worker's catch-up (KaChat Wallet's SyncWorker,
+     *  iOS wallet 7f789f4 `runCatchUpIfNeeded`). */
+    suspend fun runPassNow() {
+        try {
+            runDiffPass()
+        } catch (e: Exception) {
+            Log.w(TAG, "Address activity pass failed", e)
+        }
+    }
+
+    /**
+     * What the push service watches for this device's "Received" pushes (the registration's
+     * `watch_only_addresses`): the main address, the spending addresses while their switch is on,
+     * and every cold-storage address whose account notifies - the same choices the local
+     * notifications follow. Empty while Address Activity is off. The service keeps 200 at most.
+     * KaChat Wallet only (iOS wallet 1806a69): KaChat gets the main address's payments as chat pushes.
+     */
+    suspend fun pushWatchOnlyAddresses(): List<String> {
+        if (!settingsRepository.addressActivityNotificationsEnabled.first()) return emptyList()
+        val wallet = walletAddressOrNull() ?: return emptyList()
+        val addresses = mutableSetOf(wallet)
+        if (settingsRepository.spendingReceiveNotifications.first()) {
+            addresses += runCatching { walletManager.allSpendingAddresses() }.getOrDefault(emptyList())
+        }
+        val cold = coldLabelByAddress()
+        addresses += cold.keys - coldMutedAddresses
+        return addresses.sorted().take(MAX_PUSH_WATCH_ONLY)
     }
 
     /** One immediate pass - used by the payment composer's post-send refresh path. */
@@ -196,8 +227,9 @@ class AddressActivityNotifier @Inject constructor(
             if (balance != previous) {
                 changed = true
                 // The UI refresh signal stays about spending and cold-storage addresses, as before:
-                // the chatting address's balance moves with every message sent.
-                if (address != walletAddress) changedAddresses.add(address)
+                // the chatting address's balance moves with every message sent. KaChat Wallet has
+                // no messages: its main address is a wallet address like the rest.
+                if (address != walletAddress || !com.kachat.app.util.ChatFeatures.enabled) changedAddresses.add(address)
             }
             if (balance > previous && !isFirstRun && address in notifiable) {
                 attributeAndMaybeNotifyIncrease(
@@ -217,6 +249,14 @@ class AddressActivityNotifier @Inject constructor(
             saveBaselines(baselines, walletAddress)
             if (changedAddresses.isNotEmpty()) {
                 _utxoActivityEvents.tryEmit(changedAddresses)
+                // KaChat Wallet: no message poll refreshes the balance, so a receive does (iOS
+                // wallet 7f789f4, the fallback poll that refreshes the balance instead).
+                if (!com.kachat.app.util.ChatFeatures.enabled) {
+                    runCatching {
+                        walletServiceLazy.get().refreshBalance()
+                        walletServiceLazy.get().refreshSpendingBalance()
+                    }
+                }
             }
         }
     }
@@ -238,7 +278,8 @@ class AddressActivityNotifier @Inject constructor(
         api: KaspaRestApi
     ) {
         ensureHandledLoaded(walletAddress)
-        val isChatting = address == walletAddress
+        // KaChat Wallet has no chats: its main address is a wallet address like the rest.
+        val isChatting = com.kachat.app.util.ChatFeatures.enabled && address == walletAddress
         val transactions = try {
             api.getTransactions(address, limit = 10)
         } catch (e: Exception) {
@@ -406,6 +447,9 @@ class AddressActivityNotifier @Inject constructor(
         private const val PREFS_NAME = "kachat_address_activity"
         private const val HANDLED_TX_ID_CAP = 500
         private const val POLL_INTERVAL_MS = 30_000L
+
+        /** The push service keeps this many watch-only addresses at most. */
+        private const val MAX_PUSH_WATCH_ONLY = 200
 
         internal fun shortAddress(a: String): String =
             if (a.length <= 20) a else a.take(14) + "..." + a.takeLast(6)

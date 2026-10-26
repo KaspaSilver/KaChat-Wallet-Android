@@ -88,6 +88,7 @@ class KaPostsNotificationPoller @Inject constructor(
     var isNotificationsScreenVisible: Boolean = false
 
     fun start() {
+        if (!com.kachat.app.util.ChatFeatures.enabled) return
         if (pollJob?.isActive == true) return
         pollJob = scope.launch {
             while (true) {

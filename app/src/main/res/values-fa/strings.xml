@@ -1420,4 +1420,7 @@
     <string name="chess_no_finished_duels">هنوز بازی 1v1 تمام‌شده‌ای نیست.</string>
     <string name="chess_no_finished_tournaments_this_month">هنوز تورنمنت تمام‌شده‌ای در این ماه نیست.</string>
     <string name="chess_no_finished_tournaments">هنوز تورنمنت تمام‌شده‌ای نیست.</string>
+    <string name="wallet_title">کیف پول</string>
+    <string name="connection_tab_push">اعلان‌ها</string>
+    <string name="ab_add_address_sub">یک آدرس کسپا را با نامی که می‌شناسید ذخیره کنید.</string>
 </resources>

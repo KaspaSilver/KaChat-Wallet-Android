@@ -133,3 +133,62 @@ fun Screen.tabIconPainter(): Painter = when {
     this == Screen.KachatNames -> remember { KachatWordmarkPainter() }
     else -> rememberVectorPainter(icon)
 }
+
+/**
+ * KaChat Wallet's dock icon for .kachat (iOS wallet `KachatTabIcon.domainsImage`): a name tag -
+ * a rounded body on the right, a point on the left - with the hole it hangs by and an "@" cut out
+ * of it. Black on transparent like the chess pieces, so an Icon's tint colours it, laid out on
+ * iOS's 24-unit grid and drawn once at [DOMAINS_SIDE] px.
+ */
+private const val DOMAINS_SIDE = 144
+
+private val domainsIconBitmap by lazy {
+    val u = DOMAINS_SIDE / 24f
+    val mid = 12 * u
+    val bitmap = Bitmap.createBitmap(DOMAINS_SIDE, DOMAINS_SIDE, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    val top = 3.5f * u
+    val bottom = 20.5f * u
+    val left = 0.5f * u
+    val shoulder = 7f * u
+    val right = 23.5f * u
+    val r = 3.5f * u
+    val tag = android.graphics.Path().apply {
+        moveTo(left, mid)
+        lineTo(shoulder, top)
+        lineTo(right - r, top)
+        arcTo(right - 2 * r, top, right, top + 2 * r, -90f, 90f, false)
+        lineTo(right, bottom - r)
+        arcTo(right - 2 * r, bottom - 2 * r, right, bottom, 0f, 90f, false)
+        lineTo(shoulder, bottom)
+        close()
+    }
+    val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.BLACK }
+    canvas.drawPath(tag, fill)
+    // The hole and the "@" are cleared out of the body, not painted over it.
+    val clear = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.CLEAR)
+    }
+    canvas.drawCircle(5.9f * u, mid, 1.5f * u, clear)
+    clear.apply {
+        textSize = 14 * u
+        // iOS draws it heavy and rounded; black is the heaviest system weight (see wordmarkPaint).
+        typeface = Typeface.create("sans-serif-black", Typeface.NORMAL)
+        textAlign = Paint.Align.CENTER
+    }
+    val metrics = clear.fontMetrics
+    canvas.drawText("@", 15.5f * u, mid - (metrics.ascent + metrics.descent) / 2f, clear)
+    bitmap.asImageBitmap()
+}
+
+/** The painter a tab is drawn with in the dock: .kachat's name tag, else its usual icon. */
+@Composable
+fun Screen.dockIconPainter(): Painter =
+    if (this == Screen.KachatNames) remember { BitmapPainter(domainsIconBitmap) } else tabIconPainter()
+
+/**
+ * The box a tab's dock icon is drawn in. The name tag fills its square edge to edge where a
+ * Material symbol leaves a margin, so it gets a little more room to read as the same size.
+ */
+fun Screen.dockIconModifier(size: androidx.compose.ui.unit.Dp): androidx.compose.ui.Modifier =
+    if (this == Screen.KachatNames) androidx.compose.ui.Modifier.size(size * 7 / 6) else tabIconModifier(size)

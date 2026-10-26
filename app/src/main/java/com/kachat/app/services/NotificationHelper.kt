@@ -107,10 +107,13 @@ class NotificationHelper @Inject constructor(
             // matches the current settings.
             val manager = context.getSystemService(NotificationManager::class.java)
             CHANNELS.forEach { (channelId, soundOn, vibrationOn) ->
-                val channel = NotificationChannel(channelId, "Messages", NotificationManager.IMPORTANCE_HIGH).apply {
-                    description = "New messages, connection requests, and payments"
+                // KaChat Wallet: its notifications are receipts and .kachat events, and the icon
+                // never carries a badge (iOS wallet a8dc101) - no launcher dot either.
+                val channel = NotificationChannel(channelId, "Wallet", NotificationManager.IMPORTANCE_HIGH).apply {
+                    description = "Received KAS and .kachat names"
                     enableVibration(vibrationOn)
                     if (!soundOn) setSound(null, null)
+                    setShowBadge(com.kachat.app.util.ChatFeatures.enabled)
                 }
                 manager?.createNotificationChannel(channel)
             }
@@ -232,6 +235,7 @@ class NotificationHelper @Inject constructor(
     /** The one notification a new Message Request gets: "New message request - <address> wants
      *  to chat with you." (NO_HANDSHAKE_MESSAGING.md §4). The caller decides it is the first. */
     suspend fun showMessageRequest(contactId: String, dedupeTxId: String? = null) {
+        if (!com.kachat.app.util.ChatFeatures.enabled) return // KaChat Wallet: no chat banners (ChatFeatures)
         show(
             contactId = contactId,
             title = context.getString(com.kachat.app.R.string.new_message_request),
@@ -250,6 +254,7 @@ class NotificationHelper @Inject constructor(
      * keeps one notification, as iOS does with its collapse id.
      */
     suspend fun show(contactId: String, title: String, text: String, notificationOverride: ContactNotificationMode? = null, dedupeTxId: String? = null, tipTxId: String? = null) {
+        if (!com.kachat.app.util.ChatFeatures.enabled) return // KaChat Wallet: no chat banners (ChatFeatures)
         if (activeContactId.value == contactId) return // already looking at this conversation
         if (!settings.notificationsEnabled.first()) return
         if (notificationOverride == ContactNotificationMode.OFF) return
@@ -350,6 +355,7 @@ class NotificationHelper @Inject constructor(
     }
 
     suspend fun showKaPosts(text: String, actionTxId: String, postTxId: String? = null, focusTxId: String? = null) {
+        if (!com.kachat.app.util.ChatFeatures.enabled) return // KaChat Wallet: no chat banners (ChatFeatures)
         if (!settings.notificationsEnabled.first()) return
         if (!claimTxId("kaposts_$actionTxId")) return // poller and FCM push can both see the same action
         // Child Mode removes KaPosts entirely - no notification pings for it either. Guarding
@@ -462,6 +468,7 @@ class NotificationHelper @Inject constructor(
     }
 
     suspend fun showBroadcast(channelName: String, title: String, text: String, dedupeTxId: String? = null) {
+        if (!com.kachat.app.util.ChatFeatures.enabled) return // KaChat Wallet: no chat banners (ChatFeatures)
         // Every broadcast notification funnels through here - the live block scan
         // (BroadcastScanningService) AND the remote push (KaChatFirebaseMessagingService, whose
         // `body` is whatever the indexer relayed, i.e. the raw on-chain content). Humanizing at
@@ -530,6 +537,7 @@ class NotificationHelper @Inject constructor(
         dedupeTxId: String? = null,
         targetGroupId: String? = groupId,
     ) {
+        if (!com.kachat.app.util.ChatFeatures.enabled) return // KaChat Wallet: no chat banners (ChatFeatures)
         if (activeGroupId.value == groupId) return // already looking at this group's thread
         if (!settings.notificationsEnabled.first()) return
         if (!claimTxId(dedupeTxId)) return // the other delivery path (scan/sync vs push) got here first

@@ -32,10 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.core.content.IntentCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.lifecycleScope
-import com.kachat.app.services.CallService
 import com.kachat.app.services.CrashRecorder
-import com.kachat.app.services.IncomingCallNotifier
-import com.kachat.app.ui.screens.CallOverlay
 import com.kachat.app.services.NotificationHelper
 import com.kachat.app.services.PendingShare
 import com.kachat.app.services.ShareIntake
@@ -62,7 +59,6 @@ import javax.inject.Inject
  */
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
-    @Inject lateinit var callService: CallService
     @Inject lateinit var onboardingGate: com.kachat.app.services.OnboardingGate
 
     // The KaChat sheet that explains the battery exemption before Android's own dialog. Re-derived
@@ -110,6 +106,9 @@ class MainActivity : AppCompatActivity() {
      * and Android's dialog only opens from its Allow. Asked once either way, as before.
      */
     private fun batteryExemptionDue(): Boolean {
+        // KaChat Wallet has no encrypted messages to wake for: its pushes are Received KAS and
+        // .kachat events, so it never asks (and declares no REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).
+        if (!com.kachat.app.util.ChatFeatures.enabled) return false
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return false
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) !=
@@ -156,7 +155,7 @@ class MainActivity : AppCompatActivity() {
     private fun guarded(what: String, block: () -> Unit) =
         com.kachat.app.util.StartupSafety.step("MainActivity", what, block)
 
-    /** The launching (or new) Intent's notification target, links, share and call answer. */
+    /** The launching (or new) Intent's notification target, links and share. */
     private fun handleLaunchIntent(intent: Intent?) {
         if (intent == null) return
         guarded("notification target") { consumeNotificationTarget(intent) }
@@ -165,7 +164,6 @@ class MainActivity : AppCompatActivity() {
         guarded("payment request link") { handlePaymentRequestDeepLink(intent) }
         guarded("share") { handleShareIntent(intent) }
         guarded("clear intent payload") { clearConsumedIntentPayload(intent) }
-        guarded("call answer") { consumeCallAnswer(intent) }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -188,12 +186,11 @@ class MainActivity : AppCompatActivity() {
         }
         enableEdgeToEdge()
         // Everything up to setContent is a side step - a permission prompt, a notification or
-        // link to route, the call window wiring. Each is guarded on its own: one that throws is
+        // link to route. Each is guarded on its own: one that throws is
         // logged, and the app still opens (KaChatApplication's startup rule).
         guarded("notification permission") { maybeRequestNotificationPermission() }
         guarded("battery rationale") { refreshBatteryRationale() }
         handleLaunchIntent(intent)
-        guarded("call window") { observeCallForLockScreen() }
         setContent {
             val walletViewModel: WalletViewModel = hiltViewModel()
             // Settings > Customization > Appearance: System follows the device, as on iOS.
@@ -220,10 +217,6 @@ class MainActivity : AppCompatActivity() {
                     )
                     CrashNotice()
                     BatteryExemptionRationale(isLoggedIn = isLoggedIn)
-                    // The call screen (ringing in, ringing out, connected) sits over the whole
-                    // app, whichever screen is showing - a call is not a page of the chat it
-                    // started from.
-                    CallOverlay(callService)
                 }
             }
         }
@@ -304,91 +297,6 @@ class MainActivity : AppCompatActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         handleLaunchIntent(intent)
-    }
-
-    /**
-     * Answering from the ringing notification. The notification's Answer button opens the app
-     * with the call's id attached; picking up needs the microphone, which only an Activity can
-     * ask for, so the tap lands here. With the permission already granted this is a real
-     * one-tap answer; without it the call screen is on screen anyway and its Accept button asks.
-     *
-     * The id is checked so a stale tap (the call already over, or another one ringing) cannot
-     * answer the wrong call, and stripped so a configuration change does not re-answer.
-     */
-    private fun consumeCallAnswer(intent: Intent) {
-        val callId = intent.getStringExtra(IncomingCallNotifier.EXTRA_ANSWER_CALL_ID) ?: return
-        intent.removeExtra(IncomingCallNotifier.EXTRA_ANSWER_CALL_ID)
-        val call = callService.session.value ?: return
-        if (call.id != callId || call.phase != CallService.Phase.RingingIn) return
-        val needed = buildList {
-            add(Manifest.permission.RECORD_AUDIO)
-            if (call.video) add(Manifest.permission.CAMERA)
-        }.filter { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
-        if (needed.isEmpty()) callService.acceptIncoming()
-    }
-
-    /**
-     * Floats a live video call in the system's small window, over KaChat and over other apps -
-     * Android's own version of the call window a phone shows when you leave a video call. Only
-     * a call whose other side is actually sending video is worth floating; anything else keeps
-     * the green return bar instead.
-     */
-    private fun enterCallPictureInPicture(): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return false
-        if (!callService.canFloatVideo) return false
-        return runCatching {
-            val params = android.app.PictureInPictureParams.Builder()
-                .setAspectRatio(android.util.Rational(9, 16))
-                .build()
-            enterPictureInPictureMode(params)
-        }.getOrDefault(false)
-    }
-
-    /** Leaving the app with a video call up floats it, rather than leaving it behind. */
-    override fun onUserLeaveHint() {
-        super.onUserLeaveHint()
-        if (callService.session.value != null) enterCallPictureInPicture()
-    }
-
-    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: android.content.res.Configuration) {
-        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
-        callService.setInPictureInPicture(isInPictureInPictureMode)
-    }
-
-    /**
-     * A ringing or live call shows over the lock screen and wakes the display, the way the
-     * phone's own dialler does - and only then: the flags come straight back off when the call
-     * ends, so the rest of the app stays behind the lock screen where it belongs.
-     */
-    private fun observeCallForLockScreen() {
-        // Tucking a video call away floats it in the system's own window.
-        lifecycleScope.launch {
-            callService.isMinimized.collect { minimized ->
-                if (minimized && !callService.isInPictureInPicture.value) enterCallPictureInPicture()
-            }
-        }
-        lifecycleScope.launch {
-            callService.session.collect { call ->
-                val live = call != null && call.phase !is CallService.Phase.Ended
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-                    setShowWhenLocked(live)
-                    setTurnScreenOn(live)
-                } else {
-                    @Suppress("DEPRECATION")
-                    if (live) {
-                        window.addFlags(
-                            android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-                                android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
-                        )
-                    } else {
-                        window.clearFlags(
-                            android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-                                android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
-                        )
-                    }
-                }
-            }
-        }
     }
 
     /**
@@ -495,6 +403,9 @@ class MainActivity : AppCompatActivity() {
                 com.kachat.app.ui.screens.KachatDeepLink.pendingName.value =
                     com.kachat.app.services.kachatnames.KachatNames.Codec.normalize(it.lowercase().removeSuffix(".kachat"))
             }
+            // KaChat Wallet's "Received" push on one of its own addresses: that address's History,
+            // as the app's own Address Activity notification opens (PUSH_SERVICE.md).
+            "address_activity" -> pendingOwnAddress = intent.getStringExtra("address")?.takeIf { it.isNotBlank() }
             "broadcast" -> pendingChannelName = intent.getStringExtra("channel")?.takeIf { it.isNotBlank() }
             "kaposts" -> {
                 // The server's own key for "the content that was acted on" has been spelled

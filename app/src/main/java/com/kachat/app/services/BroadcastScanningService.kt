@@ -13,6 +13,7 @@ import com.kachat.app.util.KaspaAddress
 import com.kachat.app.util.MessageProtocol
 import com.kachat.app.util.VoiceMessage
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -100,6 +101,12 @@ class BroadcastScanningService @Inject constructor(
     private var liveViewedChannelNames: Set<String> = emptySet()
     private var notifyEnabledChannelNames: Set<String> = emptySet()
         private var hiddenSenderRows: List<com.kachat.app.models.HiddenBroadcastSenderEntity> = emptyList()
+
+    // KaChat Wallet: no chats, so nothing here ever starts - every job this service launches
+    // runs on [scope], which is cancelled before the init below can launch one (ChatFeatures).
+    init {
+        if (!com.kachat.app.util.ChatFeatures.enabled) scope.cancel()
+    }
 
     init {
         // Self-observing rather than wired externally per-screen: this needs to hold/release its

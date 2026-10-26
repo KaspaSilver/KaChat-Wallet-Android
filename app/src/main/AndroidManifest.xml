@@ -9,27 +9,11 @@
     <!-- Push notifications -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <!-- Lets the app show the OS "ignore battery optimizations" dialog so data-only encrypted
-         DM/group push can wake a force-closed app (see MainActivity.maybeRequestBatteryExemption). -->
-    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
-    <!-- Voice messages -->
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-
-    <!-- Camera (optional, for sharing images, and for video calls) -->
+    <!-- Camera (optional): scanning QR codes - addresses, payment requests and Cold Storage
+         signing. KaChat Wallet has no calls and no voice messages, so no microphone, audio
+         routing or call foreground service (iOS wallet 964fb25, a11a6d7). -->
     <uses-permission android:name="android.permission.CAMERA" />
-
-    <!-- Voice and video calls over Nextcloud Talk: the speaker/earpiece route, and the
-         foreground service that keeps the microphone and camera usable while a call is
-         backgrounded (Android 14 cuts them off otherwise) - see CallForegroundService. -->
-    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-    <!-- No USE_FULL_SCREEN_INTENT: Google Play grants it only to apps whose core purpose is
-         calling or alarms, and KaChat is a chat app that can also call, so a submission carrying
-         it is rejected (policy notice, 2026-09-22). An incoming call rings through the CallStyle
-         notification instead - see IncomingCallNotifier. -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
 
     <!-- Saving a received photo message to the device gallery. Only needed on API 28 and below —
          API 29+ (Q) scoped storage lets MediaStore inserts succeed without this permission. -->
@@ -42,16 +26,13 @@
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
     <!-- Play derives REQUIRED hardware from the permissions above unless it is told otherwise:
-         CAMERA implies android.hardware.camera, RECORD_AUDIO implies android.hardware.microphone.
-         Left implicit, the store hides the app from every device without that hardware - most
-         Chromebooks, camera-less tablets, TV/auto form factors - even though KaChat is a chat app
-         whose camera and microphone are optional extras (QR scanning, photos, calls). Declaring
-         them required="false" keeps the app installable there; the features that need the hardware
-         already check for it at runtime through the normal permission request. -->
+         CAMERA implies android.hardware.camera. Left implicit, the store hides the app from every
+         device without one - most Chromebooks, camera-less tablets, TV/auto form factors - though
+         the camera is an optional extra (QR scanning). Declaring it required="false" keeps the app
+         installable there; scanning already checks for it at runtime. -->
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.camera.any" android:required="false" />
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
-    <uses-feature android:name="android.hardware.microphone" android:required="false" />
 
     <!-- usesCleartextTraffic stays true DELIBERATELY (2026-08 security audit, decision 3A):
          Kaspa node gRPC (protowire on port 16110/16210) is plaintext by protocol, and a
@@ -81,81 +62,14 @@
             android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.KaChat"
             android:resizeableActivity="true"
-            android:supportsPictureInPicture="true"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- KaPosts share links: kachat://kapost/<txid> opens the post's thread. -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="kachat" android:host="kapost" />
-            </intent-filter>
-            <!-- Broadcast room share links: kachat://broadcast/<channel> opens (and, for a room
-                 that isn't one of the curated ones, joins) that room. <channel> is the normalized
-                 name with no leading '#' - see MessageProtocol.normalizeChannelName. -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="kachat" android:host="broadcast" />
-            </intent-filter>
-            <!-- Profile links: kachat://profile/<address> opens that person's User Info, contact
-                 or not (iOS 81df734). The address is checksum-validated before anything routes. -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="kachat" android:host="profile" />
-            </intent-filter>
-            <!-- Payment requests: kachat://pay/<address>?amount=...&memo=...[&chat=1]&by=...&sig=...
-                 (the kachat.app page's "Pay in KaChat") opens Send Kaspa filled in (iOS c6851d6).
-                 Every field, and the signature, is checked before anything routes. -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="kachat" android:host="pay" />
-            </intent-filter>
-            <!-- Universal-link form. autoVerify needs /.well-known/assetlinks.json served at
-                 the domain (mirrors iOS's AASA file - see KACHAT_APP_LINKS.md). kachat.app is
-                 the host the app writes; the duckdns one is only ever read, for links shared
-                 before the move. -->
-            <intent-filter android:autoVerify="true">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="kachat.app" android:pathPrefix="/post/" />
-                <!-- Broadcast rooms share the same universal-link host/verification. -->
-                <data android:scheme="https" android:host="kachat.app" android:pathPrefix="/broadcast/" />
-                <!-- The share button beside the Profile title writes these (/u/<address>). -->
-                <data android:scheme="https" android:host="kachat.app" android:pathPrefix="/u/" />
-                <!-- Payment requests (Chats > + > Request Payment, iOS c6851d6). -->
-                <data android:scheme="https" android:host="kachat.app" android:pathPrefix="/pay/" />
-                <data android:scheme="https" android:host="kachat.duckdns.org" android:pathPrefix="/post/" />
-                <data android:scheme="https" android:host="kachat.duckdns.org" android:pathPrefix="/broadcast/" />
-            </intent-filter>
-            <!-- System share sheet: text/links and images shared from any app land in a chat's
-                 composer (see ShareShortcutsManager/ShareIntake + MainActivity.handleShareIntent).
-                 Recent conversations additionally appear as direct-share targets via the sharing
-                 shortcuts published by ShareShortcutsManager + @xml/shortcuts below. -->
-            <intent-filter>
-                <action android:name="android.intent.action.SEND" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="text/plain" />
-                <data android:mimeType="image/*" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.SEND_MULTIPLE" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="image/*" />
-            </intent-filter>
-            <meta-data
-                android:name="android.app.shortcuts"
-                android:resource="@xml/shortcuts" />
+            <!-- No kachat:// or https://kachat.app links and no share target: those open KaChat,
+                 whose chats, posts and rooms they lead to, and KaChat Wallet has none (iOS wallet
+                 registers no associated domains, and dd35458 dropped its chat Shortcuts). -->
         </activity>
 
         <!-- WorkManager's default auto-init is disabled — KaChatApplication implements
@@ -186,17 +100,6 @@
         <!-- FCM Push Notification Service. Data-only messages are handled here and turned into
              notifications via NotificationHelper (mirrors iOS's Notification Service Extension).
              Inactive at runtime until google-services.json is added (see app/build.gradle.kts). -->
-        <!-- Keeps a live call's microphone and camera usable in the background (CallService). -->
-        <service
-            android:name=".services.CallForegroundService"
-            android:exported="false"
-            android:foregroundServiceType="microphone|camera" />
-
-        <!-- Declining from the ringing notification, which needs no UI (IncomingCallNotifier). -->
-        <receiver
-            android:name=".services.CallActionReceiver"
-            android:exported="false" />
-
         <service
             android:name=".services.KaChatFirebaseMessagingService"
             android:exported="false">
@@ -210,6 +113,12 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="kachat_messages_sound_vibrate" />
+        <!-- The push service's "Received" push is a notification message, which Android draws
+             itself while the app is in the background: with the wallet's status-bar icon, not
+             the full-colour launcher icon (PUSH_SERVICE.md). -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_kachat_wallet_notification" />
 
         <!-- Required for AppCompatDelegate.setApplicationLocales() to survive a cold app
              restart on API <33 (the Settings > Language row uses this API) - without this

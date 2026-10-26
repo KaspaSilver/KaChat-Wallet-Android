@@ -1508,6 +1508,7 @@ class GroupRepository @Inject constructor(
      * arrived while the app was away without two full syncs running side by side.
      */
     suspend fun runGroupCatchUp() {
+        if (!com.kachat.app.util.ChatFeatures.enabled) return
         if (catchUpMutex.isLocked) {
             if (catchUpQueued) return
             catchUpQueued = true
@@ -1541,6 +1542,7 @@ class GroupRepository @Inject constructor(
      * move. A full page is followed straight away from its `latestBlockTime`.
      */
     suspend fun pollLiveGroupTraffic(onlyGroupId: String?, includeControl: Boolean, cursor: Long): LiveGroupPoll {
+        if (!com.kachat.app.util.ChatFeatures.enabled) return LiveGroupPoll.Unsupported
         val api = networkService.indexerApi.value ?: return LiveGroupPoll.Failed
         val walletAddress = walletManager.getActiveAccount()?.address ?: return LiveGroupPoll.Failed
         val since = if (cursor > LIVE_POLL_REWIND_MS) cursor - LIVE_POLL_REWIND_MS else 0L
@@ -1599,6 +1601,8 @@ class GroupRepository @Inject constructor(
     }
 
     suspend fun syncGroups() {
+        // KaChat Wallet: no group chats (ChatFeatures).
+        if (!com.kachat.app.util.ChatFeatures.enabled) return
         val api = networkService.indexerApi.value ?: return
         // On a cold foreground before the user has logged in/imported a wallet there's no active
         // account yet, and getAddress() would throw IllegalStateException. Bail out the same way

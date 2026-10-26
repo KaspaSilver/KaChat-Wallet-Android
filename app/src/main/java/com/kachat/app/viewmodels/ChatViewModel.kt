@@ -67,7 +67,6 @@ class ChatViewModel @Inject constructor(
     private val voiceRecorderService: VoiceRecorderService,
     private val nextcloudService: NextcloudService,
     private val nextcloudSyncService: com.kachat.app.services.NextcloudSyncService,
-    private val callService: com.kachat.app.services.CallService,
     private val backupRestoreCoordinator: com.kachat.app.services.BackupRestoreCoordinator,
     private val groupRepository: com.kachat.app.repository.GroupRepository,
     private val shareShortcutsManager: com.kachat.app.services.ShareShortcutsManager,
@@ -106,6 +105,11 @@ class ChatViewModel @Inject constructor(
     fun runInitialSyncAfterOnboarding() {
         if (!onboardingGate.isHeld) return
         onboardingGate.release()
+        // KaChat Wallet: nothing to download but the balance, and no "Setting up your account".
+        if (!com.kachat.app.util.ChatFeatures.enabled) {
+            viewModelScope.launch { runCatching { walletService.refreshBalance() } }
+            return
+        }
         viewModelScope.launch {
             try {
                 _initialSyncPhase.value = InitialSyncPhase.Messages
@@ -223,22 +227,6 @@ class ChatViewModel @Inject constructor(
             chatRepository.addContact(existing.copy(notificationOverride = override?.name))
         }
     }
-
-    // -------------------------------------------------------------------------
-    // Calls (Nextcloud Talk over the 1:1 channel) - see CallService.
-    // -------------------------------------------------------------------------
-
-    /** The live call, if any; the thread hides its call button while one is up. */
-    val callSession: StateFlow<com.kachat.app.services.CallService.ActiveCall?> = callService.session
-
-    val callLastError: StateFlow<String?> = callService.lastError
-
-    /** Why a call from someone did not ring, for their chat to say once (see CallService). */
-    val callChatNotice: StateFlow<com.kachat.app.services.CallService.ChatNotice?> = callService.chatNotice
-
-    fun takeCallChatNotice(contactId: String): String? = callService.takeChatNotice(contactId)
-
-    fun startCall(contact: ContactEntity, video: Boolean) = callService.startCall(contact, video)
 
     /** "Allow calls and video calls" for one contact - Chat Info's switch and the prompt behind
      *  the call button. OFF by default: while off, this contact's invites and requests are

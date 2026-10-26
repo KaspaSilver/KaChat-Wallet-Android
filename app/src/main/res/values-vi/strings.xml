@@ -1389,4 +1389,7 @@
     <string name="chess_no_finished_duels">Chưa có ván 1v1 nào kết thúc.</string>
     <string name="chess_no_finished_tournaments_this_month">Chưa có giải đấu nào kết thúc trong tháng này.</string>
     <string name="chess_no_finished_tournaments">Chưa có giải đấu nào kết thúc.</string>
+    <string name="wallet_title">Ví</string>
+    <string name="connection_tab_push">Thông báo</string>
+    <string name="ab_add_address_sub">Lưu một địa chỉ Kaspa với tên bạn dễ nhận ra.</string>
 </resources>

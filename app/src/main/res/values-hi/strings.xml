@@ -1389,4 +1389,7 @@
     <string name="chess_no_finished_duels">अभी तक कोई 1v1 गेम पूरा नहीं हुआ।</string>
     <string name="chess_no_finished_tournaments_this_month">इस महीने अभी तक कोई टूर्नामेंट पूरा नहीं हुआ।</string>
     <string name="chess_no_finished_tournaments">अभी तक कोई टूर्नामेंट पूरा नहीं हुआ।</string>
+    <string name="wallet_title">वॉलेट</string>
+    <string name="connection_tab_push">पुश</string>
+    <string name="ab_add_address_sub">किसी Kaspa पते को ऐसे नाम से सहेजें जिसे आप पहचानते हों।</string>
 </resources>

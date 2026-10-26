@@ -488,7 +488,8 @@ class BroadcastViewModel @Inject constructor(
     init {
         // The curated #kaspa/#kachat-bugs rooms are always present (4.0): auto-joined with
         // fixed 3-day retention, backed by the broadcast indexer.
-        viewModelScope.launch { broadcastRepository.ensureFeaturedChannelsJoined() }
+        // KaChat Wallet has no public chats: no rooms are joined (ChatFeatures).
+        if (com.kachat.app.util.ChatFeatures.enabled) viewModelScope.launch { broadcastRepository.ensureFeaturedChannelsJoined() }
         // Read state follows the account, and every joined room gets a marker the first time it
         // is seen, so it counts from now rather than from the start of its history.
         viewModelScope.launch {

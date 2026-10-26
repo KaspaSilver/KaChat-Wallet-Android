@@ -1389,4 +1389,7 @@
     <string name="chess_no_finished_duels">لا توجد مباريات 1v1 منتهية بعد.</string>
     <string name="chess_no_finished_tournaments_this_month">لا توجد بطولات منتهية هذا الشهر بعد.</string>
     <string name="chess_no_finished_tournaments">لا توجد بطولات منتهية بعد.</string>
+    <string name="wallet_title">المحفظة</string>
+    <string name="connection_tab_push">الإشعارات</string>
+    <string name="ab_add_address_sub">احفظ عنوان كاسبا باسم تعرفه.</string>
 </resources>

@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Book
 import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.filled.AccountCircle
@@ -99,7 +100,9 @@ sealed class Screen(val route: String, val label: String, val icon: ImageVector)
     object Settings    : Screen("settings",     "Settings",     Icons.Default.Settings)
     object Chats       : Screen("chats",        "Chats",        Icons.Default.Forum)
     object Portfolio   : Screen("portfolio",    "Portfolio",    Icons.Default.PieChart)
-    object Profile     : Screen("profile",      "Profile",      Icons.Default.AccountCircle)
+    // KaChat Wallet calls it "Wallet" in the dock, with a wallet symbol, like KaPosts' wallet tab
+    // (iOS AppTab.profile in the wallet). The route stays "profile".
+    object Profile     : Screen("profile",      "Wallet",       Icons.Outlined.AccountBalanceWallet)
     object Swap        : Screen("swap",         "Swap",         Icons.Default.SwapHoriz)
     // Labeled "Storage" (not "Cold Storage") and always in the default tab set, matching iOS's
     // AppTab.coldStorage — hideable like Portfolio/Swap via Settings > Customization > Menu, but
@@ -127,7 +130,8 @@ sealed class Screen(val route: String, val label: String, val icon: ImageVector)
     // Address Book (iOS AppTab.addressBook, 00767a4) - Kaspa Hub > Address Book: saved Kaspa
     // addresses with names, per wallet, kept in KaChat (it replaced syncing with the phone's
     // Contacts). Your own saved addresses, so Simple Mode shows it.
-    object AddressBook : Screen("address_book", "Address Book", Icons.Outlined.Book)
+    // KaChat Wallet calls it "Addresses" (owner's call, iOS 9cb6e40).
+    object AddressBook : Screen("address_book", "Addresses",    Icons.Outlined.Book)
     // KaChat Bots (5.2.1, iOS AppTab.kachatBots, 82ab31d) - Kaspa Hub > KaChat Bots: Block Reward
     // Tracker, Wallet Tracker, Price Bot and Kaspa Answers; tapping one opens a chat with it.
     // Ordinary chats with the bots, so Simple Mode shows it.
@@ -189,7 +193,20 @@ val Screen.hubTitle: String
  * be reinserted sensibly; where they sit among the five is the person's (Customize Dock), that
  * they are there is not.
  */
-val PINNED_DOCK_ROUTES = listOf(Screen.KaspaHub.route, Screen.Chats.route, Screen.Profile.route)
+val PINNED_DOCK_ROUTES = listOf(Screen.Profile.route)
+
+/**
+ * KaChat Wallet's dock, fixed (iOS wallet `AppTab.defaultDock`): Portfolio, Storage, Wallet (the
+ * Profile) in the middle, .kachat and Addresses. There is no Chats, no Kaspa Hub and no Customize
+ * Dock; [resolveDock] reads this rather than a saved arrangement.
+ */
+val WALLET_DOCK = listOf(Screen.Portfolio, Screen.ColdStorage, Screen.Profile, Screen.KachatNames, Screen.AddressBook)
+
+/**
+ * KaChat Wallet's home (iOS wallet `AppTab.home`): where the app opens, and where it lands when
+ * the screen it was on goes away - the part Chats plays in KaChat.
+ */
+val HOME_ROUTE = Screen.Portfolio.route
 
 /**
  * ChangeNOW Swap, off for now (iOS f94db5a). An in-app crypto exchange - a third-party one like
@@ -208,17 +225,14 @@ val SETTINGS_SHEET_ROUTES = setOf(
     "wallet_notification_settings", "quick_reaction_settings",
 )
 
-/** Tabs the user can place. Chats is listed but pinned (see [PINNED_DOCK_ROUTES]). */
+/** Tabs besides the pinned one. KaChat Wallet: the wallet's own four; every other KaChat feature stays off. */
 val ASSIGNABLE_TAB_ROUTES = listOf(
-    Screen.Chats.route, Screen.Portfolio.route, Screen.ColdStorage.route,
-    Screen.Swap.route, Screen.KaPosts.route,
-    Screen.KaspaWebsites.route, Screen.Chess.route,
-    Screen.KachatNames.route, Screen.KachatStats.route, Screen.AddressBook.route,
-    Screen.KachatBots.route
+    Screen.Portfolio.route, Screen.ColdStorage.route,
+    Screen.KachatNames.route, Screen.AddressBook.route,
 )
 
 /** Route strings for tabs that can never be hidden — see [resolveTabOrder]. */
-val ALWAYS_VISIBLE_TAB_ROUTES = setOf(Screen.Chats.route, Screen.Profile.route)
+val ALWAYS_VISIBLE_TAB_ROUTES = setOf(Screen.Profile.route)
 
 // All top-level tabs, in the app's default order (matches iOS's AppTab.defaultOrder). Settings
 // isn't a tab at all (matches iOS) — it's reached one tap in from Profile's gear icon instead,
@@ -308,37 +322,14 @@ fun resolveTabOrder(routes: List<String>, hiddenTabs: Set<String>, childMode: Bo
  * one. The pinned tabs are reinserted whatever the stored list says, so no saved - or hand-edited
  * - arrangement can leave the app without them.
  */
-fun resolveDock(dockRoutes: List<String>, hiddenTabs: Set<String>, childMode: Boolean = false): List<Screen> {
-    val byRoute = bottomNavItems.associateBy { it.route }
-    // The stored order (matches iOS AppTab.visible), deduplicated defensively - a repeated route
-    // would render the same tab twice - with at most ASSIGNABLE_DOCK_SLOTS picks besides the
-    // pinned tabs. A saved arrangement from before Chats was pinned keeps its first two picks;
-    // anything past them is not lost, it is listed in Kaspa Hub (see kaspaHubSections).
-    var picks = 0
-    val placed = mutableListOf<Screen>()
-    for (screen in dockRoutes.mapNotNull { byRoute[it] }) {
-        if (!SWAP_FEATURE_ENABLED && screen == Screen.Swap) continue
-        if (screen.route in hiddenTabs && screen.route !in ALWAYS_VISIBLE_TAB_ROUTES) continue
-        if (childMode && screen.route in CHILD_MODE_HIDDEN_ROUTES) continue
-        if (screen.route !in PINNED_DOCK_ROUTES && screen.route !in ASSIGNABLE_TAB_ROUTES) continue
-        if (screen in placed) continue
-        if (screen.route !in PINNED_DOCK_ROUTES) {
-            if (picks >= ASSIGNABLE_DOCK_SLOTS) continue
-            picks++
-        }
-        placed.add(screen)
+fun resolveDock(dockRoutes: List<String>, hiddenTabs: Set<String>, childMode: Boolean = false): List<Screen> =
+    // KaChat Wallet's dock is fixed: always [WALLET_DOCK], minus anything switched off (Simple
+    // Mode hides .kachat). A saved arrangement is ignored, so nothing it says can take a tab away
+    // or bring a KaChat one in (iOS wallet AppTab.visible).
+    WALLET_DOCK.filter { screen ->
+        (screen.route in ALWAYS_VISIBLE_TAB_ROUTES || screen.route !in hiddenTabs) &&
+            !(childMode && screen.route in CHILD_MODE_HIDDEN_ROUTES)
     }
-    // Reinserted whatever the stored list says, so no saved arrangement - or a hand-edited one -
-    // can leave the app without Chats, the Hub that holds everything else, or Profile.
-    for (route in PINNED_DOCK_ROUTES) {
-        val screen = byRoute[route] ?: continue
-        if (screen !in placed) {
-            val position = AppSettingsRepository.DEFAULT_DOCK_TABS.indexOf(route).takeIf { it >= 0 } ?: placed.size
-            placed.add(minOf(position, placed.size), screen)
-        }
-    }
-    return placed
-}
 
 /**
  * What the Kaspa Hub grid actually shows: its candidates, minus anything hidden, minus anything
@@ -352,30 +343,13 @@ fun resolveDock(dockRoutes: List<String>, hiddenTabs: Set<String>, childMode: Bo
  * a route reached from Profile), so it has nothing to be deduplicated against and the grid always
  * shows it.
  */
+@Suppress("UNUSED_PARAMETER")
 fun kaspaHubSections(
     dockRoutes: List<String>,
     hubRoutes: List<String>,
     hiddenTabs: Set<String>,
     childMode: Boolean = false,
-): List<Screen> {
-    val byRoute = bottomNavItems.associateBy { it.route }
-    val inDock = resolveDock(dockRoutes, hiddenTabs, childMode).toSet()
-    fun eligible(screen: Screen) = screen.route in ASSIGNABLE_TAB_ROUTES &&
-        screen.route !in PINNED_DOCK_ROUTES &&
-        (SWAP_FEATURE_ENABLED || screen != Screen.Swap) &&
-        screen !in inDock &&
-        screen.route !in hiddenTabs &&
-        !(childMode && screen.route in CHILD_MODE_HIDDEN_ROUTES)
-
-    val ordered = hubRoutes.mapNotNull { byRoute[it] }.filter(::eligible).toMutableList()
-    // Anything absent from the stored list - a tab added by an update, or one demoted before that
-    // list knew about it - is appended rather than lost, which is the same failure that dropped a
-    // tab from the dock.
-    for (screen in bottomNavItems) {
-        if (eligible(screen) && screen !in ordered) ordered.add(screen)
-    }
-    return ordered
-}
+): List<Screen> = emptyList() // KaChat Wallet has no Kaspa Hub: every tab it has is in the dock.
 
 /**
  * Root composable: bottom nav + NavHost.
@@ -578,7 +552,7 @@ fun MainShell(
             }
         }
     }
-    // Child Mode just turned on (or the app landed on a now-hidden screen): snap home to Chats.
+    // Child Mode just turned on (or the app landed on a now-hidden screen): snap home (Portfolio).
     // Covers the three hidden tab routes plus Broadcasts' pushed room screen.
     LaunchedEffect(childModeEnabled, currentTopRoute) {
         if (childModeEnabled && currentTopRoute != null && (
@@ -586,7 +560,7 @@ fun MainShell(
                     currentTopRoute.startsWith("broadcast_channel/")
                 )
         ) {
-            navController.popBackStack(Screen.Chats.route, false)
+            navController.popBackStack(HOME_ROUTE, false)
         }
     }
 
@@ -616,7 +590,7 @@ fun MainShell(
             // route and land on nothing.
             val channel = com.kachat.app.ui.screens.KaChatLink.sanitizeChannelName(pendingChannelName)
             if (channel == null || walletViewModel.isChildModeEnabled()) {
-                navController.popBackStack(Screen.Chats.route, false)
+                navController.popBackStack(HOME_ROUTE, false)
             } else {
                 // Newest rows first, alongside the navigation rather than after it.
                 notificationBroadcastViewModel.prefetchNewest(channel)
@@ -641,7 +615,7 @@ fun MainShell(
     // resolves to an empty, unusable thread.
     LaunchedEffect(pendingOpenGroups) {
         if (pendingOpenGroups) {
-            navController.popBackStack(Screen.Chats.route, false)
+            navController.popBackStack(HOME_ROUTE, false)
             onPendingOpenGroupsHandled()
         }
     }
@@ -736,7 +710,7 @@ fun MainShell(
         } else {
             // Untargeted: surface the Chats list wherever the user currently is; whichever chat
             // the user opens next hands the share to the same compose sheet.
-            navController.popBackStack(Screen.Chats.route, false)
+            navController.popBackStack(HOME_ROUTE, false)
         }
     }
 
@@ -773,7 +747,7 @@ fun MainShell(
             if (walletViewModel.isChildModeEnabled()) {
                 KaPostsDeepLink.pendingPostTxId.value = null
                 KaPostsDeepLink.pendingFocusReplyTxId.value = null
-                navController.popBackStack(Screen.Chats.route, false)
+                navController.popBackStack(HOME_ROUTE, false)
             } else {
                 navController.navigate(Screen.KaPosts.route) { launchSingleTop = true }
             }
@@ -815,60 +789,19 @@ fun MainShell(
         // silently join a room either. Read race-free (suspend), same as the notification path.
         if (walletViewModel.isChildModeEnabled()) {
             BroadcastDeepLink.clearJoinRequests()
-            navController.popBackStack(Screen.Chats.route, false)
+            navController.popBackStack(HOME_ROUTE, false)
         } else {
             navController.navigate("broadcast_channel/$channel")
         }
     }
 
-    // Shows the Welcome Guide automatically the first time this shell renders after an account is
-    // added — whether created or imported — see `WalletViewModel.pendingWelcomeGuide`. Always shown
-    // on create/import, independent of the "show setup guides" setting.
+    // KaChat Wallet shows no welcome guide after an account is added - KaChat's walks through
+    // chats and the dock, which the wallet doesn't have (iOS wallet MainTabView) - so nothing waits
+    // on it: the request is dropped and the onboarding sync hold lifted.
     val pendingWelcomeGuide by walletViewModel.pendingWelcomeGuide.collectAsState()
-    // Guards the interrupted-run re-presenter below against racing the auto-present:
-    // markOnboardingWizardPending() persists BEFORE the navigation composes, so the marker
-    // flow could re-fire that effect while the top route was still the old tab page - which
-    // stacked a SECOND welcome_guide under the first and made a fresh import walk the whole
-    // wizard twice. Once auto-presented, re-presenting is only ever a next-launch concern.
-    var welcomeGuidePresentedThisSession by remember { mutableStateOf(false) }
     LaunchedEffect(pendingWelcomeGuide) {
-        if (pendingWelcomeGuide) {
-            welcomeGuidePresentedThisSession = true
-            // First-run auto-present: the "Who will use KaChat?" step is now owed an answer -
-            // persist the marker so killing the app mid-wizard re-presents the step at next
-            // launch. Never downgrades an already-"chosen" device (see markUserTypePending), and
-            // legacy installs that never auto-present are never marked (so never forced).
-            walletViewModel.markUserTypePending()
-            // Onboarding runs are unskippable end to end - a run only completes at Finish, and
-            // this persisted marker re-presents an interrupted run at next launch.
-            walletViewModel.markOnboardingWizardPending()
-            navController.navigate("welcome_guide?onboarding=true")
-            walletViewModel.consumePendingWelcomeGuide()
-        }
-    }
-
-    // Interrupted first run: the auto-present trigger above is in-memory only and lost on
-    // relaunch, so the persisted markers re-present the guide until it's genuinely finished -
-    // jumping back to the Adult/Child choice when that's what is still owed, otherwise replaying
-    // the whole onboarding run from the top (still unskippable).
-    val userTypePendingMarker by walletViewModel.userTypePending.collectAsState()
-    val onboardingWizardPendingMarker by walletViewModel.onboardingWizardPending.collectAsState()
-    // A hold with no wizard behind it would strand the account unsynced forever. Once the guide
-    // is neither pending nor on screen, lift it.
-    LaunchedEffect(pendingWelcomeGuide, currentTopRoute) {
-        if (!pendingWelcomeGuide && currentTopRoute?.startsWith("welcome_guide") != true) {
-            chatViewModel.releaseOnboardingHoldIfIdle()
-        }
-    }
-
-    LaunchedEffect(userTypePendingMarker, onboardingWizardPendingMarker, pendingWelcomeGuide, currentTopRoute) {
-        if (pendingWelcomeGuide || welcomeGuidePresentedThisSession) return@LaunchedEffect
-        if (currentTopRoute == null || currentTopRoute.startsWith("welcome_guide")) return@LaunchedEffect
-        if (userTypePendingMarker == true) {
-            navController.navigate("welcome_guide?startAtUserType=true&onboarding=true")
-        } else if (onboardingWizardPendingMarker == true) {
-            navController.navigate("welcome_guide?onboarding=true")
-        }
+        if (pendingWelcomeGuide) walletViewModel.consumePendingWelcomeGuide()
+        chatViewModel.releaseOnboardingHoldIfIdle()
     }
 
     // Frosted glass under the floating dock: the NavHost below is the backdrop, and the dock
@@ -1190,10 +1123,10 @@ fun MainShell(
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                             Box {
                                                 Icon(
-                                                    painter = screen.tabIconPainter(),
+                                                    painter = screen.dockIconPainter(),
                                                     contentDescription = screen.label,
                                                     tint = if (selected) KaspaTeal else LocalAppColors.current.textPrimary,
-                                                    modifier = screen.tabIconModifier(24.dp)
+                                                    modifier = screen.dockIconModifier(24.dp)
                                                 )
                                                 // How many are waiting, not just that some are. A
                                                 // bare dot said "something happened"; the number is
@@ -1309,7 +1242,7 @@ fun MainShell(
         ) {
         NavHost(
             navController = navController,
-            startDestination = Screen.Chats.route,
+            startDestination = HOME_ROUTE,
             // In the Settings stack the whole host draws as iOS's sheet: its rounded top 10 below
             // the status bar, black above it. The status-bar padding is consumed here, so the
             // settings screens' own statusBarsPadding adds nothing inside the sheet.
@@ -1749,7 +1682,6 @@ fun MainShell(
                     @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
                     HelpScreen(
                         onBack = { navController.popBackStack() },
-                        onWelcomeGuide = { navController.navigate("welcome_guide") },
                         onKnsGuide = { navController.navigate("kachat_setup_guide") }
                     )
                 }

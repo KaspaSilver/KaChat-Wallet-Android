@@ -56,7 +56,6 @@ import com.kachat.app.R
 import com.kachat.app.models.SourceWalletOption
 import com.kachat.app.models.WalletSourceFamily
 import com.kachat.app.services.WalletManager
-import com.kachat.app.ui.theme.KaspaSubtext
 import com.kachat.app.ui.theme.KaspaTeal
 import com.kachat.app.ui.theme.DarkAppColors
 import com.kachat.app.ui.theme.LocalAppColors
@@ -332,15 +331,14 @@ fun WelcomeScreen(
             val hasWallet by viewModel.hasWallet.collectAsState()
             val accounts by viewModel.accounts.collectAsState()
 
-            // Wordmark with the app mark beside it - the launcher icon itself, so the two never
-            // drift apart. Replaces the 160dp logo above the title: on a device with accounts
-            // saved, that block was most of why the list below had nowhere to go.
+            // Wordmark with the app mark beside it. KaChat Wallet's name says what it is, so there is
+            // no tagline under it (owner's call, iOS wallet 089a03f).
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Text(
-                    text = stringResource(R.string.kachat),
+                    text = "KaChat Wallet",
                     style = MaterialTheme.typography.headlineLarge.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 36.sp
@@ -348,26 +346,15 @@ fun WelcomeScreen(
                     color = LocalAppColors.current.textPrimary
                 )
                 Image(
-                    // A PNG copy of the launcher artwork, NOT R.mipmap.ic_launcher: on API 26+
+                    // The logo as a PNG (tools/make_logo.py), NOT R.mipmap.ic_launcher: on API 26+
                     // that id resolves to the adaptive-icon XML, which painterResource cannot
                     // load - it throws "Only VectorDrawables and rasterized asset types are
                     // supported" and takes the whole welcome screen down with it.
-                    painter = painterResource(id = R.drawable.kachat_app_mark),
-                    contentDescription = stringResource(R.string.kachat_logo),
+                    painter = painterResource(id = R.drawable.kachat_wallet_logo),
+                    contentDescription = "KaChat Wallet",
                     modifier = Modifier.size(40.dp).clip(RoundedCornerShape(9.dp))
                 )
             }
-
-            // Shown whether or not there are accounts saved: it is what the screen is, and
-            // hiding it on a returning device left the wordmark sitting on its own with nothing
-            // saying what it belongs to.
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = stringResource(R.string.secure_messaging_on_kaspa_blockdag),
-                style = MaterialTheme.typography.bodyLarge,
-                color = KaspaSubtext,
-                textAlign = TextAlign.Center
-            )
 
             Spacer(modifier = Modifier.weight(1f))
 
@@ -493,7 +480,7 @@ fun WelcomeScreen(
         // (iOS: 10pt above the safe area), so the height budget that keeps Create and Import on
         // screen is untouched and a 3-button bar never covers it.
         Text(
-            text = "KaChat ${com.kachat.app.util.AppVersion.display}",
+            text = "KaChat Wallet ${com.kachat.app.util.AppVersion.display}",
             fontSize = 11.sp,
             color = LocalAppColors.current.textSecondary,
             modifier = Modifier

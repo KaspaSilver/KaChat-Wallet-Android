@@ -105,6 +105,8 @@ class ShareShortcutsManager @Inject constructor(
     /** [promoteContactId] pins that conversation to the front — used at send time, before the
      *  conversations flow has reordered around the still-pending insert. */
     fun refresh(conversations: List<Conversation>, promoteContactId: String? = null) {
+        // KaChat Wallet: no chats to share into, so no direct-share shortcuts (ChatFeatures).
+        if (!com.kachat.app.util.ChatFeatures.enabled) return
         val top = conversations
             .asSequence()
             .filter { it.contact.conversationStatus != "rejected" }

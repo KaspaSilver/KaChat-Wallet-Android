@@ -151,34 +151,31 @@ fun AddressBookScreen(
     var search by rememberSaveable { mutableStateOf("") }
     val shown = remember(entries, search) { AddressBookManager.shared?.search(search) ?: emptyList() }
     var showImportExport by remember { mutableStateOf(false) }
+    val haptic = com.kachat.app.util.rememberHaptics()
 
     Scaffold(
         containerColor = colors.background,
         // Runs on under the dock, as iOS's content runs on under its tab bar.
         contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0),
         topBar = {
-            // iOS's bar, with or without entries: the connection dot, the balance centred (the
-            // inline "Address Book" title gives way to it, so there is no large title) and Import
-            // or Export (iOS 87b2a0b) beside + on one piece of glass, at the iPhone's glyph sizes
-            // (square.and.arrow.up.on.square 24 x 28, plus 18) and spacing.
-            HubSectionTopBar(onBack = onBack) {
-                Spacer(Modifier.width(2.dp))
-                ToolbarIconButton(
-                    Icons.Outlined.IosShare,
-                    stringResource(R.string.ab_import_export_a11y),
-                    onClick = { showImportExport = true },
-                    iconSize = 31.dp,
-                )
-                Spacer(Modifier.width(13.dp))
-                ToolbarIconButton(
-                    Icons.Outlined.Add,
-                    stringResource(R.string.ab_add_address),
-                    onClick = { showAdd = true },
-                    iconSize = 30.dp,
-                )
-                Spacer(Modifier.width(2.dp))
-            }
-        }
+            // iOS's bar, with or without entries: the connection dot and the balance centred, and
+            // "Addresses" large under it, as the other tabs show their titles (iOS wallet 1314382).
+            MainPageHeader(title = stringResource(R.string.addresses), onBack = onBack)
+        },
+        // Add and Import / Export live behind one floating glass + (like Chats'), not in the bar
+        // (iOS wallet 06b5e8a).
+        floatingActionButton = {
+            com.kachat.app.ui.theme.IosGlassFab(
+                // Above the dock the list runs under.
+                modifier = Modifier.padding(bottom = LocalDockInset.current),
+                onClick = {
+                    haptic(com.kachat.app.util.IosHaptic.IMPACT_LIGHT)
+                    showImportExport = true
+                },
+                icon = Icons.Outlined.Add,
+                contentDescription = stringResource(R.string.ab_actions_a11y),
+            )
+        },
     ) { padding ->
         if (entries.isEmpty()) {
             AddressBookEmptyState(
@@ -224,7 +221,11 @@ fun AddressBookScreen(
     if (showAdd) {
         AddressBookEntryEditor(address = null, onDone = {}, onDismiss = { showAdd = false })
     }
-    AddressBookImportExport(show = showImportExport, onDismiss = { showImportExport = false })
+    AddressBookActions(
+        show = showImportExport,
+        onAdd = { showAdd = true },
+        onDismiss = { showImportExport = false },
+    )
 }
 
 /** Reaches the app's [NextcloudService] from the Address Book's composables. */
@@ -235,13 +236,13 @@ interface AddressBookDeps {
 }
 
 /**
- * The Address Book's Import or Export half sheet (iOS AddressBookView, 87b2a0b): Import File,
- * Export File, and - with Nextcloud connected - Import from Nextcloud / Export to Nextcloud
- * (else a line saying where to connect it). The file is plain JSON, "KaChat Address Book
+ * What the Addresses + offers, as a half sheet (iOS wallet AddressBookView, 06b5e8a): Add
+ * Address, Import File, Export File, and - with Nextcloud connected - Import from Nextcloud /
+ * Export to Nextcloud (else a line saying where to connect it). The file is plain JSON, "KaChat Address Book
  * <time>.json" ([AddressBookManager.exportData]), so it moves both ways between iOS and Android.
  */
 @Composable
-private fun AddressBookImportExport(show: Boolean, onDismiss: () -> Unit) {
+private fun AddressBookActions(show: Boolean, onAdd: () -> Unit, onDismiss: () -> Unit) {
     val context = LocalContext.current
     val colors = LocalAppColors.current
     val scope = rememberCoroutineScope()
@@ -356,10 +357,18 @@ private fun AddressBookImportExport(show: Boolean, onDismiss: () -> Unit) {
 
     if (show) {
         ActionSheetContainer(
-            title = stringResource(R.string.ab_import_or_export),
+            title = stringResource(R.string.addresses),
             subtitle = null,
             onDismiss = onDismiss,
         ) {
+            ActionSheetRow(
+                icon = Icons.Outlined.Add,
+                title = stringResource(R.string.ab_add_address),
+                subtitle = stringResource(R.string.ab_add_address_sub),
+            ) {
+                onDismiss()
+                onAdd()
+            }
             ActionSheetRow(
                 icon = Icons.Default.FileDownload,
                 title = stringResource(R.string.ab_import_file),
@@ -1089,7 +1098,7 @@ fun AddressBookPickerSheet(
         BackHandler(onBack = close)
         Column(Modifier.fillMaxSize()) {
             SheetNavBar(
-                title = stringResource(R.string.ab_address_book),
+                title = stringResource(R.string.addresses),
                 leading = { SheetBarButton(stringResource(R.string.cancel), onClick = close) },
                 trailing = {
                     if (isMultiple) {

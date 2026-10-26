@@ -1389,4 +1389,7 @@
     <string name="chess_no_finished_duels">এখনো কোনো 1v1 খেলা শেষ হয়নি।</string>
     <string name="chess_no_finished_tournaments_this_month">এই মাসে এখনো কোনো টুর্নামেন্ট শেষ হয়নি।</string>
     <string name="chess_no_finished_tournaments">এখনো কোনো টুর্নামেন্ট শেষ হয়নি।</string>
+    <string name="wallet_title">ওয়ালেট</string>
+    <string name="connection_tab_push">পুশ</string>
+    <string name="ab_add_address_sub">চেনা নাম দিয়ে একটি ক্যাসপা ঠিকানা সংরক্ষণ করুন।</string>
 </resources>

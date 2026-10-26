@@ -1389,4 +1389,7 @@
     <string name="chess_no_finished_duels">Aucune partie 1v1 terminée pour l\'instant.</string>
     <string name="chess_no_finished_tournaments_this_month">Aucun tournoi terminé ce mois-ci.</string>
     <string name="chess_no_finished_tournaments">Aucun tournoi terminé pour l\'instant.</string>
+    <string name="wallet_title">Portefeuille</string>
+    <string name="connection_tab_push">Push</string>
+    <string name="ab_add_address_sub">Enregistrez une adresse Kaspa sous un nom que vous reconnaîtrez.</string>
 </resources>

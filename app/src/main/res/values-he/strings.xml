@@ -1389,4 +1389,7 @@
     <string name="chess_no_finished_duels">עדיין אין משחקי 1v1 שהסתיימו.</string>
     <string name="chess_no_finished_tournaments_this_month">עדיין אין טורנירים שהסתיימו החודש.</string>
     <string name="chess_no_finished_tournaments">עדיין אין טורנירים שהסתיימו.</string>
+    <string name="wallet_title">ארנק</string>
+    <string name="connection_tab_push">התראות</string>
+    <string name="ab_add_address_sub">שמרו כתובת Kaspa עם שם שתזהו.</string>
 </resources>

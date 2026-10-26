@@ -183,8 +183,8 @@ android {
             buildConfigField("boolean", "KACHAT_IS_RELEASE", "false")
             // The handed-out APK carries arm64 alone: every phone sold for years is 64-bit ARM,
             // while x86/x86_64 are emulators and Chromebooks and armeabi-v7a is 32-bit hardware
-            // long out of production - and WebRTC alone ships a 12MB library per architecture,
-            // which made the APK 57MB, most of it code the people downloading it can never run.
+            // long out of production, and native libraries ship once per architecture - most of
+            // an all-ABI APK would be code the people downloading it can never run.
             // The Play bundle keeps all four, since Play serves each device only its own, so a
             // 32-bit or x86 device still installs from there.
             ndk { abiFilters += listOf("arm64-v8a") }
@@ -336,9 +336,6 @@ dependencies {
 
     // Image loading (KNS avatars)
     implementation(libs.coil.compose)
-
-    // Voice and video calls (WebRTC over Nextcloud Talk's signaling) - see CallService
-    implementation(libs.webrtc)
 
     // gRPC (Kaspa node connections)
     implementation(libs.grpc.okhttp)
