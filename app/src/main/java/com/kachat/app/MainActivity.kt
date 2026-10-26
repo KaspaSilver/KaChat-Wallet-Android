@@ -13,7 +13,6 @@ import android.provider.Settings
 import androidx.activity.compose.setContent
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Close
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.enableEdgeToEdge
@@ -77,22 +76,8 @@ class MainActivity : AppCompatActivity() {
     // OwnAddressRoute.pending).
     private var pendingOwnAddress by mutableStateOf<String?>(null)
 
-    // Android 13+ requires an explicit runtime grant before ANY notification (local or FCM push)
-    // can be shown. Registered here (during construction, as required) and requested in onCreate.
-    private val requestNotificationPermission =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            // The battery sheet waits for this answer: notifications off means there is nothing
-            // for the exemption to deliver, so it is not worth asking.
-            if (granted) refreshBatteryRationale()
-        }
-
-    private fun maybeRequestNotificationPermission() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
-        val granted = ContextCompat.checkSelfPermission(
-            this, Manifest.permission.POST_NOTIFICATIONS
-        ) == PackageManager.PERMISSION_GRANTED
-        if (!granted) requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-    }
+    // Android 13+'s notification permission is asked from the tabs, once, not at launch: see
+    // MainShell's NotificationPermissionOnce (iOS wallet 1806a69).
 
     /**
      * The battery-optimization exemption - Android's "Let KaChat always run in background?"
@@ -188,7 +173,6 @@ class MainActivity : AppCompatActivity() {
         // Everything up to setContent is a side step - a permission prompt, a notification or
         // link to route. Each is guarded on its own: one that throws is
         // logged, and the app still opens (KaChatApplication's startup rule).
-        guarded("notification permission") { maybeRequestNotificationPermission() }
         guarded("battery rationale") { refreshBatteryRationale() }
         handleLaunchIntent(intent)
         setContent {

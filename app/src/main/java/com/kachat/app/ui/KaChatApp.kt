@@ -404,6 +404,31 @@ fun KaChatApp(
     }
 }
 
+/** See MainShell: Android 13+'s notification permission, asked once per install from the tabs. */
+@Composable
+private fun NotificationPermissionOnce(
+    settingsViewModel: com.kachat.app.viewmodels.SettingsViewModel = hiltViewModel(),
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val launcher = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (!granted) settingsViewModel.setNotificationsEnabled(false)
+    }
+    LaunchedEffect(Unit) {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU) return@LaunchedEffect
+        val prefs = context.getSharedPreferences("kachat_prefs", android.content.Context.MODE_PRIVATE)
+        if (prefs.getBoolean(KEY_NOTIFICATION_PERMISSION_REQUESTED, false)) return@LaunchedEffect
+        prefs.edit().putBoolean(KEY_NOTIFICATION_PERMISSION_REQUESTED, true).apply()
+        val granted = androidx.core.content.ContextCompat.checkSelfPermission(
+            context, android.Manifest.permission.POST_NOTIFICATIONS
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (!granted) launcher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+    }
+}
+
+private const val KEY_NOTIFICATION_PERMISSION_REQUESTED = "notification_permission_requested"
+
 /**
  * The ONE [ColdStorageViewModel] every cold-storage screen shares, scoped to the nav graph.
  *
@@ -803,6 +828,11 @@ fun MainShell(
         if (pendingWelcomeGuide) walletViewModel.consumePendingWelcomeGuide()
         chatViewModel.releaseOnboardingHoldIfIdle()
     }
+
+    // KaChat Wallet asks once, the first time its tabs show, for permission to notify - KaChat
+    // asks at launch, over the sign-in screen (iOS wallet 1806a69). Denied, notifications are
+    // switched off, which also takes the device off the push service.
+    NotificationPermissionOnce()
 
     // Frosted glass under the floating dock: the NavHost below is the backdrop, and the dock
     // draws a blurred copy of whatever sits behind it (RenderEffect on Android 12+, a

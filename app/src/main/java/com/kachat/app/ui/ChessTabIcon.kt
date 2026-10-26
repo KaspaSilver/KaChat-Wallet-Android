@@ -138,15 +138,17 @@ fun Screen.tabIconPainter(): Painter = when {
  * KaChat Wallet's dock icon for .kachat (iOS wallet `KachatTabIcon.domainsImage`): a name tag -
  * a rounded body on the right, a point on the left - with the hole it hangs by and an "@" cut out
  * of it. Black on transparent like the chess pieces, so an Icon's tint colours it, laid out on
- * iOS's 24-unit grid and drawn once at [DOMAINS_SIDE] px.
+ * iOS's 24-unit grid and drawn once at [DOMAINS_SIDE] px wide - only the 18 units around the tag
+ * tall, so the dock can widen it without making it taller than the symbols beside it.
  */
 private const val DOMAINS_SIDE = 144
 
 private val domainsIconBitmap by lazy {
     val u = DOMAINS_SIDE / 24f
     val mid = 12 * u
-    val bitmap = Bitmap.createBitmap(DOMAINS_SIDE, DOMAINS_SIDE, Bitmap.Config.ARGB_8888)
+    val bitmap = Bitmap.createBitmap(DOMAINS_SIDE, (18 * u).toInt(), Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bitmap)
+    canvas.translate(0f, -3 * u)
     val top = 3.5f * u
     val bottom = 20.5f * u
     val left = 0.5f * u
@@ -187,8 +189,9 @@ fun Screen.dockIconPainter(): Painter =
     if (this == Screen.KachatNames) remember { BitmapPainter(domainsIconBitmap) } else tabIconPainter()
 
 /**
- * The box a tab's dock icon is drawn in. The name tag fills its square edge to edge where a
- * Material symbol leaves a margin, so it gets a little more room to read as the same size.
+ * The box a tab's dock icon is drawn in. The name tag runs edge to edge where a Material symbol
+ * leaves a margin, so it gets a little more width to read as the same size - never more height,
+ * which would push its label below the others.
  */
 fun Screen.dockIconModifier(size: androidx.compose.ui.unit.Dp): androidx.compose.ui.Modifier =
-    if (this == Screen.KachatNames) androidx.compose.ui.Modifier.size(size * 7 / 6) else tabIconModifier(size)
+    if (this == Screen.KachatNames) androidx.compose.ui.Modifier.size(width = size * 7 / 6, height = size) else tabIconModifier(size)
