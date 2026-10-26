@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">KaChat</string>
+    <string name="app_name">KaChat Wallet</string>
     <string name="n_12_words">12 kata</string>
     <string name="accept">Terima</string>
     <string name="account_name">Nama Akun</string>

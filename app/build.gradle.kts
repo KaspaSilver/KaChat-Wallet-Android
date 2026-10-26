@@ -84,25 +84,28 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.kachat.app"
+        // KaChat Wallet's own package, the Android side of the iPhone wallet's com.kachat.wallet:
+        // it installs beside KaChat and never shares its storage, keystore entries or push
+        // registration. The Kotlin namespace stays com.kachat.app so the code still lines up
+        // with KaChat-Android's for porting fixes across.
+        applicationId = "com.kachat.wallet"
         minSdk = 26
         targetSdk = 36
-        // ---- Version train ----
-        // 4.1 shipped on 2026-09-15; every build from here is 5.0, the same train iOS runs.
+        // ---- Version ----
+        // KaChat Wallet numbers its own builds from 1.0 (1), like the iPhone wallet.
         //
         // KACHAT_BUILD_NUMBER is the number people see: the About row and the crash and
-        // diagnostics reports read "5.1 (1)", "5.1 (2)", ... on a handed-out GitHub build, and
-        // plain "5.1" on the Play build (see KACHAT_IS_RELEASE per flavour below). Bump it for
-        // every build that is handed out - the counterpart of iOS's Version.xcconfig
-        // KACHAT_BUILD_NUMBER, so the two apps report the same shape.
+        // diagnostics reports read "1.0 (1)", "1.0 (2)", ... on a handed-out GitHub build, and
+        // plain "1.0" on the Play build (see KACHAT_IS_RELEASE per flavour below). Bump it for
+        // every build that is handed out.
         //
         // versionCode is a separate thing and only ever goes up: Play's high-water mark is
-        // permanent and per app, and unlike iOS it does NOT reset when versionName changes
-        // (4.1's builds ran 35..47). A device will not treat a rebuild as an update unless it
-        // moves, so it goes up with every handed-out build too, alongside the build number.
-        val kachatBuildNumber = 7
-        versionCode = 120
-        versionName = "5.2.2"
+        // permanent and per app, and unlike iOS it does NOT reset when versionName changes. A
+        // device will not treat a rebuild as an update unless it moves, so it goes up with every
+        // handed-out build too, alongside the build number.
+        val kachatBuildNumber = 1
+        versionCode = 1
+        versionName = "1.0"
         buildConfigField("int", "KACHAT_BUILD_NUMBER", kachatBuildNumber.toString())
         // KACHAT_IS_RELEASE is set per flavour below rather than once here, because on Android the
         // two channels ARE the two answers iOS's single flag flips between: what goes to the Play
@@ -163,8 +166,8 @@ android {
     }
 
     // Where a build is handed out from. Same package, same signing key, same code - the one
-    // thing that differs is the launcher name: the GitHub APK calls itself "KaChat APK" (see
-    // src/github/res) so a person can tell it from the Play Store's "KaChat" at a glance.
+    // thing that differs is the launcher name: the GitHub APK calls itself "KaChat Wallet APK"
+    // (see src/github/res) so a person can tell it from the Play Store's "KaChat Wallet".
     // Installing one over the other still updates in place, since Android sees one package.
     // Play builds: bundlePlayRelease. GitHub APK: assembleGithubRelease.
     flavorDimensions += "distribution"

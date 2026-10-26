@@ -92,7 +92,7 @@ class IncomingCallNotifier @Inject constructor(
         val decline = declineIntent(callId)
         val caller = Person.Builder().setName(callerName).setImportant(true).build()
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_kachat_logo)
+            .setSmallIcon(R.drawable.ic_kachat_wallet_notification)
             .setContentTitle(callerName)
             .setContentText(if (video) "Incoming KaChat video call" else "Incoming KaChat call")
             .setCategory(NotificationCompat.CATEGORY_CALL)

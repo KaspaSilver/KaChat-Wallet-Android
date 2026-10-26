@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- KaChat Wallet's status-bar icon: the logo's wallet (tools/make_logo.py) in one colour, with
+     Kaspa's backward K cut out. The K's outline runs the other way round from the wallet's, so
+     the nonZero fill leaves it empty. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="1024"
+    android:viewportHeight="1024">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M298,225 H742 A48,48 0 0 1 790,273 V332 A48,48 0 0 1 742,380 H298 A48,48 0 0 1 250,332 V273 A48,48 0 0 1 298,225 Z M261,300 H763 A96,96 0 0 1 859,396 V694 A96,96 0 0 1 763,790 H261 A96,96 0 0 1 165,694 V396 A96,96 0 0 1 261,300 Z M746,465 H843 A56,56 0 0 1 899,521 V569 A56,56 0 0 1 843,625 H746 A56,56 0 0 1 690,569 V521 A56,56 0 0 1 746,465 Z M406,403 L374,453 L517,546 L374,639 L406,689 L562.5,586 L557,694 L617,690 L632,398 L572,402 L566.7,506 Z" />
+</vector>

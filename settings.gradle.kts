@@ -17,5 +17,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "KaChat"
+rootProject.name = "KaChatWallet"
 include(":app")

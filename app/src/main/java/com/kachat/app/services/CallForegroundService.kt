@@ -63,7 +63,7 @@ class CallForegroundService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_kachat_logo)
+            .setSmallIcon(R.drawable.ic_kachat_wallet_notification)
             .setContentTitle(title)
             .setContentText(if (video) "Video call in progress" else "Voice call in progress")
             .setOngoing(true)
