@@ -878,10 +878,13 @@ class PortfolioRepository @Inject constructor(
     //
     // Column order matches CoinMarketCap's portfolio Transaction History export exactly:
     // Date (UTC±H:MM),Token,Type,Price (USD),Amount,Total value (USD),Fee,Fee Currency,Notes
-    // — so a file exported from CoinMarketCap imports here unmodified, and a file exported from
-    // here imports back into CoinMarketCap unmodified. Mirrors iOS's PortfolioViewModel exactly.
+    // — so a file exported from CoinMarketCap imports here unmodified. An export from here adds
+    // one last column, `Portfolio`, with the portfolio's name on every row, so an import puts the
+    // rows back into the portfolio of that name ([importCsv]; iOS wallet 59593af). Mirrors iOS's
+    // PortfolioViewModel exactly.
 
     private val trackedToken = "KAS"
+    private val portfolioColumn = "Portfolio"
 
     /**
      * CoinMarketCap formats numeric columns with thousands-separator commas above 999 (e.g.
@@ -932,22 +935,28 @@ class PortfolioRepository @Inject constructor(
      * The file is named after the portfolio as named in the app ("Long Term 2026-10-08T18-37-50Z
      * .csv", [baseName] from [exportBaseName]), so it is recognizable in Files and Nextcloud
      * (iOS 87b2a0b). The time is ISO 8601 in whole seconds with ':' as '-', as iOS writes it.
+     * Every row also carries [portfolioName] in a last `Portfolio` column (iOS wallet 59593af).
      */
-    fun exportCsv(transactions: List<PortfolioTransactionEntity>, baseName: String = DEFAULT_EXPORT_NAME): Uri {
+    fun exportCsv(
+        transactions: List<PortfolioTransactionEntity>,
+        baseName: String = DEFAULT_EXPORT_NAME,
+        portfolioName: String = "",
+    ): Uri {
         val exportDir = File(context.cacheDir, "portfolio_exports").apply { mkdirs() }
         val fileTimestamp = DateTimeFormatter.ISO_INSTANT
             .format(Instant.now().truncatedTo(java.time.temporal.ChronoUnit.SECONDS)).replace(":", "-")
         val csvFile = File(exportDir, "$baseName $fileTimestamp.csv")
 
         val dateFormat = makeDateFormat(TimeZone.getTimeZone("UTC"))
+        val quotedName = portfolioName.replace("\"", "\"\"")
         val csv = buildString {
-            append("Date (UTC+0:00),Token,Type,Price (USD),Amount,Total value (USD),Fee,Fee Currency,Notes\n")
+            append("Date (UTC+0:00),Token,Type,Price (USD),Amount,Total value (USD),Fee,Fee Currency,Notes,$portfolioColumn\n")
             transactions.sortedBy { it.timestampMillis }.forEach { tx ->
                 val kas = tx.amountSompi / 100_000_000.0
                 val price = if (kas != 0.0) tx.fiatValue / kas else 0.0
                 val date = dateFormat.format(Date(tx.timestampMillis))
                 val notes = (tx.notes ?: "").replace("\"", "\"\"")
-                append("\"$date\",\"$trackedToken\",\"${tx.type}\",\"$price\",\"$kas\",\"${tx.fiatValue}\",\"0.00\",\"USD\",\"$notes\"\n")
+                append("\"$date\",\"$trackedToken\",\"${tx.type}\",\"$price\",\"$kas\",\"${tx.fiatValue}\",\"0.00\",\"USD\",\"$notes\",\"$quotedName\"\n")
             }
         }
         csvFile.writeText(csv)
@@ -964,29 +973,49 @@ class PortfolioRepository @Inject constructor(
      * subtracted for sells — since the ledger doesn't track fee as a separate line item. A row
      * whose timestamp exactly matches an existing transaction replaces it in place (same id, new
      * data) rather than adding a duplicate — re-importing a corrected or re-exported CSV updates
-     * the ledger instead of piling up copies. Returns the number of rows imported or replaced.
+     * the ledger instead of piling up copies.
+     *
+     * Which portfolio (iOS wallet 59593af): a row's `Portfolio` column (an export from here)
+     * names it. The portfolio of that name is used (any case), else this wallet's untouched
+     * "Portfolio 1" takes the name, else a new one is made - unless the wallet is at its limit,
+     * when the active portfolio gets the rows. A row with no name (a CoinMarketCap file) goes into
+     * the active portfolio. The portfolio imported into becomes the active one.
+     * Timestamp-match-and-replace only considers the target portfolio's own rows - otherwise a
+     * row could get silently reassigned or overwritten across portfolios just because two
+     * unrelated ledgers share a timestamp.
      */
-    /**
-     * Imports into whichever portfolio is currently active. Timestamp-match-and-replace only
-     * considers that portfolio's own rows (not the whole wallet's, which may include other
-     * portfolios' transactions) — otherwise a row could get silently reassigned or overwritten
-     * across portfolios just because two unrelated ledgers happen to share a timestamp.
-     */
-    suspend fun importCsv(uri: Uri): Int {
-        val portfolioId = currentPortfolioId() ?: return 0
-        val content = context.contentResolver.openInputStream(uri)?.bufferedReader()?.readText() ?: return 0
+    suspend fun importCsv(uri: Uri): CsvImportResult {
+        val activePortfolioId = currentPortfolioId() ?: return CsvImportResult()
+        val content = context.contentResolver.openInputStream(uri)?.bufferedReader()?.readText() ?: return CsvImportResult()
         // Whole records, not lines: a note can hold line breaks, which the export writes inside
         // its quotes. Splitting the file on every newline first cut such a row in two (iOS 98f5009).
         val records = parseCsvRecords(content).toMutableList()
-        if (records.isEmpty()) return 0
-        val header = records.removeAt(0).joinToString(",")
+        if (records.isEmpty()) return CsvImportResult()
+        val headerFields = records.removeAt(0)
+        val header = headerFields.joinToString(",")
         val dateFormat = makeDateFormat(parseHeaderUtcOffset(header))
+        val nameColumn = headerFields.indexOfFirst { it.trim().equals(portfolioColumn, ignoreCase = true) }.takeIf { it >= 0 }
 
         val walletAddress = walletManager.getAddress()
-        val existing = database.portfolioDao().getTransactions(walletAddress, portfolioId).first()
-        val idByTimestamp = existing.associate { it.timestampMillis to it.id }.toMutableMap()
+
+        // Per named portfolio, where its rows go; resolved once per name.
+        val targetByName = HashMap<String, String>()
+        suspend fun target(fields: List<String>): String {
+            if (nameColumn == null || fields.size <= nameColumn) return activePortfolioId
+            val name = fields[nameColumn].trim()
+            if (name.isEmpty()) return activePortfolioId
+            targetByName[name.lowercase()]?.let { return it }
+            val id = resolveImportPortfolio(walletAddress, name) ?: activePortfolioId
+            targetByName[name.lowercase()] = id
+            return id
+        }
+
+        val existing = database.portfolioDao().getAllTransactionsForWallet(walletAddress).first()
+        val idByTimestamp = HashMap<String, MutableMap<Long, String>>()
+        for (tx in existing) idByTimestamp.getOrPut(tx.portfolioId) { HashMap() }[tx.timestampMillis] = tx.id
 
         var imported = 0
+        val targets = mutableListOf<String>()
         for (fields in records) {
             if (fields.size < 6) continue
 
@@ -1019,11 +1048,14 @@ class PortfolioRepository @Inject constructor(
                 }
             }
 
-            val notes = if (fields.size > 8 && fields[8].isNotEmpty()) fields[8] else null
+            val notes = if (fields.size > 8 && fields[8].isNotEmpty() && nameColumn != 8) fields[8] else null
             // roundToLong throws on NaN, and an amount past Kaspa's supply overflows sompi.
             val amountSompi = com.kachat.app.viewmodels.PortfolioViewModel.kasToSompiOrNull(kas) ?: continue
+            val portfolioId = target(fields)
+            if (portfolioId !in targets) targets.add(portfolioId)
 
-            val existingId = idByTimestamp[timestampMillis]
+            val byTimestamp = idByTimestamp.getOrPut(portfolioId) { HashMap() }
+            val existingId = byTimestamp[timestampMillis]
             if (existingId != null) {
                 updateTransaction(existingId, type, amountSompi, fiatValue, timestampMillis, notes)
             } else {
@@ -1040,7 +1072,7 @@ class PortfolioRepository @Inject constructor(
                         notes = notes
                     )
                 )
-                idByTimestamp[timestampMillis] = newId
+                byTimestamp[timestampMillis] = newId
             }
             imported++
         }
@@ -1049,8 +1081,38 @@ class PortfolioRepository @Inject constructor(
             // written, and a CSV row has no on-chain source - price them by their date like any
             // other (iOS 98f5009).
             startPriceBackfillIfNeeded(walletAddress)
+            // Show where the rows went.
+            targets.firstOrNull()?.let { portfolioManager.setActivePortfolio(it) }
         }
-        return imported
+        val portfolios = database.portfolioDefinitionDao().getPortfoliosOnce(walletAddress)
+        val names = targets.mapNotNull { id -> portfolios.firstOrNull { it.id == id }?.name }
+        return CsvImportResult(count = imported, portfolioNames = names)
+    }
+
+    /** What a CSV import did (iOS `CsvImportResult`). */
+    data class CsvImportResult(
+        val count: Int = 0,
+        /** The portfolios the rows went into, in file order. */
+        val portfolioNames: List<String> = emptyList(),
+    )
+
+    /**
+     * The portfolio a CSV row naming [name] goes into: the one of that name (any case), else the
+     * wallet's untouched "Portfolio 1" renamed to it, else a new one. Null at the portfolio limit
+     * (the caller uses the active portfolio). iOS `resolveImportPortfolio`.
+     */
+    private suspend fun resolveImportPortfolio(walletAddress: String, name: String): String? {
+        val portfolios = database.portfolioDefinitionDao().getPortfoliosOnce(walletAddress)
+        portfolios.firstOrNull { it.name.trim().equals(name, ignoreCase = true) }?.let { return it.id }
+        val only = portfolios.singleOrNull()
+        if (only != null && only.updatedAtMillis == null && only.name == com.kachat.app.services.PortfolioSync.SEED_NAME &&
+            database.portfolioDao().countForPortfolio(only.id) == 0 &&
+            ledgerStore.loadFees(walletAddress).none { it.portfolioId == only.id }
+        ) {
+            portfolioManager.renamePortfolio(only.id, name)
+            return only.id
+        }
+        return portfolioManager.addPortfolio(name, makeActive = false)?.id
     }
 
     init {
@@ -1069,8 +1131,8 @@ class PortfolioRepository @Inject constructor(
     }
 
     companion object {
-        /** The CSV export's name when the portfolio has none (iOS 87b2a0b). */
-        const val DEFAULT_EXPORT_NAME = "KaChat Portfolio"
+        /** The CSV export's name when the portfolio has none (iOS 87b2a0b; "KaPay", iOS 5bab351). */
+        const val DEFAULT_EXPORT_NAME = "KaPay Portfolio"
 
         /**
          * The export's file name: the name given to the portfolio in the app, so it is

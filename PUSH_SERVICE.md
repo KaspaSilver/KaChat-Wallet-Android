@@ -20,7 +20,7 @@ wallet's `PUSH_SERVICE.md` for the service side. It asks for only two kinds of p
 - `watch_only_addresses`: the main address, its spending addresses (while their switch is on)
   and the Cold Storage addresses whose account notifies - at most 200
   (`AddressActivityNotifier.pushWatchOnlyAddresses`). With Address Activity off there is nothing
-  to watch, and the device unregisters instead.
+  to watch there, and the device stays registered for .kachat events through `primary_address`.
 - `apns_topic`: `"com.kachat.wallet"`. FCM delivery doesn't use it; the service reads it to send
   a wallet device only `address_activity` and `name_event` pushes (`WALLET_PUSH_TYPES`). The
   service keeps it only when `com.kachat.wallet` is one of its allowed topics.

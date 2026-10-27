@@ -114,8 +114,8 @@
     <string name="kns_domains">KNS-Domains</string>
     <string name="kachat">KaChat</string>
     <string name="kachat_logo">KaChat-Logo</string>
-    <string name="kachat_can_t_show_notifications_until">KaChat kann keine Benachrichtigungen anzeigen, bis du sie für diese App zulässt.</string>
-    <string name="kachat_needs_to_connect_to_a">KaChat muss sich mit einem Knoten verbinden. Wie möchtest du dich verbinden?</string>
+    <string name="kachat_can_t_show_notifications_until">KaPay kann keine Benachrichtigungen anzeigen, bis du sie für diese App zulässt.</string>
+    <string name="kachat_needs_to_connect_to_a">KaPay muss sich mit einem Knoten verbinden. Wie möchtest du dich verbinden?</string>
     <string name="kaspa">Kaspa</string>
     <string name="kaspa_address_or_kns_domain">Kaspa-Adresse oder KNS-Domain</string>
     <string name="kaspa_explorer">Kaspa Explorer</string>
@@ -224,7 +224,7 @@
     <string name="tap_an_address_below_to_use">Tippe unten auf eine Adresse, um sie zu verwenden</string>
     <string name="tap_to_reveal_seed_phrase">Tippe, um Seed Phrase anzuzeigen</string>
     <string name="this_could_take_a_few_minutes">Dies kann einige Minuten dauern, bis es on-chain bestätigt ist.</string>
-    <string name="this_only_removes_it_from_kachat">Dies entfernt sie nur von KaChats Beobachtungsliste. Es hat keine Auswirkung auf das KasSigner-Gerät oder darauf gehaltene Guthaben.</string>
+    <string name="this_only_removes_it_from_kachat">Dies entfernt sie nur von KaPays Beobachtungsliste. Es hat keine Auswirkung auf das KasSigner-Gerät oder darauf gehaltene Guthaben.</string>
     <string name="this_permanently_deletes_every_message_with">Dies löscht dauerhaft jede Nachricht mit ihnen auf diesem Gerät. Dies kann nicht rückgängig gemacht werden; ihnen erneut zu schreiben startet eine neue Konversation.</string>
     <string name="this_removes_the_group_and_its">Dies entfernt die Gruppe und ihre Nachrichten von diesem Gerät. Dies kann nicht rückgängig gemacht werden, und andere Mitglieder werden nicht benachrichtigt.</string>
     <string name="to">An</string>
@@ -354,7 +354,7 @@
     <string name="auto_search_for_nodes">Automatisch nach Nodes suchen</string>
     <string name="most_taxing_on_the_device_not_as">Am belastendsten für das Gerät, nicht so zuverlässig - hängt davon ab, wo du lebst</string>
     <string name="choose_your_language">Wähle deine Sprache</string>
-    <string name="select_the_language_youd_like_to">Wähle die Sprache, die du in KaChat verwenden möchtest.</string>
+    <string name="select_the_language_youd_like_to">Wähle die Sprache, die du in KaPay verwenden möchtest.</string>
     <string name="best">Am besten</string>
     <string name="enter_as_host_port_or_grpcs_host">Eingabe als host:port oder grpcs://host</string>
     <string name="receive_kaspa">Kaspa empfangen</string>
@@ -577,8 +577,8 @@
     <string name="welcome_fund_chatting_body">Zum Start werden 50 Kaspa empfohlen - genug, um dir einen .kachat-Namen zu sichern und eine Weile zu chatten. 5 Kaspa reichen für etwa 2500 Nachrichten.</string>
     <!-- Testnet (iOS bdae4b7, 0c1af03, 9858bd1, 0bda85e, af8ec68, f38cac2) -->
     <string name="testnet">Testnet</string>
-    <string name="testnet_restart_to_testnet">Schließe KaChat vollständig und öffne es erneut, um den Wechsel zum Testnet abzuschließen.</string>
-    <string name="testnet_restart_to_mainnet">Schließe KaChat vollständig und öffne es erneut, um den Wechsel zurück zum Mainnet abzuschließen.</string>
+    <string name="testnet_restart_to_testnet">Schließe KaPay vollständig und öffne es erneut, um den Wechsel zum Testnet abzuschließen.</string>
+    <string name="testnet_restart_to_mainnet">Schließe KaPay vollständig und öffne es erneut, um den Wechsel zurück zum Mainnet abzuschließen.</string>
     <string name="kaposts_not_on_testnet">KaPosts ist im Testnet noch nicht verfügbar</string>
     <string name="kaposts_not_on_testnet_sub">Für das Testnet gibt es keinen KaPost-Indexer. Schalte Testnet unter Einstellungen > Verbindung aus, um im Mainnet zu lesen und zu posten.</string>
     <string name="nextcloud_off_on_testnet">Nextcloud ist aus, solange Testnet an ist.</string>
@@ -612,7 +612,7 @@
     <string name="kn_cancel_commit_body">Die Registrierung stoppt und die 0.2 KAS des Commits kommen zu dir zurück, abzüglich der Netzwerkgebühr.</string>
     <string name="kn_stage_committing">Versteckter Commit wird gesendet...</string>
     <string name="kn_stage_waiting_confirm">Warte auf die Bestätigung des Commits...</string>
-    <string name="kn_stage_waiting">Der Commit muss etwa eine Minute alt sein, bevor der Name registriert werden kann. Lass KaChat offen - es registriert von selbst und macht weiter, wo es aufgehört hat, wenn du gehst.</string>
+    <string name="kn_stage_waiting">Der Commit muss etwa eine Minute alt sein, bevor der Name registriert werden kann. Lass KaPay offen - es registriert von selbst und macht weiter, wo es aufgehört hat, wenn du gehst.</string>
     <string name="kn_stage_registering">Wird registriert...</string>
     <string name="kn_stage_registered">Registriert. Er gehört dir.</string>
     <string name="kn_stage_taken">Jemand hat diesen Namen zuerst registriert. Brich den Commit ab, um seine 0.2 KAS zurückzubekommen.</string>
@@ -643,7 +643,7 @@
     <string name="kn_not_enough">Nicht genug KAS auf deiner Chat-Adresse für diesen Namen.</string>
     <string name="kn_claim_footer">Der Preis geht an die Miner - KaChat nimmt nichts. Kaution und Einlage kommen zurück, wenn du den Namen freigibst.</string>
     <string name="kn_claim_step1">Zuerst geht ein versteckter Commit auf die Chain. Niemand sieht, für welchen Namen er ist.</string>
-    <string name="kn_claim_step2">Etwa eine Minute später registriert KaChat den Namen von selbst. Lass die App offen; wenn du gehst, macht sie beim nächsten Mal weiter.</string>
+    <string name="kn_claim_step2">Etwa eine Minute später registriert KaPay den Namen von selbst. Lass die App offen; wenn du gehst, macht sie beim nächsten Mal weiter.</string>
     <string name="kn_how_claiming_works">So funktioniert die Registrierung</string>
     <string name="kn_claim_name_button">%1$s.kachat sichern</string>
     <string name="kn_claim_name_title">Namen sichern</string>
@@ -917,8 +917,8 @@
     <!-- .kachat: expires-soon follows the period clock (iOS 24d673a, IOS-060) -->
     <string name="kn_buy_soon_left">Bis dieser Name abläuft, bleibt weniger als %1$s. Du müsstest ihn bald verlängern.</string>
     <!-- Addresses of the other network are refused (iOS ce20e87, IOS-003) -->
-    <string name="address_other_network_testnet">Das ist eine Testnet-Adresse. KaChat läuft im Mainnet.</string>
-    <string name="address_other_network_mainnet">Das ist eine Mainnet-Adresse. KaChat läuft im Testnet.</string>
+    <string name="address_other_network_testnet">Das ist eine Testnet-Adresse. KaPay läuft im Mainnet.</string>
+    <string name="address_other_network_mainnet">Das ist eine Mainnet-Adresse. KaPay läuft im Testnet.</string>
     <!-- Coin Control: the most coins one transaction may spend (AND-012 follow-up) -->
     <string name="coin_control_max_selection">Eine Transaktion kann höchstens %1$d UTXOs ausgeben, daher können keine weiteren ausgewählt werden.</string>
     <!-- Seed phrase screen: the passphrase is part of the backup (iOS 3076ab7, IOS-017) -->
@@ -960,7 +960,7 @@
     <string name="kn_free_to_claim">Frei zum Registrieren</string>
     <!-- .kachat registration progress half sheet (iOS 61fb0fc) -->
     <string name="kn_claiming_name">%1$s wird beansprucht</string>
-    <string name="kn_keep_open_claiming">Lass KaChat geöffnet: Der Name wird etwa eine Minute nach der Bestätigung des verdeckten Commits registriert. Wenn du die App verlässt, geht es bei deiner Rückkehr dort weiter.</string>
+    <string name="kn_keep_open_claiming">Lass KaPay geöffnet: Der Name wird etwa eine Minute nach der Bestätigung des verdeckten Commits registriert. Wenn du die App verlässt, geht es bei deiner Rückkehr dort weiter.</string>
     <!-- KaPosts tip sheet (Send Kaspa layout, iOS 0e08006) -->
     <string name="kaposts_tip_title">Trinkgeld</string>
     <!-- KaChat Stats: .kachat names (iOS b2d108b) -->
@@ -1038,7 +1038,7 @@
     <string name="what_is_this">Was ist das?</string>
     <string name="what_is_a_seed_phrase">Was ist eine Seed Phrase?</string>
     <string name="seed_phrase_explainer_master_key">Eine Seed Phrase ist eine Liste aus 12 oder 24 gewöhnlichen Wörtern, die als Hauptschlüssel zu deinem Konto dient. Deine Wallet, deine Chat-Adresse und deine Nachrichten stammen alle davon.</string>
-    <string name="seed_phrase_explainer_anyone">Wer diese Wörter hat, kann alles aus deinem Konto nehmen. Wenn du sie verlierst und auch dieses Gerät, kann niemand dein Konto wiederherstellen, nicht einmal KaChat.</string>
+    <string name="seed_phrase_explainer_anyone">Wer diese Wörter hat, kann alles aus deinem Konto nehmen. Wenn du sie verlierst und auch dieses Gerät, kann niemand dein Konto wiederherstellen, nicht einmal KaPay.</string>
     <string name="seed_phrase_explainer_paper">Schreibe die Wörter der Reihe nach auf Papier und bewahre sie an einem sicheren, privaten Ort auf. Gib sie nie auf einer Website ein, schick sie nie in einem Chat und speichere sie nicht in einem Screenshot oder in Cloud-Notizen.</string>
     <string name="seed_phrase_explainer_lengths">12 Wörter sind bereits sehr sicher. 24 Wörter bieten noch mehr Schutz.</string>
     <!-- Onboarding: the seed phrase explainer page's headings (iOS 712bb4d) -->
@@ -1071,7 +1071,7 @@
     <string name="ab_address_book">Adressbuch</string>
     <string name="ab_add_to_address_book">Zum Adressbuch hinzufügen</string>
     <string name="ab_search_prompt">Namen und Adressen suchen</string>
-    <string name="ab_empty_body">Speichere die Kaspa-Adressen, die du nutzt, unter einem Namen, den du wiedererkennst. Sie bleiben in KaChat, nur für diese Wallet, und landen nie in den Kontakten deines Telefons.</string>
+    <string name="ab_empty_body">Speichere die Kaspa-Adressen, die du nutzt, unter einem Namen, den du wiedererkennst. Sie bleiben in KaPay, nur für diese Wallet, und landen nie in den Kontakten deines Telefons.</string>
     <string name="ab_add_address">Adresse hinzufügen</string>
     <string name="ab_copied">Kopiert</string>
     <string name="ab_share_address">Adresse teilen</string>
@@ -1080,7 +1080,7 @@
     <string name="ab_delete_confirm">%1$s aus deinem Adressbuch löschen?</string>
     <string name="ab_not_in_book">Nicht in deinem Adressbuch</string>
     <string name="ab_note_optional">Notiz (optional)</string>
-    <string name="ab_editor_footer">Nur für diese Wallet in KaChat gespeichert. Wird nie zu den Kontakten deines Telefons hinzugefügt.</string>
+    <string name="ab_editor_footer">Nur für diese Wallet in KaPay gespeichert. Wird nie zu den Kontakten deines Telefons hinzugefügt.</string>
     <string name="ab_remove_from">Aus dem Adressbuch entfernen</string>
     <string name="ab_edit_address">Adresse bearbeiten</string>
     <string name="ab_picker_empty_body">Füge Adressen unter Kaspa Hub &gt; Adressbuch hinzu.</string>
@@ -1134,10 +1134,10 @@
     <string name="kn_claim_fee_note">Zum Beanspruchen gehen zwei Transaktionen raus: jetzt der Commit, etwa eine Minute später die Registrierung. Beide mit dieser Geschwindigkeit.</string>
     <string name="kn_step_sent">An das Netzwerk gesendet</string>
     <string name="kn_step_in_block">In einem Block</string>
-    <string name="kn_step_updated">In KaChat aktualisiert</string>
+    <string name="kn_step_updated">In KaPay aktualisiert</string>
     <string name="kn_tx_stage_waiting">Warte darauf, dass das Netzwerk sie in einen Block aufnimmt. Meist ein paar Sekunden, länger bei viel Betrieb.</string>
-    <string name="kn_tx_stage_in_block">Sie ist in einem Block. KaChat wird aktualisiert...</string>
-    <string name="kn_tx_stage_done">Fertig. Sie wird jetzt in KaChat angezeigt.</string>
+    <string name="kn_tx_stage_in_block">Sie ist in einem Block. KaPay wird aktualisiert...</string>
+    <string name="kn_tx_stage_done">Fertig. Sie wird jetzt in KaPay angezeigt.</string>
     <string name="kn_tx_stage_dropped">Das Netzwerk hat sie noch nicht aufgenommen. Kommt sie nie an, wurde nichts ausgegeben - versuch es mit einer schnelleren Gebühr.</string>
     <string name="kn_tap_tx_explorer">Tippe auf die Transaktion, um sie im Explorer zu öffnen.</string>
     <!-- .kachat offers: tiles and half sheet (iOS 7f50e84) -->
@@ -1148,8 +1148,8 @@
     <!-- .kachat fee re-check (iOS 7e2b6cd, IOS-061) -->
     <string name="kn_err_fee_changed">Die Netzwerkgebühr ist seit deiner Bestätigung auf %1$s gestiegen. Es wurde nichts gesendet. Prüfe die neue Gebühr und bestätige erneut.</string>
     <!-- Address Book: the active network only (iOS 218dc42, IOS-063) -->
-    <string name="ab_err_import_all_mainnet">Alle Adressen in dieser Datei sind Mainnet-Adressen. KaChat ist im Testnet.</string>
-    <string name="ab_err_import_all_testnet">Alle Adressen in dieser Datei sind Testnet-Adressen. KaChat ist im Mainnet.</string>
+    <string name="ab_err_import_all_mainnet">Alle Adressen in dieser Datei sind Mainnet-Adressen. KaPay ist im Testnet.</string>
+    <string name="ab_err_import_all_testnet">Alle Adressen in dieser Datei sind Testnet-Adressen. KaPay ist im Mainnet.</string>
     <string name="ab_import_skipped_other_network">%1$d aus dem anderen Netzwerk übersprungen.</string>
     <!-- .kachat registry v5 migration (iOS dd836cb) -->
     <string name="kn_registration_not_open">Die Namen ziehen in die neue Registry um. Neue Namen kannst du ab %1$s beanspruchen.</string>
@@ -1197,7 +1197,7 @@
     <string name="kn_offer_refundable_from_expiry">Dieser Name läuft früher ab, daher ist dein Angebot ab %1$s rückerstattbar.</string>
     <!-- .kachat: combining many small coins before a name transaction (iOS f1c16ec) -->
     <string name="kn_combining_coins">Deine KAS liegen in vielen kleinen Coins. Sie werden zuerst zu einem zusammengelegt...</string>
-    <string name="kn_combines_coins_note">Deine KAS liegen in vielen kleinen Coins. KaChat legt sie vor der Registrierung zu einem zusammen, für eine winzige zusätzliche Netzwerkgebühr.</string>
+    <string name="kn_combines_coins_note">Deine KAS liegen in vielen kleinen Coins. KaPay legt sie vor der Registrierung zu einem zusammen, für eine winzige zusätzliche Netzwerkgebühr.</string>
     <string name="kn_not_enough_to_combine">Nicht genug KAS auf deiner Chat-Adresse dafür.</string>
     <!-- KaChat Bots (iOS 82ab31d, 7dd508a, d576941, 4a43e33) -->
     <string name="bots_title">KaChat-Bots</string>
@@ -1245,7 +1245,7 @@
     <string name="delete_chat_q">Delete Chat?</string>
     <string name="delete_chat_alert_message">This permanently deletes every message in this chat from this device. This cannot be undone.</string>
     <!-- .kachat transaction sheet: coins are combined only after the slide (iOS 778a8fc, IOS-075) -->
-    <string name="kn_combines_coins_on_slide">Dein KAS liegt in vielen kleinen Münzen. Beim Schieben fasst KaChat sie zuerst zu einer zusammen (eine eigene Transaktion mit kleiner Gebühr) und sendet dann diese.</string>
+    <string name="kn_combines_coins_on_slide">Dein KAS liegt in vielen kleinen Münzen. Beim Schieben fasst KaPay sie zuerst zu einer zusammen (eine eigene Transaktion mit kleiner Gebühr) und sendet dann diese.</string>
     <!-- An address's Domains tab: one card per name service (iOS fe52376) -->
     <string name="address_tab_domains">Domains</string>
     <string name="address_domains_none">Keine %1$s-Namen auf dieser Adresse.</string>

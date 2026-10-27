@@ -3,12 +3,13 @@ package com.kachat.app.services
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
+import com.google.gson.JsonPrimitive
 import com.kachat.app.models.PortfolioEntity
 import com.kachat.app.models.PortfolioFeeRecord
 import com.kachat.app.models.PortfolioTransactionEntity
 
 /**
- * A portfolio as Nextcloud Automatic Sync carries it: `{id, name, sortOrder, createdAt,
+ * A portfolio as the Nextcloud backup carries it: `{id, name, sortOrder, createdAt,
  * updatedAt?}` (NEXTCLOUD_SYNC.md section 5, Portfolios; iOS `Portfolio`). [id] is canonical - the
  * UUID in uppercase, as iOS's encoder writes it - so both platforms key a portfolio alike.
  */
@@ -51,7 +52,7 @@ data class PortfolioTombstone(
 )
 
 /**
- * One wallet's portfolios as Nextcloud Automatic Sync carries them, and how two copies merge
+ * One wallet's portfolios as the Nextcloud backup carries them, and how two copies merge
  * (iOS `PortfolioSync`, 11f1548). Pure: the archive merge and the restore both use it. Per item
  * the newest `updatedAt` wins, unless a tombstone at or after it deletes it; a transaction or fee
  * lives only while its portfolio does.
@@ -391,15 +392,19 @@ data class PortfolioSync(
         /** A non-finite number is not JSON; Gson would write it bare and iOS would refuse the file. */
         private fun finite(value: Double): Double = if (value.isFinite()) value else 0.0
 
-        private fun encodePortfolio(p: SyncPortfolio) = JsonObject().apply {
-            addProperty("createdAt", iso(p.createdAtMillis))
+        /** How a date is written: ISO 8601 whole seconds in KaChat's chat archive, iOS's default
+         *  `Date` encoding (seconds since 2001) in [PortfolioBackupFile]. */
+        private val isoDate: (Long) -> JsonElement = { ms -> JsonPrimitive(iso(ms)) }
+
+        internal fun encodePortfolio(p: SyncPortfolio, date: (Long) -> JsonElement = isoDate) = JsonObject().apply {
+            add("createdAt", date(p.createdAtMillis))
             addProperty("id", p.id)
             addProperty("name", p.name)
             addProperty("sortOrder", p.sortOrder)
-            p.updatedAtMillis?.let { addProperty("updatedAt", iso(it)) }
+            p.updatedAtMillis?.let { add("updatedAt", date(it)) }
         }
 
-        private fun encodeTransaction(t: SyncTransaction) = JsonObject().apply {
+        internal fun encodeTransaction(t: SyncTransaction, date: (Long) -> JsonElement = isoDate) = JsonObject().apply {
             addProperty("amountSompi", t.amountSompi)
             addProperty("fiatValue", finite(t.fiatValue))
             addProperty("id", t.id)
@@ -407,24 +412,66 @@ data class PortfolioSync(
             addProperty("portfolioId", t.portfolioId)
             t.sourceAddress?.let { addProperty("sourceAddress", it) }
             t.sourceTxId?.let { addProperty("sourceTxId", it) }
-            addProperty("timestamp", iso(t.timestampMillis))
+            add("timestamp", date(t.timestampMillis))
             addProperty("type", t.type)
-            t.updatedAtMillis?.let { addProperty("updatedAt", iso(it)) }
+            t.updatedAtMillis?.let { add("updatedAt", date(it)) }
         }
 
-        private fun encodeFee(f: PortfolioFeeRecord) = JsonObject().apply {
+        internal fun encodeFee(f: PortfolioFeeRecord, date: (Long) -> JsonElement = isoDate) = JsonObject().apply {
             addProperty("amountSompi", f.amountSompi)
             f.fiatValue?.takeIf { it.isFinite() }?.let { addProperty("fiatValue", it) }
             addProperty("portfolioId", f.portfolioId)
             addProperty("sourceAddress", f.sourceAddress)
-            addProperty("timestamp", iso(f.timestampMillis))
+            add("timestamp", date(f.timestampMillis))
             addProperty("txId", f.txId)
         }
 
-        private fun encodeTombstone(t: PortfolioTombstone) = JsonObject().apply {
-            addProperty("deletedAt", iso(t.deletedAtMillis))
+        internal fun encodeTombstone(t: PortfolioTombstone, date: (Long) -> JsonElement = isoDate) = JsonObject().apply {
+            add("deletedAt", date(t.deletedAtMillis))
             addProperty("id", t.id)
             addProperty("kind", t.kind)
         }
+    }
+}
+
+
+/**
+ * The Portfolio backup on Nextcloud ([NextcloudService.PORTFOLIO_FILE_NAME]): one wallet's
+ * [PortfolioSync] as plain JSON, iOS's `PortfolioBackupFile` (wallet 59593af) -
+ * `{exportedAt, fees, portfolios, tombstones, transactions, version}`, keys sorted and pretty
+ * printed as iOS's encoder writes them. Dates are kept exact, in iOS's default `Date` encoding
+ * (a number: seconds since 2001-01-01), since a merge compares edit stamps and iOS's default
+ * decoder reads nothing else. Read leniently, one element at a time, accepting ISO 8601 too.
+ */
+object PortfolioBackupFile {
+    const val CURRENT_VERSION = 1
+
+    private const val APPLE_REFERENCE_EPOCH_S = 978_307_200L
+
+    /** iOS's default Date encoding with this device's millisecond precision, written plain
+     *  ("783212345.123", never in exponent form). */
+    private val appleDate: (Long) -> JsonElement = { ms ->
+        JsonPrimitive(java.math.BigDecimal.valueOf(ms, 3).subtract(java.math.BigDecimal.valueOf(APPLE_REFERENCE_EPOCH_S)))
+    }
+
+    fun encode(sync: PortfolioSync, exportedAtMillis: Long = System.currentTimeMillis()): ByteArray {
+        val file = JsonObject().apply {
+            add("exportedAt", appleDate(exportedAtMillis))
+            add("fees", JsonArray().apply { sync.fees.forEach { add(PortfolioSync.encodeFee(it, appleDate)) } })
+            add("portfolios", JsonArray().apply { sync.portfolios.forEach { add(PortfolioSync.encodePortfolio(it, appleDate)) } })
+            add("tombstones", JsonArray().apply { sync.tombstones.forEach { add(PortfolioSync.encodeTombstone(it, appleDate)) } })
+            add("transactions", JsonArray().apply { sync.transactions.forEach { add(PortfolioSync.encodeTransaction(it, appleDate)) } })
+            addProperty("version", CURRENT_VERSION)
+        }
+        return com.google.gson.GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create()
+            .toJson(file).toByteArray(Charsets.UTF_8)
+    }
+
+    /** The backup's portfolios. Throws [NextcloudException] for a file that isn't one. */
+    fun decode(data: ByteArray): PortfolioSync {
+        val root = runCatching {
+            com.google.gson.JsonParser.parseString(String(data, Charsets.UTF_8)).asJsonObject
+        }.getOrNull() ?: throw NextcloudException("The Portfolio backup on Nextcloud couldn't be read.")
+        return PortfolioSync.fromArchive(root.get("portfolios"), root.get("transactions"), root.get("fees"), root.get("tombstones"))
     }
 }

@@ -114,8 +114,8 @@
     <string name="kns_domains">KNS डोमेन</string>
     <string name="kachat">KaChat</string>
     <string name="kachat_logo">KaChat लोगो</string>
-    <string name="kachat_can_t_show_notifications_until">जब तक आप इस ऐप के लिए सूचनाओं की अनुमति नहीं देते, KaChat सूचनाएं नहीं दिखा सकता।</string>
-    <string name="kachat_needs_to_connect_to_a">KaChat को एक नोड से जुड़ने की आवश्यकता है। आप कैसे कनेक्ट करना चाहेंगे?</string>
+    <string name="kachat_can_t_show_notifications_until">जब तक आप इस ऐप के लिए सूचनाओं की अनुमति नहीं देते, KaPay सूचनाएं नहीं दिखा सकता।</string>
+    <string name="kachat_needs_to_connect_to_a">KaPay को एक नोड से जुड़ने की आवश्यकता है। आप कैसे कनेक्ट करना चाहेंगे?</string>
     <string name="kaspa">कास्पा</string>
     <string name="kaspa_address_or_kns_domain">Kaspa पता या KNS डोमेन</string>
     <string name="kaspa_explorer">कास्पा एक्सप्लोरर</string>
@@ -224,7 +224,7 @@
     <string name="tap_an_address_below_to_use">नीचे किसी पते का उपयोग करने के लिए उस पर टैप करें</string>
     <string name="tap_to_reveal_seed_phrase">Seed phrase प्रकट करने के लिए टैप करें</string>
     <string name="this_could_take_a_few_minutes">चेन पर कन्फर्म होने में कुछ मिनट लग सकते हैं।</string>
-    <string name="this_only_removes_it_from_kachat">यह इसे केवल KaChat की वॉच सूची से हटाता है। इसका KasSigner डिवाइस या उसके पास मौजूद किसी भी फंड पर कोई प्रभाव नहीं पड़ता।</string>
+    <string name="this_only_removes_it_from_kachat">यह इसे केवल KaPay की वॉच सूची से हटाता है। इसका KasSigner डिवाइस या उसके पास मौजूद किसी भी फंड पर कोई प्रभाव नहीं पड़ता।</string>
     <string name="this_permanently_deletes_every_message_with">यह इस डिवाइस पर उनके साथ हर संदेश को स्थायी रूप से हटा देता है। इसे पूर्ववत नहीं किया जा सकता; उन्हें फिर से संदेश भेजना एक बिल्कुल नई बातचीत शुरू करता है।</string>
     <string name="this_removes_the_group_and_its">यह समूह और उसके संदेशों को इस डिवाइस से हटा देता है। इसे पूर्ववत नहीं किया जा सकता, और अन्य सदस्यों को सूचित नहीं किया जाएगा।</string>
     <string name="to">प्रति</string>
@@ -354,7 +354,7 @@
     <string name="auto_search_for_nodes">नोड्स की स्वतः खोज करें</string>
     <string name="most_taxing_on_the_device_not_as">डिवाइस पर सबसे अधिक बोझ, उतना विश्वसनीय नहीं - यह इस पर निर्भर करता है कि आप कहां रहते हैं</string>
     <string name="choose_your_language">अपनी भाषा चुनें</string>
-    <string name="select_the_language_youd_like_to">वह भाषा चुनें जिसे आप KaChat में उपयोग करना चाहते हैं।</string>
+    <string name="select_the_language_youd_like_to">वह भाषा चुनें जिसे आप KaPay में उपयोग करना चाहते हैं।</string>
     <string name="best">सर्वश्रेष्ठ</string>
     <string name="enter_as_host_port_or_grpcs_host">host:port या grpcs://host के रूप में दर्ज करें</string>
     <string name="receive_kaspa">Kaspa प्राप्त करें</string>
@@ -577,8 +577,8 @@
     <string name="welcome_fund_chatting_body">शुरुआत के लिए 50 Kaspa की सलाह दी जाती है - इतना कि एक .kachat नाम ले सकें और कुछ समय चैट कर सकें। 5 Kaspa लगभग 2500 मैसेज के लिए काफ़ी हैं।</string>
     <!-- Testnet (iOS bdae4b7, 0c1af03, 9858bd1, 0bda85e, af8ec68, f38cac2) -->
     <string name="testnet">टेस्टनेट</string>
-    <string name="testnet_restart_to_testnet">टेस्टनेट पर स्विच पूरा करने के लिए KaChat को पूरी तरह बंद करके फिर खोलें।</string>
-    <string name="testnet_restart_to_mainnet">मेननेट पर वापस जाने के लिए KaChat को पूरी तरह बंद करके फिर खोलें।</string>
+    <string name="testnet_restart_to_testnet">टेस्टनेट पर स्विच पूरा करने के लिए KaPay को पूरी तरह बंद करके फिर खोलें।</string>
+    <string name="testnet_restart_to_mainnet">मेननेट पर वापस जाने के लिए KaPay को पूरी तरह बंद करके फिर खोलें।</string>
     <string name="kaposts_not_on_testnet">KaPosts अभी टेस्टनेट पर उपलब्ध नहीं है</string>
     <string name="kaposts_not_on_testnet_sub">टेस्टनेट के लिए कोई KaPost इंडेक्सर नहीं है। मेननेट पर पढ़ने और पोस्ट करने के लिए सेटिंग्स > कनेक्शन में टेस्टनेट बंद करें।</string>
     <string name="nextcloud_off_on_testnet">टेस्टनेट चालू रहने तक Nextcloud बंद है।</string>
@@ -612,7 +612,7 @@
     <string name="kn_cancel_commit_body">रजिस्ट्रेशन रुक जाता है और कमिट के 0.2 KAS नेटवर्क शुल्क घटाकर आपको लौट आते हैं।</string>
     <string name="kn_stage_committing">छिपा कमिट भेजा जा रहा है...</string>
     <string name="kn_stage_waiting_confirm">कमिट की पुष्टि का इंतज़ार...</string>
-    <string name="kn_stage_waiting">नाम रजिस्टर होने से पहले कमिट को लगभग एक मिनट पुराना होना चाहिए। KaChat खुला रखें - यह खुद रजिस्टर करता है, और अगर आप चले जाएँ तो वहीं से जारी रखता है।</string>
+    <string name="kn_stage_waiting">नाम रजिस्टर होने से पहले कमिट को लगभग एक मिनट पुराना होना चाहिए। KaPay खुला रखें - यह खुद रजिस्टर करता है, और अगर आप चले जाएँ तो वहीं से जारी रखता है।</string>
     <string name="kn_stage_registering">रजिस्टर हो रहा है...</string>
     <string name="kn_stage_registered">रजिस्टर हो गया। अब यह आपका है।</string>
     <string name="kn_stage_taken">किसी और ने यह नाम पहले रजिस्टर कर लिया। 0.2 KAS वापस पाने के लिए कमिट रद्द करें।</string>
@@ -643,7 +643,7 @@
     <string name="kn_not_enough">इस नाम के लिए आपके चैटिंग पते पर पर्याप्त KAS नहीं है।</string>
     <string name="kn_claim_footer">कीमत माइनरों को जाती है - KaChat कुछ नहीं लेता। नाम छोड़ने पर बॉन्ड और जमा राशि वापस आती है।</string>
     <string name="kn_claim_step1">पहले एक छिपा कमिट चेन पर जाता है। कोई नहीं देख सकता कि यह किस नाम के लिए है।</string>
-    <string name="kn_claim_step2">लगभग एक मिनट बाद KaChat खुद नाम रजिस्टर करता है। ऐप खुला रखें; अगर आप चले जाएँ तो अगली बार जारी रहेगा।</string>
+    <string name="kn_claim_step2">लगभग एक मिनट बाद KaPay खुद नाम रजिस्टर करता है। ऐप खुला रखें; अगर आप चले जाएँ तो अगली बार जारी रहेगा।</string>
     <string name="kn_how_claiming_works">नाम लेना कैसे काम करता है</string>
     <string name="kn_claim_name_button">%1$s.kachat लें</string>
     <string name="kn_claim_name_title">नाम लें</string>
@@ -917,8 +917,8 @@
     <!-- .kachat: expires-soon follows the period clock (iOS 24d673a, IOS-060) -->
     <string name="kn_buy_soon_left">इस नाम की समाप्ति में %1$s से कम बचा है। आपको इसे जल्द नवीनीकृत करना होगा।</string>
     <!-- Addresses of the other network are refused (iOS ce20e87, IOS-003) -->
-    <string name="address_other_network_testnet">यह एक Testnet पता है। KaChat अभी Mainnet पर है।</string>
-    <string name="address_other_network_mainnet">यह एक Mainnet पता है। KaChat अभी Testnet पर है।</string>
+    <string name="address_other_network_testnet">यह एक Testnet पता है। KaPay अभी Mainnet पर है।</string>
+    <string name="address_other_network_mainnet">यह एक Mainnet पता है। KaPay अभी Testnet पर है।</string>
     <!-- Coin Control: the most coins one transaction may spend (AND-012 follow-up) -->
     <string name="coin_control_max_selection">एक लेन-देन में अधिकतम %1$d UTXO खर्च किए जा सकते हैं, इसलिए और नहीं चुने जा सकते।</string>
     <!-- Seed phrase screen: the passphrase is part of the backup (iOS 3076ab7, IOS-017) -->
@@ -960,7 +960,7 @@
     <string name="kn_free_to_claim">दावा करने के लिए खाली</string>
     <!-- .kachat registration progress half sheet (iOS 61fb0fc) -->
     <string name="kn_claiming_name">%1$s का दावा किया जा रहा है</string>
-    <string name="kn_keep_open_claiming">KaChat खुला रखें: छिपी प्रतिबद्धता की पुष्टि के लगभग एक मिनट बाद नाम पंजीकृत होता है। अगर आप बाहर जाते हैं, तो लौटने पर यह वहीं से जारी रहेगा।</string>
+    <string name="kn_keep_open_claiming">KaPay खुला रखें: छिपी प्रतिबद्धता की पुष्टि के लगभग एक मिनट बाद नाम पंजीकृत होता है। अगर आप बाहर जाते हैं, तो लौटने पर यह वहीं से जारी रहेगा।</string>
     <!-- KaPosts tip sheet (Send Kaspa layout, iOS 0e08006) -->
     <string name="kaposts_tip_title">टिप</string>
     <!-- KaChat Stats: .kachat names (iOS b2d108b) -->
@@ -1041,7 +1041,7 @@
     <string name="what_is_this">यह क्या है?</string>
     <string name="what_is_a_seed_phrase">seed phrase क्या है?</string>
     <string name="seed_phrase_explainer_master_key">seed phrase 12 या 24 साधारण शब्दों की एक सूची है जो आपके खाते की मास्टर चाबी की तरह काम करती है। आपका वॉलेट, चैटिंग पता और संदेश सब इसी से बनते हैं।</string>
-    <string name="seed_phrase_explainer_anyone">जिसके पास ये शब्द हैं वह आपके खाते का सब कुछ ले सकता है। अगर आप इन्हें खो दें और यह डिवाइस भी खो दें, तो कोई भी आपका खाता वापस नहीं ला सकता, KaChat भी नहीं।</string>
+    <string name="seed_phrase_explainer_anyone">जिसके पास ये शब्द हैं वह आपके खाते का सब कुछ ले सकता है। अगर आप इन्हें खो दें और यह डिवाइस भी खो दें, तो कोई भी आपका खाता वापस नहीं ला सकता, KaPay भी नहीं।</string>
     <string name="seed_phrase_explainer_paper">शब्दों को क्रम से कागज़ पर लिखें और किसी सुरक्षित, निजी जगह पर रखें। इन्हें कभी किसी वेबसाइट पर टाइप न करें, चैट में न भेजें, और स्क्रीनशॉट या क्लाउड नोट्स में न रखें।</string>
     <string name="seed_phrase_explainer_lengths">12 शब्द पहले से ही बहुत सुरक्षित हैं। 24 शब्द और भी ज़्यादा सुरक्षा देते हैं।</string>
     <!-- Onboarding: the seed phrase explainer page's headings (iOS 712bb4d) -->
@@ -1074,7 +1074,7 @@
     <string name="ab_address_book">एड्रेस बुक</string>
     <string name="ab_add_to_address_book">एड्रेस बुक में जोड़ें</string>
     <string name="ab_search_prompt">नाम और पते खोजें</string>
-    <string name="ab_empty_body">जिन Kaspa पतों का आप उपयोग करते हैं, उन्हें पहचाने जाने वाले नाम से सहेजें। वे KaChat में रहते हैं, सिर्फ़ इस वॉलेट के लिए, और कभी आपके फ़ोन के संपर्कों में नहीं जाते।</string>
+    <string name="ab_empty_body">जिन Kaspa पतों का आप उपयोग करते हैं, उन्हें पहचाने जाने वाले नाम से सहेजें। वे KaPay में रहते हैं, सिर्फ़ इस वॉलेट के लिए, और कभी आपके फ़ोन के संपर्कों में नहीं जाते।</string>
     <string name="ab_add_address">पता जोड़ें</string>
     <string name="ab_copied">कॉपी हो गया</string>
     <string name="ab_share_address">पता साझा करें</string>
@@ -1083,7 +1083,7 @@
     <string name="ab_delete_confirm">%1$s को अपनी एड्रेस बुक से हटाएँ?</string>
     <string name="ab_not_in_book">आपकी एड्रेस बुक में नहीं है</string>
     <string name="ab_note_optional">नोट (वैकल्पिक)</string>
-    <string name="ab_editor_footer">सिर्फ़ इस वॉलेट के लिए KaChat में सहेजा गया। कभी आपके फ़ोन के संपर्कों में नहीं जोड़ा जाता।</string>
+    <string name="ab_editor_footer">सिर्फ़ इस वॉलेट के लिए KaPay में सहेजा गया। कभी आपके फ़ोन के संपर्कों में नहीं जोड़ा जाता।</string>
     <string name="ab_remove_from">एड्रेस बुक से हटाएँ</string>
     <string name="ab_edit_address">पता संपादित करें</string>
     <string name="ab_picker_empty_body">Kaspa Hub &gt; एड्रेस बुक में पते जोड़ें।</string>
@@ -1137,10 +1137,10 @@
     <string name="kn_claim_fee_note">दावा करने पर दो लेनदेन जाते हैं: अभी कमिट, करीब एक मिनट बाद पंजीकरण। दोनों इसी गति से।</string>
     <string name="kn_step_sent">नेटवर्क को भेजा गया</string>
     <string name="kn_step_in_block">एक ब्लॉक में</string>
-    <string name="kn_step_updated">KaChat में अपडेट</string>
+    <string name="kn_step_updated">KaPay में अपडेट</string>
     <string name="kn_tx_stage_waiting">नेटवर्क द्वारा ब्लॉक में डाले जाने का इंतज़ार। आमतौर पर कुछ सेकंड; व्यस्त होने पर ज़्यादा।</string>
-    <string name="kn_tx_stage_in_block">यह ब्लॉक में है। KaChat अपडेट हो रहा है...</string>
-    <string name="kn_tx_stage_done">हो गया। अब यह KaChat में दिखता है।</string>
+    <string name="kn_tx_stage_in_block">यह ब्लॉक में है। KaPay अपडेट हो रहा है...</string>
+    <string name="kn_tx_stage_done">हो गया। अब यह KaPay में दिखता है।</string>
     <string name="kn_tx_stage_dropped">नेटवर्क ने इसे अभी तक नहीं लिया। अगर यह कभी नहीं पहुँचा तो कुछ खर्च नहीं हुआ - तेज़ फ़ीस से फिर कोशिश करें।</string>
     <string name="kn_tap_tx_explorer">एक्सप्लोरर में खोलने के लिए लेनदेन पर टैप करें।</string>
     <!-- .kachat offers: tiles and half sheet (iOS 7f50e84) -->
@@ -1151,8 +1151,8 @@
     <!-- .kachat fee re-check (iOS 7e2b6cd, IOS-061) -->
     <string name="kn_err_fee_changed">आपके पुष्टि करने के बाद नेटवर्क शुल्क बढ़कर %1$s हो गया। कुछ नहीं भेजा गया। नया शुल्क देखें और फिर से पुष्टि करें।</string>
     <!-- Address Book: the active network only (iOS 218dc42, IOS-063) -->
-    <string name="ab_err_import_all_mainnet">इस फ़ाइल का हर पता Mainnet का है। KaChat Testnet पर है।</string>
-    <string name="ab_err_import_all_testnet">इस फ़ाइल का हर पता Testnet का है। KaChat Mainnet पर है।</string>
+    <string name="ab_err_import_all_mainnet">इस फ़ाइल का हर पता Mainnet का है। KaPay Testnet पर है।</string>
+    <string name="ab_err_import_all_testnet">इस फ़ाइल का हर पता Testnet का है। KaPay Mainnet पर है।</string>
     <string name="ab_import_skipped_other_network">दूसरे नेटवर्क के %1$d छोड़ दिए गए।</string>
     <!-- .kachat registry v5 migration (iOS dd836cb) -->
     <string name="kn_registration_not_open">नाम नए रजिस्ट्री में ले जाए जा रहे हैं। नए नाम %1$s से क्लेम किए जा सकेंगे।</string>
@@ -1200,7 +1200,7 @@
     <string name="kn_offer_refundable_from_expiry">यह नाम पहले समाप्त होता है, इसलिए आपका ऑफ़र %1$s से वापस लिया जा सकता है।</string>
     <!-- .kachat: combining many small coins before a name transaction (iOS f1c16ec) -->
     <string name="kn_combining_coins">आपका KAS कई छोटे कॉइन में बँटा है। पहले उन्हें एक में मिलाया जा रहा है...</string>
-    <string name="kn_combines_coins_note">आपका KAS कई छोटे कॉइन में बँटा है। पंजीकरण से पहले KaChat उन्हें एक में मिलाता है, बहुत छोटे अतिरिक्त नेटवर्क शुल्क पर।</string>
+    <string name="kn_combines_coins_note">आपका KAS कई छोटे कॉइन में बँटा है। पंजीकरण से पहले KaPay उन्हें एक में मिलाता है, बहुत छोटे अतिरिक्त नेटवर्क शुल्क पर।</string>
     <string name="kn_not_enough_to_combine">इसके लिए आपके चैटिंग पते पर पर्याप्त KAS नहीं है।</string>
     <!-- KaChat Bots (iOS 82ab31d, 7dd508a, d576941, 4a43e33) -->
     <string name="bots_title">KaChat बॉट</string>
@@ -1248,7 +1248,7 @@
     <string name="delete_chat_q">Delete Chat?</string>
     <string name="delete_chat_alert_message">This permanently deletes every message in this chat from this device. This cannot be undone.</string>
     <!-- .kachat transaction sheet: coins are combined only after the slide (iOS 778a8fc, IOS-075) -->
-    <string name="kn_combines_coins_on_slide">आपका KAS कई छोटे सिक्कों में है। स्लाइड करने पर KaChat पहले उन्हें एक में मिलाएगा (अपने छोटे शुल्क वाला अलग लेनदेन), फिर इसे भेजेगा।</string>
+    <string name="kn_combines_coins_on_slide">आपका KAS कई छोटे सिक्कों में है। स्लाइड करने पर KaPay पहले उन्हें एक में मिलाएगा (अपने छोटे शुल्क वाला अलग लेनदेन), फिर इसे भेजेगा।</string>
     <!-- An address's Domains tab: one card per name service (iOS fe52376) -->
     <string name="address_tab_domains">डोमेन</string>
     <string name="address_domains_none">इस पते पर कोई %1$s नाम नहीं है।</string>

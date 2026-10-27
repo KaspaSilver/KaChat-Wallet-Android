@@ -35,6 +35,11 @@ import javax.inject.Singleton
  * snapshotted at start and every destructive/step is pinned to it, so a mid-flow account switch
  * aborts to [Phase.Failure] instead of touching the new account's data (see
  * [ChatRepository.resyncIncomingMessages]).
+ *
+ * KaPay: chats are never backed up (iOS wallet 301ebfb). Settings > Storage > Nextcloud restores
+ * the Address Book and Portfolio through [NextcloudSyncService.restoreBackup] and never comes
+ * here; [startNextcloudRestore] stays only for the dormant chat code, and fails at once
+ * ([NextcloudService.downloadBackup] has no chat archive to give it).
  */
 @Singleton
 class BackupRestoreCoordinator @Inject constructor(

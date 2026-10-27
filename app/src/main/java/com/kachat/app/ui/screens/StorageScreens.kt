@@ -75,8 +75,8 @@ import com.kachat.app.viewmodels.ChatViewModel
 /**
  * Settings > Storage sub-pages. The Storage entry itself is a hub of category rows (rendered by
  * [SettingsScreen] under `sectionKey == "storage"`), like iOS's Settings > Storage. Nextcloud
- * ([NextcloudStorageScreen]) is the one cloud option on Android - the same self-hosted
- * option as on iOS, and the only sync that works across both platforms.
+ * ([NextcloudStorageScreen]) is the one cloud option on Android - the same self-hosted backup of
+ * the Address Book and Portfolio as on iOS, read and written alike on both platforms.
  *
  * Local (on-device) storage has no settings of its own — just the "Local storage used" readout —
  * so it stays inline on the hub instead of becoming a third row that would open a page holding a
@@ -113,21 +113,18 @@ fun MessageRetentionSetting(chatViewModel: ChatViewModel) {
 }
 
 /**
- * Settings > Storage > Nextcloud — the self-hosted cloud backup, iOS's NextcloudSettingsView: an
- * inset-grouped Form page ([SettingsFormPage]) whose sections (connect form, or the account,
- * start/backup folders, automatic + manual backup, restore and disconnect) are
- * [NextcloudSettingsSection]'s.
+ * Settings > Storage > Nextcloud — the Address Book and Portfolio backup to the user's own
+ * Nextcloud, iOS wallet's NextcloudSettingsView: an inset-grouped Form page ([SettingsFormPage])
+ * whose sections (connect form, or the account, Automatic Backup, Back Up Now, Restore Backup and
+ * disconnect) are [NextcloudSettingsSection]'s. No chat restore modal here: the wallet's backup
+ * holds no chats (iOS wallet 301ebfb), and its restore reports in place.
  */
 @Composable
-fun NextcloudStorageScreen(
-    onBack: () -> Unit,
-    chatViewModel: ChatViewModel = hiltViewModel()
-) {
+fun NextcloudStorageScreen(onBack: () -> Unit) {
     Box(modifier = Modifier.fillMaxSize()) {
         SettingsFormPage(title = stringResource(R.string.nextcloud), onBack = onBack) {
-            NextcloudSettingsSection(chatViewModel)
+            NextcloudSettingsSection()
         }
-        ChatRestoreProgressOverlay(chatViewModel.restoreCoordinator)
     }
 }
 

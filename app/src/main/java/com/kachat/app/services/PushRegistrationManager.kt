@@ -458,9 +458,11 @@ class PushRegistrationManager @Inject constructor(
         val watchedGroupIds = if (!chats) emptyList() else collectWatchedGroupIds(walletAddress)
         val watchOnlyAddresses = if (chats) emptyList() else addressActivityNotifierLazy.get().pushWatchOnlyAddresses()
         val apnsTopic = if (chats) null else context.packageName.removeSuffix(".debug")
-        // Nothing to watch (Address Activity off): the service refuses an empty registration,
-        // so leave it instead, as iOS does.
-        if (watchedAddresses.isEmpty() && watchedGroupIds.isEmpty() && watchOnlyAddresses.isEmpty()) {
+        // Nothing to watch: leave the service instead. KaChat Wallet's main address alone is
+        // enough - .kachat name events go to primary_address whether or not Address Activity (the
+        // watch-only list) is on, so switching that off must not unregister (iOS wallet 2c59051).
+        val walletOnlyPrimary = !chats && walletAddress.isNotEmpty()
+        if (watchedAddresses.isEmpty() && watchedGroupIds.isEmpty() && watchOnlyAddresses.isEmpty() && !walletOnlyPrimary) {
             if (!leftWithNothingToWatch) {
                 unregisterLocked(SigningMaterial(privateKey, walletAddress))
                 leftWithNothingToWatch = true

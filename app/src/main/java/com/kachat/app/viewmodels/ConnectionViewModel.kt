@@ -193,6 +193,17 @@ class ConnectionViewModel @Inject constructor(
      *  e6f664f). Choosing the running network again cancels it. */
     fun switchNetwork(to: com.kachat.app.util.KaspaNetwork.Type) { viewModelScope.launch { settings.switchNetwork(to) } }
     fun setIndexerUrl(value: String) { viewModelScope.launch { settings.setIndexerUrl(value) } }
+
+    /**
+     * Settings > Connection > Domains' .kachat indexer (iOS wallet 59593af): https only; blank
+     * stores blank, which reads as the network's default indexer. False when refused.
+     */
+    fun setKachatIndexerUrl(value: String): Boolean {
+        val trimmed = value.trim().trimEnd('/')
+        if (trimmed.isNotEmpty() && !trimmed.startsWith("https://", ignoreCase = true)) return false
+        viewModelScope.launch { settings.setIndexerUrl(trimmed) }
+        return true
+    }
     fun setKaspaRestApiUrl(value: String) { viewModelScope.launch { settings.setKaspaRestUrl(value) } }
 
     /**

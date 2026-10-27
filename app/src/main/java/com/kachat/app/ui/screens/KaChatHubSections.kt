@@ -202,7 +202,9 @@ fun KachatMarketScreen(onBack: (() -> Unit)?, onOpenChat: (String) -> Unit = {})
             }
         }
     ) { padding ->
-      Box(Modifier.fillMaxSize().padding(padding).then(if (isLive) Modifier.nestedScroll(pullState.nestedScrollConnection) else Modifier)) {
+      // A sideways swipe moves between the four tabs (iOS wallet 040f91a pageSwipe()).
+      Box(Modifier.fillMaxSize().padding(padding).then(if (isLive) Modifier.nestedScroll(pullState.nestedScrollConnection) else Modifier)
+          .kachatPageSwipe(pageCount = 4, page = { page }, onPage = { page = it })) {
         Column(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = LocalDockInset.current + 24.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)

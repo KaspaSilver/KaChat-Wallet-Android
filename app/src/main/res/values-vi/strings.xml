@@ -114,8 +114,8 @@
     <string name="kns_domains">Tên miền KNS</string>
     <string name="kachat">KaChat</string>
     <string name="kachat_logo">Logo KaChat</string>
-    <string name="kachat_can_t_show_notifications_until">KaChat không thể hiển thị thông báo cho đến khi bạn cho phép chúng cho ứng dụng này.</string>
-    <string name="kachat_needs_to_connect_to_a">KaChat cần kết nối với một nút. Bạn muốn kết nối như thế nào?</string>
+    <string name="kachat_can_t_show_notifications_until">KaPay không thể hiển thị thông báo cho đến khi bạn cho phép chúng cho ứng dụng này.</string>
+    <string name="kachat_needs_to_connect_to_a">KaPay cần kết nối với một nút. Bạn muốn kết nối như thế nào?</string>
     <string name="kaspa">Kaspa</string>
     <string name="kaspa_address_or_kns_domain">Địa chỉ Kaspa hoặc tên miền KNS</string>
     <string name="kaspa_explorer">Trình khám phá Kaspa</string>
@@ -224,7 +224,7 @@
     <string name="tap_an_address_below_to_use">Chạm vào một địa chỉ bên dưới để sử dụng nó</string>
     <string name="tap_to_reveal_seed_phrase">Nhấn để hiện seed phrase</string>
     <string name="this_could_take_a_few_minutes">Quá trình này có thể mất vài phút trong khi xác nhận trên chuỗi.</string>
-    <string name="this_only_removes_it_from_kachat">Điều này chỉ xóa nó khỏi danh sách theo dõi của KaChat. Nó không ảnh hưởng đến thiết bị KasSigner hoặc bất kỳ khoản tiền nào nó nắm giữ.</string>
+    <string name="this_only_removes_it_from_kachat">Điều này chỉ xóa nó khỏi danh sách theo dõi của KaPay. Nó không ảnh hưởng đến thiết bị KasSigner hoặc bất kỳ khoản tiền nào nó nắm giữ.</string>
     <string name="this_permanently_deletes_every_message_with">Điều này xóa vĩnh viễn mọi tin nhắn với họ trên thiết bị này. Không thể hoàn tác; nhắn tin lại cho họ sẽ bắt đầu một cuộc trò chuyện hoàn toàn mới.</string>
     <string name="this_removes_the_group_and_its">Điều này xóa nhóm và tin nhắn của nhóm khỏi thiết bị này. Điều này không thể hoàn tác, và các thành viên khác sẽ không được thông báo.</string>
     <string name="to">Đến</string>
@@ -354,7 +354,7 @@
     <string name="auto_search_for_nodes">Tu dong tim kiem node</string>
     <string name="most_taxing_on_the_device_not_as">Ton hao thiet bi nhieu nhat, khong dang tin cay bang - tuy thuoc vao noi ban song</string>
     <string name="choose_your_language">Chon ngon ngu cua ban</string>
-    <string name="select_the_language_youd_like_to">Chon ngon ngu ban muon su dung trong KaChat.</string>
+    <string name="select_the_language_youd_like_to">Chon ngon ngu ban muon su dung trong KaPay.</string>
     <string name="best">Tot nhat</string>
     <string name="enter_as_host_port_or_grpcs_host">Nhap dang host:port hoac grpcs://host</string>
     <string name="receive_kaspa">Nhan Kaspa</string>
@@ -577,8 +577,8 @@
     <string name="welcome_fund_chatting_body">Nên có 50 Kaspa để bắt đầu - đủ để nhận một tên .kachat và trò chuyện một thời gian. 5 Kaspa đủ cho khoảng 2500 tin nhắn.</string>
     <!-- Testnet (iOS bdae4b7, 0c1af03, 9858bd1, 0bda85e, af8ec68, f38cac2) -->
     <string name="testnet">Testnet</string>
-    <string name="testnet_restart_to_testnet">Đóng hẳn KaChat rồi mở lại để hoàn tất chuyển sang Testnet.</string>
-    <string name="testnet_restart_to_mainnet">Đóng hẳn KaChat rồi mở lại để hoàn tất quay về Mainnet.</string>
+    <string name="testnet_restart_to_testnet">Đóng hẳn KaPay rồi mở lại để hoàn tất chuyển sang Testnet.</string>
+    <string name="testnet_restart_to_mainnet">Đóng hẳn KaPay rồi mở lại để hoàn tất quay về Mainnet.</string>
     <string name="kaposts_not_on_testnet">KaPosts chưa khả dụng trên Testnet</string>
     <string name="kaposts_not_on_testnet_sub">Chưa có trình lập chỉ mục KaPost cho testnet. Tắt Testnet trong Cài đặt > Kết nối để đọc và đăng trên mainnet.</string>
     <string name="nextcloud_off_on_testnet">Nextcloud tắt khi Testnet đang bật.</string>
@@ -612,7 +612,7 @@
     <string name="kn_cancel_commit_body">Việc đăng ký dừng lại và 0.2 KAS của cam kết trở về bạn, trừ phí mạng.</string>
     <string name="kn_stage_committing">Đang gửi cam kết ẩn...</string>
     <string name="kn_stage_waiting_confirm">Đang chờ cam kết được xác nhận...</string>
-    <string name="kn_stage_waiting">Cam kết cần chờ khoảng một phút trước khi tên có thể được đăng ký. Hãy để KaChat mở - ứng dụng tự đăng ký, và tiếp tục từ chỗ dừng nếu bạn rời đi.</string>
+    <string name="kn_stage_waiting">Cam kết cần chờ khoảng một phút trước khi tên có thể được đăng ký. Hãy để KaPay mở - ứng dụng tự đăng ký, và tiếp tục từ chỗ dừng nếu bạn rời đi.</string>
     <string name="kn_stage_registering">Đang đăng ký...</string>
     <string name="kn_stage_registered">Đã đăng ký. Tên này là của bạn.</string>
     <string name="kn_stage_taken">Đã có người đăng ký tên này trước. Hủy cam kết để lấy lại 0.2 KAS.</string>
@@ -643,7 +643,7 @@
     <string name="kn_not_enough">Địa chỉ trò chuyện của bạn không đủ KAS cho tên này.</string>
     <string name="kn_claim_footer">Giá trả cho thợ đào - KaChat không lấy gì. Tiền bảo đảm và ký quỹ trả lại khi bạn nhả tên.</string>
     <string name="kn_claim_step1">Một cam kết ẩn được đưa lên chuỗi trước. Không ai thấy nó dành cho tên nào.</string>
-    <string name="kn_claim_step2">Khoảng một phút sau KaChat tự đăng ký tên. Hãy để ứng dụng mở; nếu bạn rời đi, lần sau sẽ tiếp tục.</string>
+    <string name="kn_claim_step2">Khoảng một phút sau KaPay tự đăng ký tên. Hãy để ứng dụng mở; nếu bạn rời đi, lần sau sẽ tiếp tục.</string>
     <string name="kn_how_claiming_works">Cách nhận tên hoạt động</string>
     <string name="kn_claim_name_button">Nhận %1$s.kachat</string>
     <string name="kn_claim_name_title">Nhận tên</string>
@@ -917,8 +917,8 @@
     <!-- .kachat: expires-soon follows the period clock (iOS 24d673a, IOS-060) -->
     <string name="kn_buy_soon_left">Còn chưa đến %1$s là tên này hết hạn. Bạn sẽ phải gia hạn sớm.</string>
     <!-- Addresses of the other network are refused (iOS ce20e87, IOS-003) -->
-    <string name="address_other_network_testnet">Đây là địa chỉ Testnet. KaChat đang ở Mainnet.</string>
-    <string name="address_other_network_mainnet">Đây là địa chỉ Mainnet. KaChat đang ở Testnet.</string>
+    <string name="address_other_network_testnet">Đây là địa chỉ Testnet. KaPay đang ở Mainnet.</string>
+    <string name="address_other_network_mainnet">Đây là địa chỉ Mainnet. KaPay đang ở Testnet.</string>
     <!-- Coin Control: the most coins one transaction may spend (AND-012 follow-up) -->
     <string name="coin_control_max_selection">Một giao dịch chỉ có thể chi tiêu tối đa %1$d UTXO, vì vậy không thể chọn thêm.</string>
     <!-- Seed phrase screen: the passphrase is part of the backup (iOS 3076ab7, IOS-017) -->
@@ -960,7 +960,7 @@
     <string name="kn_free_to_claim">Có thể đăng ký</string>
     <!-- .kachat registration progress half sheet (iOS 61fb0fc) -->
     <string name="kn_claiming_name">Đang nhận %1$s</string>
-    <string name="kn_keep_open_claiming">Hãy giữ KaChat mở: tên được đăng ký khoảng một phút sau khi cam kết ẩn được xác nhận. Nếu bạn rời đi, quá trình sẽ tiếp tục từ chỗ dừng khi bạn quay lại.</string>
+    <string name="kn_keep_open_claiming">Hãy giữ KaPay mở: tên được đăng ký khoảng một phút sau khi cam kết ẩn được xác nhận. Nếu bạn rời đi, quá trình sẽ tiếp tục từ chỗ dừng khi bạn quay lại.</string>
     <!-- KaPosts tip sheet (Send Kaspa layout, iOS 0e08006) -->
     <string name="kaposts_tip_title">Tiền tip</string>
     <!-- KaChat Stats: .kachat names (iOS b2d108b) -->
@@ -1041,7 +1041,7 @@
     <string name="what_is_this">Đây là gì?</string>
     <string name="what_is_a_seed_phrase">Seed phrase là gì?</string>
     <string name="seed_phrase_explainer_master_key">Seed phrase là danh sách 12 hoặc 24 từ thông thường, đóng vai trò chìa khóa chính cho tài khoản của bạn. Ví, địa chỉ trò chuyện và tin nhắn của bạn đều đến từ nó.</string>
-    <string name="seed_phrase_explainer_anyone">Bất kỳ ai có các từ này đều có thể lấy hết mọi thứ trong tài khoản của bạn. Nếu bạn làm mất chúng và cũng mất thiết bị này, không ai có thể khôi phục tài khoản cho bạn, kể cả KaChat.</string>
+    <string name="seed_phrase_explainer_anyone">Bất kỳ ai có các từ này đều có thể lấy hết mọi thứ trong tài khoản của bạn. Nếu bạn làm mất chúng và cũng mất thiết bị này, không ai có thể khôi phục tài khoản cho bạn, kể cả KaPay.</string>
     <string name="seed_phrase_explainer_paper">Hãy viết các từ ra giấy theo đúng thứ tự và cất ở nơi an toàn, riêng tư. Đừng bao giờ gõ chúng vào trang web, gửi qua tin nhắn, hay lưu trong ảnh chụp màn hình hoặc ghi chú trên đám mây.</string>
     <string name="seed_phrase_explainer_lengths">12 từ đã rất an toàn. 24 từ còn bảo vệ tốt hơn nữa.</string>
     <!-- Onboarding: the seed phrase explainer page's headings (iOS 712bb4d) -->
@@ -1074,7 +1074,7 @@
     <string name="ab_address_book">Sổ địa chỉ</string>
     <string name="ab_add_to_address_book">Thêm vào sổ địa chỉ</string>
     <string name="ab_search_prompt">Tìm tên và địa chỉ</string>
-    <string name="ab_empty_body">Lưu các địa chỉ Kaspa bạn hay dùng với một cái tên dễ nhận ra. Chúng nằm trong KaChat, chỉ cho ví này, và không bao giờ vào danh bạ điện thoại của bạn.</string>
+    <string name="ab_empty_body">Lưu các địa chỉ Kaspa bạn hay dùng với một cái tên dễ nhận ra. Chúng nằm trong KaPay, chỉ cho ví này, và không bao giờ vào danh bạ điện thoại của bạn.</string>
     <string name="ab_add_address">Thêm địa chỉ</string>
     <string name="ab_copied">Đã sao chép</string>
     <string name="ab_share_address">Chia sẻ địa chỉ</string>
@@ -1083,7 +1083,7 @@
     <string name="ab_delete_confirm">Xóa %1$s khỏi sổ địa chỉ?</string>
     <string name="ab_not_in_book">Không có trong sổ địa chỉ</string>
     <string name="ab_note_optional">Ghi chú (tùy chọn)</string>
-    <string name="ab_editor_footer">Lưu trong KaChat chỉ cho ví này. Không bao giờ được thêm vào danh bạ điện thoại.</string>
+    <string name="ab_editor_footer">Lưu trong KaPay chỉ cho ví này. Không bao giờ được thêm vào danh bạ điện thoại.</string>
     <string name="ab_remove_from">Gỡ khỏi sổ địa chỉ</string>
     <string name="ab_edit_address">Sửa địa chỉ</string>
     <string name="ab_picker_empty_body">Thêm địa chỉ trong Kaspa Hub &gt; Sổ địa chỉ.</string>
@@ -1137,10 +1137,10 @@
     <string name="kn_claim_fee_note">Nhận tên gửi hai giao dịch: cam kết ngay bây giờ, đăng ký khoảng một phút sau. Cả hai dùng tốc độ này.</string>
     <string name="kn_step_sent">Đã gửi lên mạng</string>
     <string name="kn_step_in_block">Trong một khối</string>
-    <string name="kn_step_updated">Đã cập nhật trong KaChat</string>
+    <string name="kn_step_updated">Đã cập nhật trong KaPay</string>
     <string name="kn_tx_stage_waiting">Đang chờ mạng đưa vào khối. Thường vài giây; lâu hơn khi mạng bận.</string>
-    <string name="kn_tx_stage_in_block">Đã vào khối. Đang cập nhật KaChat...</string>
-    <string name="kn_tx_stage_done">Xong. Giờ đã hiển thị trong KaChat.</string>
+    <string name="kn_tx_stage_in_block">Đã vào khối. Đang cập nhật KaPay...</string>
+    <string name="kn_tx_stage_done">Xong. Giờ đã hiển thị trong KaPay.</string>
     <string name="kn_tx_stage_dropped">Mạng chưa nhận giao dịch. Nếu nó không bao giờ vào, không có gì bị tiêu - hãy thử lại với phí nhanh hơn.</string>
     <string name="kn_tap_tx_explorer">Chạm vào giao dịch để mở trong trình khám phá.</string>
     <!-- .kachat offers: tiles and half sheet (iOS 7f50e84) -->
@@ -1151,8 +1151,8 @@
     <!-- .kachat fee re-check (iOS 7e2b6cd, IOS-061) -->
     <string name="kn_err_fee_changed">Phí mạng đã tăng lên %1$s kể từ khi bạn xác nhận. Chưa có gì được gửi. Hãy xem phí mới và xác nhận lại.</string>
     <!-- Address Book: the active network only (iOS 218dc42, IOS-063) -->
-    <string name="ab_err_import_all_mainnet">Mọi địa chỉ trong tệp đó đều là địa chỉ Mainnet. KaChat đang ở Testnet.</string>
-    <string name="ab_err_import_all_testnet">Mọi địa chỉ trong tệp đó đều là địa chỉ Testnet. KaChat đang ở Mainnet.</string>
+    <string name="ab_err_import_all_mainnet">Mọi địa chỉ trong tệp đó đều là địa chỉ Mainnet. KaPay đang ở Testnet.</string>
+    <string name="ab_err_import_all_testnet">Mọi địa chỉ trong tệp đó đều là địa chỉ Testnet. KaPay đang ở Mainnet.</string>
     <string name="ab_import_skipped_other_network">Đã bỏ qua %1$d địa chỉ của mạng khác.</string>
     <!-- .kachat registry v5 migration (iOS dd836cb) -->
     <string name="kn_registration_not_open">Các tên đang được chuyển sang sổ đăng ký mới. Bạn có thể nhận tên mới từ %1$s.</string>
@@ -1200,7 +1200,7 @@
     <string name="kn_offer_refundable_from_expiry">Tên này hết hạn sớm hơn, nên đề nghị của bạn hoàn lại được từ %1$s.</string>
     <!-- .kachat: combining many small coins before a name transaction (iOS f1c16ec) -->
     <string name="kn_combining_coins">KAS của bạn nằm rải rác trong nhiều đồng nhỏ. Đang gộp chúng thành một trước...</string>
-    <string name="kn_combines_coins_note">KAS của bạn nằm rải rác trong nhiều đồng nhỏ. KaChat gộp chúng thành một trước khi đăng ký, với một khoản phí mạng nhỏ thêm.</string>
+    <string name="kn_combines_coins_note">KAS của bạn nằm rải rác trong nhiều đồng nhỏ. KaPay gộp chúng thành một trước khi đăng ký, với một khoản phí mạng nhỏ thêm.</string>
     <string name="kn_not_enough_to_combine">Địa chỉ chat của bạn không đủ KAS để làm việc này.</string>
     <!-- KaChat Bots (iOS 82ab31d, 7dd508a, d576941, 4a43e33) -->
     <string name="bots_title">Bot KaChat</string>
@@ -1248,7 +1248,7 @@
     <string name="delete_chat_q">Delete Chat?</string>
     <string name="delete_chat_alert_message">This permanently deletes every message in this chat from this device. This cannot be undone.</string>
     <!-- .kachat transaction sheet: coins are combined only after the slide (iOS 778a8fc, IOS-075) -->
-    <string name="kn_combines_coins_on_slide">KAS của bạn nằm trong nhiều đồng nhỏ. Khi bạn trượt, KaChat sẽ gộp chúng thành một trước (một giao dịch riêng với phí nhỏ), rồi gửi giao dịch này.</string>
+    <string name="kn_combines_coins_on_slide">KAS của bạn nằm trong nhiều đồng nhỏ. Khi bạn trượt, KaPay sẽ gộp chúng thành một trước (một giao dịch riêng với phí nhỏ), rồi gửi giao dịch này.</string>
     <!-- An address's Domains tab: one card per name service (iOS fe52376) -->
     <string name="address_tab_domains">Tên miền</string>
     <string name="address_domains_none">Địa chỉ này không có tên %1$s.</string>

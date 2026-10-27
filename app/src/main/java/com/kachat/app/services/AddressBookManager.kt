@@ -78,7 +78,7 @@ class AddressBookManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val walletManager: WalletManager,
     private val database: KaChatDatabase,
-    // Lazy: NextcloudSyncService reaches this class back through the export service.
+    // Lazy: NextcloudSyncService exports and imports the Address Book through this class.
     private val nextcloudSyncService: dagger.Lazy<NextcloudSyncService>,
 ) {
     private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -576,7 +576,7 @@ class AddressBookManager @Inject constructor(
 
     /** A user edit: the backup owes an upload. */
     private fun didChange() {
-        runCatching { nextcloudSyncService.get().noteMessageActivity() }
+        runCatching { nextcloudSyncService.get().noteBackupDataChanged() }
     }
 
     private fun persist() {

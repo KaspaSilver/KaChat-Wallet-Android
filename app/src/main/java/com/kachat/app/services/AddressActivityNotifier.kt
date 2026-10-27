@@ -24,34 +24,30 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Local notifications for external receipts on any of the wallet's own SPENDING or COLD STORAGE
- * addresses, and plain transfers to the CHATTING address (iOS 56b75c8). Android port of iOS's
- * `AddressActivityNotifier.swift`.
+ * "Received" notifications: alerts the user when any of the wallet's own addresses - the main
+ * address, spending-chain addresses (Manage Addresses) or watch-only cold-storage addresses -
+ * receives Kaspa from someone else. Android port of iOS's `AddressActivityNotifier.swift`.
  *
- * iOS drives this from live utxosChanged subscription events plus a foreground catch-up diff.
- * Android has no UTXO push subscription (chat delivery is poll/FCM based), so this runs the same
- * per-wallet BASELINE + DIFF algorithm on a foreground poll loop ([POLL_INTERVAL_MS]) plus an
- * immediate pass on app-foreground ([onAppForeground]) - the catch-up half of the iOS design is
- * the whole engine here:
+ * iOS drives this from a live UTXO subscription plus a catch-up diff. Android has no UTXO
+ * subscription, so the catch-up is the whole engine: a per-wallet BASELINE + DIFF on a
+ * foreground poll loop ([POLL_INTERVAL_MS]), an immediate pass on app-foreground
+ * ([onAppForeground]), and one from the periodic background worker ([runPassNow]):
  *
- * - Per-wallet balance baselines persist across launches; the very first run for a wallet seeds
- *   them silently (no dredging up history as "new" receipts).
- * - A balance increase is attributed to recent transactions for that address; a tx whose inputs
- *   include ANY of our own addresses (chatting, spending, or cold) is a self-transfer and is
- *   suppressed. Unresolvable transactions notify anyway - missing real funds is worse than a
- *   rare duplicate. One notification per tx, outputs to our addresses summed.
- * - Handled txIds are persisted per wallet (cap 500) so live/catch-up passes never double-notify.
+ * - Per-wallet balance baselines persist across launches; the first run for a wallet (or a new
+ *   address) seeds them silently and sets the address's floor - no dredging up history.
+ * - A balance increase is attributed to the address's recent transactions newer than its floor,
+ *   newest first, up to the increase. A tx with ANY input spending from one of our addresses is
+ *   our own (change, consolidation, a send from another app on the same seed) and never
+ *   notifies; an input the REST API hasn't resolved yet is looked up in the tx that created it
+ *   ([spendsOwnFunds]). Unattributable increases notify a neutral "Balance increased".
+ * - With remote push registered, the push service sends "Received" for the same addresses and the
+ *   open app hides it - so the app announces a receive itself only while it is open, and one that
+ *   landed while it was away is left to the push ([pushShowsReceive]).
+ * - Handled txIds are persisted per wallet (cap 500) so passes never double-notify.
  * - [utxoActivityEvents] ALWAYS emits when watched balances change - a UI-refresh signal
- *   (payment composer's Available pill, Manage Addresses, Cold Storage) deliberately separate
- *   from the notification decision and NOT gated by the Address Activity setting.
- * - The notification itself is gated by Settings > Notifications > Wallet > "Address Activity"
- *   (default ON) plus the global notifications toggle.
- *
- * The chatting address notifies too, for plain transfers only (no payload, iOS 56b75c8): a
- * KaChat chat payment or a handshake is the chat's own news and stays quiet. Its catch-up only
- * counts plain transfers newer than its last look ([chattingFloorKey]) - never a burst of old
- * payments - and it has no "Balance increased" fallback (its balance moves with every chat
- * payment too).
+ *   (Available pill, Manage Addresses, Cold Storage) NOT gated by the Address Activity setting.
+ * - The notification itself is gated by Settings > Notifications > "Address Activity" (default
+ *   ON) plus the global notifications toggle.
  */
 @Singleton
 class AddressActivityNotifier @Inject constructor(
@@ -64,6 +60,8 @@ class AddressActivityNotifier @Inject constructor(
     private val notificationCenter: GlobalNotificationCenterStore,
     // Lazy: WalletService is built from the chat stack, which this must not wait on at startup.
     private val walletServiceLazy: dagger.Lazy<WalletService>,
+    /** Whether the push service is sending this device "Received" pushes (see [pushShowsReceive]). */
+    private val pushState: PushState,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO + com.kachat.app.util.StartupSafety.logOnlyHandler("AddressActivityNotifier"))
     private val runMutex = Mutex()
@@ -82,6 +80,7 @@ class AddressActivityNotifier @Inject constructor(
     /** Called from the process lifecycle observer on foreground: immediate catch-up pass, then a
      *  foreground-only poll loop approximating iOS's live subscription events. */
     fun onAppForeground() {
+        activeSinceMs = System.currentTimeMillis()
         scope.launch { runDiffPass() }
         if (pollJob?.isActive == true) return
         pollJob = scope.launch {
@@ -99,6 +98,7 @@ class AddressActivityNotifier @Inject constructor(
     /** Called on background - the loop freezes with the process, matching the app's
      *  foreground-only sync design. Next foreground runs the catch-up diff. */
     fun onAppBackground() {
+        activeSinceMs = null
         pollJob?.cancel()
         pollJob = null
     }
@@ -142,6 +142,10 @@ class AddressActivityNotifier @Inject constructor(
             }
         }
     }
+
+    /** Since when the app has been open this time (null while it isn't) - see [pushShowsReceive]. */
+    @Volatile
+    private var activeSinceMs: Long? = null
 
     // --- Watched sets -----------------------------------------------------------------
 
@@ -215,12 +219,10 @@ class AddressActivityNotifier @Inject constructor(
             val previous = baselines[address]
             if (previous == null) {
                 // First sighting of this address (feature install, newly revealed slot, fresh
-                // cold import) - seed silently.
+                // cold import) - seed silently: its history predates our tracking, and its
+                // receives count from now on.
                 baselines[address] = balance
-                if (address == walletAddress) {
-                    // the chatting address's receives count from now on
-                    prefs.edit().putLong(chattingFloorKey(walletAddress), System.currentTimeMillis()).apply()
-                }
+                setCatchUpFloor(System.currentTimeMillis(), address, walletAddress)
                 changed = true
                 continue
             }
@@ -262,11 +264,13 @@ class AddressActivityNotifier @Inject constructor(
     }
 
     /**
-     * Attributes a balance increase to its transaction(s) via recent history for the address:
-     * per unhandled tx paying this address, resolve the inputs - any own address among them
-     * means self-transfer, suppressed silently; otherwise notify once for the tx's summed
-     * outputs to this address. If history can't attribute the delta at all, a neutral
-     * "Balance increased" notification fires instead (never silently missing real funds).
+     * Attributes a balance increase to its transaction(s) via recent history for the address
+     * (iOS wallet 34f4b45 / 42470af `attributeAndNotifyIncrease`). Only receives newer than the
+     * address's floor (the newest block time a pass already looked at, or when the address started
+     * being tracked) count, newest first and no more than the increase - so older history is never
+     * announced again. A tx that spends from any of our addresses is our own and never notifies
+     * ([spendsOwnFunds]). If history can't attribute the increase at all, a neutral "Balance
+     * increased" notification fires instead - unless the push service is the one to announce it.
      */
     private suspend fun attributeAndMaybeNotifyIncrease(
         address: String,
@@ -278,62 +282,120 @@ class AddressActivityNotifier @Inject constructor(
         api: KaspaRestApi
     ) {
         ensureHandledLoaded(walletAddress)
-        // KaChat Wallet has no chats: its main address is a wallet address like the rest.
-        val isChatting = com.kachat.app.util.ChatFeatures.enabled && address == walletAddress
         val transactions = try {
             api.getTransactions(address, limit = 10)
         } catch (e: Exception) {
             emptyList()
         }
-        // the chatting address: only plain transfers newer than what was already looked at
-        val floorKey = chattingFloorKey(walletAddress)
-        val floor = prefs.getLong(floorKey, 0L).coerceAtLeast(0L)
-        if (isChatting) {
-            val newest = transactions.mapNotNull { it.blockTime }.maxOrNull() ?: System.currentTimeMillis()
-            prefs.edit().putLong(floorKey, maxOf(newest, floor)).apply()
-            // the first look only sets where it starts
-            if (floor == 0L) return
+        // An address tracked before floors existed has none yet: the increase alone bounds it.
+        val floor = catchUpFloor(address, walletAddress)
+        transactions.mapNotNull { it.blockTime }.maxOrNull()?.let { newest ->
+            setCatchUpFloor(maxOf(newest, floor ?: 0L), address, walletAddress)
         }
+        val mayFallBack = featureOn && !pushShowsReceive(blockTimeMs = null)
         if (transactions.isEmpty()) {
-            // Resolution failed entirely - still surface the funds, neutral wording (not for the
-            // chatting address, whose balance moves with every chat payment too).
-            if (featureOn && !isChatting) postBalanceIncreased(address, delta, coldLabels)
+            // Resolution failed entirely - still surface the funds, neutral wording.
+            if (mayFallBack) postBalanceIncreased(address, delta, coldLabels)
             return
         }
+        // Newest first, and only as many receives as the balance grew by: anything older was
+        // already in the baseline. Own change doesn't count against the increase.
+        val newestFirst = transactions.sortedByDescending { it.blockTime ?: Long.MAX_VALUE }
+        var remaining = delta
         var attributedAny = false
-        for (tx in transactions) {
-            if (isChatting && (!isPlainTransfer(tx) || (tx.blockTime ?: 0L) <= floor)) continue
+        for (tx in newestFirst) {
+            if (remaining <= 0) break
+            val time = tx.blockTime
+            if (floor != null && time != null && time <= floor) continue
             val toAddress = tx.outputs.filter { it.scriptPublicKeyAddress == address }.sumOf { it.amount }
             if (toAddress <= 0) continue
+            attributedAny = true
             if (isHandled(tx.transactionId, walletAddress)) {
-                attributedAny = true
+                remaining -= minOf(remaining, toAddress)
                 continue
             }
-            val inputAddresses = tx.inputs.mapNotNull { it.previousOutpointAddress }.filter { it.isNotEmpty() }
-            val isSelfSend = inputAddresses.isNotEmpty() && inputAddresses.any { it in ownAll }
+            val isSelfSend = spendsOwnFunds(tx, ownAll, api) ?: false
+            if (isHandled(tx.transactionId, walletAddress)) continue
             markHandled(tx.transactionId, walletAddress)
-            attributedAny = true
             if (isSelfSend) {
                 Log.i(TAG, "Suppressed self-send ${tx.transactionId.take(12)}")
+                continue
+            }
+            remaining -= minOf(remaining, toAddress)
+            if (pushShowsReceive(blockTimeMs = time)) {
+                Log.i(TAG, "Receive ${tx.transactionId.take(12)} left to the push (app not open)")
                 continue
             }
             if (featureOn) {
                 postReceive(totalSompi = toAddress, address = address, coldLabels = coldLabels, dedupeKey = tx.transactionId)
             }
         }
-        if (!attributedAny && featureOn && !isChatting) {
+        if (!attributedAny && mayFallBack) {
             // Balance grew but none of the fetched recent txs pays this address (deep history
             // page or indexer lag) - neutral fallback rather than staying silent.
             postBalanceIncreased(address, delta, coldLabels)
         }
     }
 
+    /**
+     * Whether the push service already shows this receive, so the app must not (iOS wallet
+     * 34f4b45): it pushes "Received" for the addresses this device registered, and the open app
+     * hides that push. A receive from before the app opened this time - or any receive while it
+     * isn't open - is the push's. [blockTimeMs] null means it is happening now.
+     */
+    private fun pushShowsReceive(blockTimeMs: Long?): Boolean {
+        if (!pushState.isActive) return false
+        val since = activeSinceMs
+        if (!notificationHelper.isAppInForeground || since == null) return true
+        if (blockTimeMs == null) return false
+        return blockTimeMs < since
+    }
+
+    /**
+     * Whether [tx] spends from any of our addresses (iOS wallet 42470af `spendsOwnFunds`): true
+     * as soon as one input is ours, false when every input is placed and none is, null when some
+     * input couldn't be placed. An input the REST API left unresolved (usual for a tx seconds old)
+     * is looked up in the transaction that created it - so change from another app on the same
+     * seed (a KaPosts post, a KaChat message) is never announced as a receive.
+     */
+    private suspend fun spendsOwnFunds(tx: TransactionResponse, ownAddresses: Set<String>, api: KaspaRestApi): Boolean? {
+        val inputs = tx.inputs
+        if (inputs.isEmpty()) return null
+        val unresolved = mutableListOf<TransactionInput>()
+        for (input in inputs) {
+            val address = input.previousOutpointAddress
+            if (!address.isNullOrEmpty()) {
+                if (address in ownAddresses) return true
+            } else {
+                unresolved += input
+            }
+        }
+        var unknown = false
+        val previousTxs = mutableMapOf<String, TransactionResponse?>()
+        for (input in unresolved) {
+            val hash = input.previousOutpointHash
+            val previous = previousTxs.getOrPut(hash) {
+                try { api.getTransaction(hash) } catch (e: Exception) { null }
+            }
+            val outputs = previous?.outputs.orEmpty()
+            val spent = outputs.firstOrNull { it.index == input.previousOutpointIndex }
+                ?: outputs.getOrNull(input.previousOutpointIndex)
+            val address = spent?.scriptPublicKeyAddress
+            if (address.isNullOrEmpty()) {
+                unknown = true
+                continue
+            }
+            if (address in ownAddresses) return true
+        }
+        return if (unknown) null else false
+    }
+
     // --- Notifications ----------------------------------------------------------------
 
     private suspend fun postReceive(totalSompi: Long, address: String, coldLabels: Map<String, String>, dedupeKey: String) {
         if (totalSompi <= 0) return
-        // The chatting address: the payment sync may have bannered this payment already.
-        if (address == walletAddressOrNull() && !notificationHelper.claimForBanner(dedupeKey)) return
+        // One banner per transaction: the FCM handler claims the same txid for a Received push.
+        if (!notificationHelper.claimForBanner(dedupeKey)) return
         notificationHelper.showAddressActivity(
             title = "Received ${formatKas(totalSompi)} ${KaspaUnit.symbol}",
             text = describe(address, coldLabels),
@@ -387,13 +449,34 @@ class AddressActivityNotifier @Inject constructor(
 
     private fun baselinesKey(walletAddress: String) = "baselines_$walletAddress"
 
-    /** The newest block time (ms) the chatting address's catch-up has already looked at, per
-     *  wallet: older receives were before it was watched, or already notified - never a burst of
-     *  old payments (iOS 56b75c8 `chattingCatchUpFloorKey`). */
-    private fun chattingFloorKey(walletAddress: String) = "addr_activity_chat_floor_${walletAddress.lowercase()}"
+    // Catch-up floors (iOS wallet 34f4b45): per address, the newest block time (ms) a pass has
+    // already looked at, or when the address started being tracked - older receives were before
+    // it was watched, or already handled, and are never announced.
+    private fun catchUpFloorsKey(walletAddress: String) = "addr_activity_floors_$walletAddress"
 
-    /** A transaction with no payload: plain KAS, not a KaChat chat payment, message or handshake. */
-    private fun isPlainTransfer(tx: TransactionResponse): Boolean = tx.payload.isNullOrEmpty()
+    private fun loadCatchUpFloors(walletAddress: String): Map<String, Long> {
+        val json = prefs.getString(catchUpFloorsKey(walletAddress), null) ?: return emptyMap()
+        return try {
+            gson.fromJson(json, object : TypeToken<Map<String, Long>>() {}.type)
+        } catch (e: Exception) {
+            emptyMap()
+        }
+    }
+
+    private fun catchUpFloor(address: String, walletAddress: String): Long? =
+        loadCatchUpFloors(walletAddress)[address] ?: if (address == walletAddress) {
+            // The main address's floor used to be kept on its own, set when it was first tracked.
+            prefs.getLong("addr_activity_chat_floor_${walletAddress.lowercase()}", 0L).takeIf { it > 0 }
+        } else {
+            null
+        }
+
+    private fun setCatchUpFloor(floor: Long, address: String, walletAddress: String) {
+        val floors = loadCatchUpFloors(walletAddress).toMutableMap()
+        if (floors[address] == floor) return
+        floors[address] = floor
+        prefs.edit().putString(catchUpFloorsKey(walletAddress), gson.toJson(floors)).apply()
+    }
     private fun handledKey(walletAddress: String) = "handled_txids_$walletAddress"
 
     private fun loadBaselines(walletAddress: String): Map<String, Long> {

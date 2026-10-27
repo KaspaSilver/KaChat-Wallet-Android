@@ -114,8 +114,8 @@
     <string name="kns_domains">KNS 도메인</string>
     <string name="kachat">KaChat</string>
     <string name="kachat_logo">KaChat 로고</string>
-    <string name="kachat_can_t_show_notifications_until">이 앱에 대한 알림을 허용할 때까지 KaChat은 알림을 표시할 수 없습니다.</string>
-    <string name="kachat_needs_to_connect_to_a">KaChat이 노드에 연결해야 합니다. 어떻게 연결하시겠습니까?</string>
+    <string name="kachat_can_t_show_notifications_until">이 앱에 대한 알림을 허용할 때까지 KaPay은 알림을 표시할 수 없습니다.</string>
+    <string name="kachat_needs_to_connect_to_a">KaPay이 노드에 연결해야 합니다. 어떻게 연결하시겠습니까?</string>
     <string name="kaspa">Kaspa</string>
     <string name="kaspa_address_or_kns_domain">Kaspa 주소 또는 KNS 도메인</string>
     <string name="kaspa_explorer">Kaspa 탐색기</string>
@@ -224,7 +224,7 @@
     <string name="tap_an_address_below_to_use">아래 주소를 탭하여 사용하세요</string>
     <string name="tap_to_reveal_seed_phrase">탭하여 seed phrase 보기</string>
     <string name="this_could_take_a_few_minutes">체인에서 확인되는 동안 몇 분 정도 걸릴 수 있습니다.</string>
-    <string name="this_only_removes_it_from_kachat">이는 KaChat의 감시 목록에서만 제거합니다. KasSigner 기기나 보유한 자금에는 영향을 미치지 않습니다.</string>
+    <string name="this_only_removes_it_from_kachat">이는 KaPay의 감시 목록에서만 제거합니다. KasSigner 기기나 보유한 자금에는 영향을 미치지 않습니다.</string>
     <string name="this_permanently_deletes_every_message_with">이는 이 기기에서 그들과의 모든 메시지를 영구적으로 삭제합니다. 되돌릴 수 없습니다; 다시 메시지를 보내면 완전히 새로운 대화가 시작됩니다.</string>
     <string name="this_removes_the_group_and_its">이는 이 기기에서 그룹과 메시지를 제거합니다. 되돌릴 수 없으며 다른 멤버에게 알림이 가지 않습니다.</string>
     <string name="to">받는 주소</string>
@@ -354,7 +354,7 @@
     <string name="auto_search_for_nodes">노드 자동 검색</string>
     <string name="most_taxing_on_the_device_not_as">기기에 가장 부담이 크고 안정성은 떨어짐 - 거주 지역에 따라 다름</string>
     <string name="choose_your_language">언어를 선택하세요</string>
-    <string name="select_the_language_youd_like_to">KaChat에서 사용하고 싶은 언어를 선택하세요.</string>
+    <string name="select_the_language_youd_like_to">KaPay에서 사용하고 싶은 언어를 선택하세요.</string>
     <string name="best">최고</string>
     <string name="enter_as_host_port_or_grpcs_host">host:port 또는 grpcs://host 형식으로 입력하세요</string>
     <string name="receive_kaspa">Kaspa 받기</string>
@@ -577,8 +577,8 @@
     <string name="welcome_fund_chatting_body">시작하려면 50 Kaspa를 권장합니다. .kachat 이름을 받고 한동안 채팅하기에 충분합니다. 5 Kaspa면 약 2500개의 메시지를 보낼 수 있습니다.</string>
     <!-- Testnet (iOS bdae4b7, 0c1af03, 9858bd1, 0bda85e, af8ec68, f38cac2) -->
     <string name="testnet">테스트넷</string>
-    <string name="testnet_restart_to_testnet">테스트넷 전환을 마치려면 KaChat을 완전히 종료한 뒤 다시 여세요.</string>
-    <string name="testnet_restart_to_mainnet">메인넷으로 돌아가려면 KaChat을 완전히 종료한 뒤 다시 여세요.</string>
+    <string name="testnet_restart_to_testnet">테스트넷 전환을 마치려면 KaPay을 완전히 종료한 뒤 다시 여세요.</string>
+    <string name="testnet_restart_to_mainnet">메인넷으로 돌아가려면 KaPay을 완전히 종료한 뒤 다시 여세요.</string>
     <string name="kaposts_not_on_testnet">KaPosts는 아직 테스트넷에서 사용할 수 없습니다</string>
     <string name="kaposts_not_on_testnet_sub">테스트넷용 KaPost 인덱서가 없습니다. 메인넷에서 읽고 게시하려면 설정 > 연결에서 테스트넷을 끄세요.</string>
     <string name="nextcloud_off_on_testnet">테스트넷이 켜져 있는 동안 Nextcloud는 꺼집니다.</string>
@@ -612,7 +612,7 @@
     <string name="kn_cancel_commit_body">등록이 중단되고 커밋의 0.2 KAS가 네트워크 수수료를 뺀 만큼 돌아와요.</string>
     <string name="kn_stage_committing">숨겨진 커밋을 보내는 중...</string>
     <string name="kn_stage_waiting_confirm">커밋 확인을 기다리는 중...</string>
-    <string name="kn_stage_waiting">이름을 등록하려면 커밋이 약 1분 지나야 해요. KaChat을 열어 두세요 - 알아서 등록하고, 앱을 떠나도 이어서 진행해요.</string>
+    <string name="kn_stage_waiting">이름을 등록하려면 커밋이 약 1분 지나야 해요. KaPay을 열어 두세요 - 알아서 등록하고, 앱을 떠나도 이어서 진행해요.</string>
     <string name="kn_stage_registering">등록 중...</string>
     <string name="kn_stage_registered">등록됐어요. 이제 내 이름이에요.</string>
     <string name="kn_stage_taken">다른 사람이 이 이름을 먼저 등록했어요. 커밋을 취소하면 0.2 KAS를 돌려받아요.</string>
@@ -643,7 +643,7 @@
     <string name="kn_not_enough">이 이름을 받기에 채팅 주소의 KAS가 부족해요.</string>
     <string name="kn_claim_footer">가격은 채굴자에게 가고 KaChat은 아무것도 받지 않아요. 보증금과 예치금은 이름을 해제하면 돌아와요.</string>
     <string name="kn_claim_step1">먼저 숨겨진 커밋이 체인에 올라가요. 어떤 이름인지는 아무도 볼 수 없어요.</string>
-    <string name="kn_claim_step2">약 1분 뒤 KaChat이 알아서 이름을 등록해요. 앱을 열어 두세요. 떠나도 다음에 이어서 진행돼요.</string>
+    <string name="kn_claim_step2">약 1분 뒤 KaPay이 알아서 이름을 등록해요. 앱을 열어 두세요. 떠나도 다음에 이어서 진행돼요.</string>
     <string name="kn_how_claiming_works">이름 받기는 이렇게 진행돼요</string>
     <string name="kn_claim_name_button">%1$s.kachat 받기</string>
     <string name="kn_claim_name_title">이름 받기</string>
@@ -917,8 +917,8 @@
     <!-- .kachat: expires-soon follows the period clock (iOS 24d673a, IOS-060) -->
     <string name="kn_buy_soon_left">이 이름의 만료까지 %1$s도 남지 않았어요. 곧 갱신해야 해요.</string>
     <!-- Addresses of the other network are refused (iOS ce20e87, IOS-003) -->
-    <string name="address_other_network_testnet">Testnet 주소예요. KaChat은 Mainnet에서 실행 중이에요.</string>
-    <string name="address_other_network_mainnet">Mainnet 주소예요. KaChat은 Testnet에서 실행 중이에요.</string>
+    <string name="address_other_network_testnet">Testnet 주소예요. KaPay은 Mainnet에서 실행 중이에요.</string>
+    <string name="address_other_network_mainnet">Mainnet 주소예요. KaPay은 Testnet에서 실행 중이에요.</string>
     <!-- Coin Control: the most coins one transaction may spend (AND-012 follow-up) -->
     <string name="coin_control_max_selection">하나의 트랜잭션은 최대 %1$d개의 UTXO만 사용할 수 있으므로 더 이상 선택할 수 없습니다.</string>
     <!-- Seed phrase screen: the passphrase is part of the backup (iOS 3076ab7, IOS-017) -->
@@ -960,7 +960,7 @@
     <string name="kn_free_to_claim">등록 가능</string>
     <!-- .kachat registration progress half sheet (iOS 61fb0fc) -->
     <string name="kn_claiming_name">%1$s 받는 중</string>
-    <string name="kn_keep_open_claiming">KaChat을 열어 두세요. 숨겨진 커밋이 확인되고 약 1분 후에 이름이 등록됩니다. 앱을 나가도 돌아오면 이어서 진행됩니다.</string>
+    <string name="kn_keep_open_claiming">KaPay을 열어 두세요. 숨겨진 커밋이 확인되고 약 1분 후에 이름이 등록됩니다. 앱을 나가도 돌아오면 이어서 진행됩니다.</string>
     <!-- KaPosts tip sheet (Send Kaspa layout, iOS 0e08006) -->
     <string name="kaposts_tip_title">팁</string>
     <!-- KaChat Stats: .kachat names (iOS b2d108b) -->
@@ -1041,7 +1041,7 @@
     <string name="what_is_this">이게 뭔가요?</string>
     <string name="what_is_a_seed_phrase">seed phrase란?</string>
     <string name="seed_phrase_explainer_master_key">seed phrase는 계정의 마스터 키 역할을 하는 12개 또는 24개의 평범한 단어 목록입니다. 지갑, 채팅 주소, 메시지가 모두 여기에서 만들어집니다.</string>
-    <string name="seed_phrase_explainer_anyone">이 단어를 가진 사람은 누구나 계정의 모든 것을 가져갈 수 있습니다. 단어를 잃어버리고 이 기기도 잃어버리면 아무도 계정을 되찾을 수 없습니다. KaChat도 마찬가지입니다.</string>
+    <string name="seed_phrase_explainer_anyone">이 단어를 가진 사람은 누구나 계정의 모든 것을 가져갈 수 있습니다. 단어를 잃어버리고 이 기기도 잃어버리면 아무도 계정을 되찾을 수 없습니다. KaPay도 마찬가지입니다.</string>
     <string name="seed_phrase_explainer_paper">단어를 순서대로 종이에 적어 안전하고 남이 볼 수 없는 곳에 보관하세요. 웹사이트에 입력하거나, 채팅으로 보내거나, 스크린샷이나 클라우드 메모에 저장하지 마세요.</string>
     <string name="seed_phrase_explainer_lengths">12개 단어도 이미 매우 안전합니다. 24개 단어는 더 강한 보호를 더해 줍니다.</string>
     <!-- Onboarding: the seed phrase explainer page's headings (iOS 712bb4d) -->
@@ -1074,7 +1074,7 @@
     <string name="ab_address_book">주소록</string>
     <string name="ab_add_to_address_book">주소록에 추가</string>
     <string name="ab_search_prompt">이름과 주소 검색</string>
-    <string name="ab_empty_body">자주 쓰는 Kaspa 주소를 알아보기 쉬운 이름으로 저장하세요. KaChat 안에만, 이 지갑 전용으로 저장되며 휴대폰 연락처에는 절대 들어가지 않습니다.</string>
+    <string name="ab_empty_body">자주 쓰는 Kaspa 주소를 알아보기 쉬운 이름으로 저장하세요. KaPay 안에만, 이 지갑 전용으로 저장되며 휴대폰 연락처에는 절대 들어가지 않습니다.</string>
     <string name="ab_add_address">주소 추가</string>
     <string name="ab_copied">복사됨</string>
     <string name="ab_share_address">주소 공유</string>
@@ -1083,7 +1083,7 @@
     <string name="ab_delete_confirm">주소록에서 %1$s 님을 삭제할까요?</string>
     <string name="ab_not_in_book">주소록에 없음</string>
     <string name="ab_note_optional">메모 (선택)</string>
-    <string name="ab_editor_footer">이 지갑 전용으로 KaChat에 저장됩니다. 휴대폰 연락처에는 추가되지 않습니다.</string>
+    <string name="ab_editor_footer">이 지갑 전용으로 KaPay에 저장됩니다. 휴대폰 연락처에는 추가되지 않습니다.</string>
     <string name="ab_remove_from">주소록에서 제거</string>
     <string name="ab_edit_address">주소 편집</string>
     <string name="ab_picker_empty_body">Kaspa Hub &gt; 주소록에서 주소를 추가하세요.</string>
@@ -1137,10 +1137,10 @@
     <string name="kn_claim_fee_note">등록 시 두 건의 트랜잭션을 보냅니다. 지금 커밋, 약 1분 뒤 등록. 둘 다 이 속도로 보냅니다.</string>
     <string name="kn_step_sent">네트워크로 보냄</string>
     <string name="kn_step_in_block">블록에 포함됨</string>
-    <string name="kn_step_updated">KaChat에 반영됨</string>
+    <string name="kn_step_updated">KaPay에 반영됨</string>
     <string name="kn_tx_stage_waiting">네트워크가 블록에 넣기를 기다리는 중. 보통 몇 초, 혼잡하면 더 걸립니다.</string>
-    <string name="kn_tx_stage_in_block">블록에 포함되었습니다. KaChat 업데이트 중...</string>
-    <string name="kn_tx_stage_done">완료. 이제 KaChat에 표시됩니다.</string>
+    <string name="kn_tx_stage_in_block">블록에 포함되었습니다. KaPay 업데이트 중...</string>
+    <string name="kn_tx_stage_done">완료. 이제 KaPay에 표시됩니다.</string>
     <string name="kn_tx_stage_dropped">네트워크가 아직 받지 않았습니다. 끝내 들어가지 않으면 아무것도 쓰이지 않습니다 - 더 빠른 수수료로 다시 시도하세요.</string>
     <string name="kn_tap_tx_explorer">트랜잭션을 탭하면 익스플로러에서 열립니다.</string>
     <!-- .kachat offers: tiles and half sheet (iOS 7f50e84) -->
@@ -1151,8 +1151,8 @@
     <!-- .kachat fee re-check (iOS 7e2b6cd, IOS-061) -->
     <string name="kn_err_fee_changed">확인한 뒤 네트워크 수수료가 %1$s(으)로 올랐습니다. 아무것도 보내지 않았습니다. 새 수수료를 확인하고 다시 확인하세요.</string>
     <!-- Address Book: the active network only (iOS 218dc42, IOS-063) -->
-    <string name="ab_err_import_all_mainnet">이 파일의 모든 주소는 Mainnet 주소입니다. KaChat은 Testnet에 있습니다.</string>
-    <string name="ab_err_import_all_testnet">이 파일의 모든 주소는 Testnet 주소입니다. KaChat은 Mainnet에 있습니다.</string>
+    <string name="ab_err_import_all_mainnet">이 파일의 모든 주소는 Mainnet 주소입니다. KaPay은 Testnet에 있습니다.</string>
+    <string name="ab_err_import_all_testnet">이 파일의 모든 주소는 Testnet 주소입니다. KaPay은 Mainnet에 있습니다.</string>
     <string name="ab_import_skipped_other_network">다른 네트워크의 %1$d개를 건너뛰었습니다.</string>
     <!-- .kachat registry v5 migration (iOS dd836cb) -->
     <string name="kn_registration_not_open">이름을 새 레지스트리로 옮기는 중입니다. 새 이름은 %1$s부터 받을 수 있습니다.</string>
@@ -1200,7 +1200,7 @@
     <string name="kn_offer_refundable_from_expiry">이 이름이 더 일찍 만료되므로 제안은 %1$s부터 환불할 수 있습니다.</string>
     <!-- .kachat: combining many small coins before a name transaction (iOS f1c16ec) -->
     <string name="kn_combining_coins">KAS가 작은 코인 여러 개에 나뉘어 있습니다. 먼저 하나로 합치는 중...</string>
-    <string name="kn_combines_coins_note">KAS가 작은 코인 여러 개에 나뉘어 있습니다. 등록 전에 KaChat이 하나로 합치며, 아주 적은 네트워크 수수료가 추가됩니다.</string>
+    <string name="kn_combines_coins_note">KAS가 작은 코인 여러 개에 나뉘어 있습니다. 등록 전에 KaPay이 하나로 합치며, 아주 적은 네트워크 수수료가 추가됩니다.</string>
     <string name="kn_not_enough_to_combine">채팅 주소에 이 작업을 할 KAS가 부족합니다.</string>
     <!-- KaChat Bots (iOS 82ab31d, 7dd508a, d576941, 4a43e33) -->
     <string name="bots_title">KaChat 봇</string>
@@ -1248,7 +1248,7 @@
     <string name="delete_chat_q">Delete Chat?</string>
     <string name="delete_chat_alert_message">This permanently deletes every message in this chat from this device. This cannot be undone.</string>
     <!-- .kachat transaction sheet: coins are combined only after the slide (iOS 778a8fc, IOS-075) -->
-    <string name="kn_combines_coins_on_slide">KAS가 작은 코인 여러 개로 나뉘어 있습니다. 밀면 KaChat이 먼저 하나로 합친 뒤(소액 수수료가 드는 별도 거래) 이것을 보냅니다.</string>
+    <string name="kn_combines_coins_on_slide">KAS가 작은 코인 여러 개로 나뉘어 있습니다. 밀면 KaPay이 먼저 하나로 합친 뒤(소액 수수료가 드는 별도 거래) 이것을 보냅니다.</string>
     <!-- An address's Domains tab: one card per name service (iOS fe52376) -->
     <string name="address_tab_domains">도메인</string>
     <string name="address_domains_none">이 주소에 %1$s 이름이 없습니다.</string>

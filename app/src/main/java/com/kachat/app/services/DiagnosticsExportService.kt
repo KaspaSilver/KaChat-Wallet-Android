@@ -7,7 +7,6 @@ import android.os.Process
 import androidx.core.content.FileProvider
 import com.google.gson.GsonBuilder
 import com.kachat.app.repository.AppSettingsRepository
-import com.kachat.app.repository.ChatRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
 import java.io.File
@@ -20,10 +19,10 @@ import javax.inject.Singleton
 
 /**
  * Android counterpart to iOS's "Export Diagnostics Archive" (`SettingsView.exportDiagnosticsArchive`)
- * — a zip with a `diagnostics.json` snapshot (app/device info, non-secret settings, local message
- * store counts, node pool state) plus `app.log` (this process's own recent logcat output). Deliberately
- * excludes anything sensitive: no private key/mnemonic material, no decrypted message content, only
- * the active wallet's public address and connection/settings metadata.
+ * — a zip with a `diagnostics.json` snapshot (app/device info, the wallet's settings and state,
+ * node pool state) plus `app.log` (this process's own recent logcat output). Only the wallet's own
+ * data (iOS wallet 59593af): no private key/mnemonic material, only the active wallet's public
+ * address and connection/settings metadata.
  *
  * Android has no equivalent to iOS's in-process OSLogStore, so `app.log` is captured via `logcat`
  * filtered to this process's own pid — apps can only read their own UID's log entries this way since
@@ -32,12 +31,13 @@ import javax.inject.Singleton
 @Singleton
 class DiagnosticsExportService @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val chatRepository: ChatRepository,
     private val walletManager: WalletManager,
     private val settingsRepository: AppSettingsRepository,
     private val nodePoolManager: NodePoolManager,
     private val pushState: PushState,
-    private val nextcloudService: NextcloudService
+    private val nextcloudService: NextcloudService,
+    /** Which .kachat source names are read from, for the wallet section (iOS wallet 59593af). */
+    private val kachatRegistry: dagger.Lazy<com.kachat.app.services.kachatnames.KachatNamesRegistry>,
 ) {
     private val gson = GsonBuilder().setPrettyPrinting().create()
 
@@ -48,12 +48,19 @@ class DiagnosticsExportService @Inject constructor(
         /** How many crash reports the archive carries under `crashes/`, newest first. */
         val recordedCrashes: Int,
         val settings: Map<String, String?>,
-        val messageStore: MessageStoreDiagnostics,
+        /** The wallet's own state - no chats, no message store (iOS wallet 59593af `WalletInfo`). */
+        val wallet: WalletInfo,
         val nodePool: NodePoolSummary
     ) {
         data class AppInfo(val packageName: String, val versionName: String?, val versionCode: Long, val build: String = com.kachat.app.util.AppVersion.display)
         data class DeviceInfo(val manufacturer: String, val model: String, val androidRelease: String, val sdkInt: Int)
-        data class MessageStoreDiagnostics(val contactCount: Int, val totalMessages: Int, val outgoingCount: Int, val incomingCount: Int, val pendingCount: Int)
+        data class WalletInfo(
+            val hasActiveAccount: Boolean,
+            val pushRegistered: Boolean,
+            /** "indexer" or "chain"; null before the first check. */
+            val kachatNamesSource: String?,
+            val nextcloudConnected: Boolean,
+        )
         data class NodePoolSummary(val counts: Map<String, Int>, val totalRecords: Int, val activeRecords: Int)
         data class NodeRecordSummary(val ip: String, val type: String, val status: String, val latency: String, val daaScore: String)
     }
@@ -62,7 +69,7 @@ class DiagnosticsExportService @Inject constructor(
     suspend fun exportDiagnostics(): Uri {
         val exportDir = File(context.cacheDir, "diagnostics_exports").apply { mkdirs() }
         val fileTimestamp = DateTimeFormatter.ISO_INSTANT.format(Instant.now()).replace(":", "-")
-        val zipFile = File(exportDir, "kachat-diagnostics-$fileTimestamp.zip")
+        val zipFile = File(exportDir, "kapay-diagnostics-$fileTimestamp.zip")
 
         val diagnosticsJson = gson.toJson(buildDiagnosticsArchive())
         val logs = collectAppLogs()
@@ -108,15 +115,20 @@ class DiagnosticsExportService @Inject constructor(
         }
 
         // Exporting must also work from the accounts screen with NO active account (the App
-        // Settings gear there includes Diagnostics) - getAllMessages() throws in that state, so
-        // fall back to an empty store summary instead of failing the whole archive.
-        val messages = runCatching { chatRepository.getAllMessages() }.getOrDefault(emptyList())
-        val messageStore = DiagnosticsArchive.MessageStoreDiagnostics(
-            contactCount = chatRepository.getContacts().first().size,
-            totalMessages = messages.size,
-            outgoingCount = messages.count { it.direction == "sent" },
-            incomingCount = messages.count { it.direction == "received" },
-            pendingCount = messages.count { it.deliveryStatus == "pending" }
+        // Settings gear there includes Diagnostics).
+        val wallet = DiagnosticsArchive.WalletInfo(
+            hasActiveAccount = runCatching { walletManager.getAddress() }.isSuccess,
+            pushRegistered = pushState.isActive,
+            kachatNamesSource = if (com.kachat.app.services.kachatnames.KachatNamesService.isLaunched) {
+                when (kachatRegistry.get().source.value) {
+                    is com.kachat.app.services.kachatnames.KachatNamesRegistry.Source.Indexer -> "indexer"
+                    com.kachat.app.services.kachatnames.KachatNamesRegistry.Source.Chain -> "chain"
+                    null -> null
+                }
+            } else {
+                null
+            },
+            nextcloudConnected = nextcloudService.account.value != null,
         )
 
         val allNodes = nodePoolManager.allNodes.value
@@ -135,16 +147,9 @@ class DiagnosticsExportService @Inject constructor(
             "activeAddress" to (settingsRepository.activeAddress.first()
                 ?: runCatching { walletManager.getAddress() }.getOrDefault("none")),
             "notificationsEnabled" to settingsRepository.notificationsEnabled.first().toString(),
-            // Calls: whether this side can host one, and why not when it cannot.
-            "nextcloudConnected" to (nextcloudService.account.value != null).toString(),
+            "addressActivityNotificationsEnabled" to settingsRepository.addressActivityNotificationsEnabled.first().toString(),
             "nextcloudServer" to (nextcloudService.account.value?.server ?: "none"),
-            "talkCallsAvailable" to nextcloudService.talkCallsAvailable.value.toString(),
-            "talkAvailabilityReason" to nextcloudService.talkAvailabilityReason.value,
-            "backupRetention" to settingsRepository.backupRetention.first().name,
-            "broadcastPopularEnabled" to settingsRepository.broadcastPopularEnabled.first().toString(),
-            "broadcastShowKnsAvatars" to settingsRepository.broadcastShowKnsAvatars.first().toString(),
-            // Push diagnostics — background DM/broadcast/KaPosts delivery is push-only (no
-            // polling fallback), so this is the state to check when notifications don't arrive.
+            // Push: the state to check when a Received or .kachat notification doesn't arrive.
             "pushActive" to pushState.isActive.toString(),
             "pushLastAttemptAtMs" to (pushState.diagnostics.value.lastAttemptAtMs?.toString() ?: "never"),
             "pushLastAction" to (pushState.diagnostics.value.lastAction ?: "none"),
@@ -168,7 +173,7 @@ class DiagnosticsExportService @Inject constructor(
             ),
             recordedCrashes = CrashRecorder.crashFiles(context).size,
             settings = settings,
-            messageStore = messageStore,
+            wallet = wallet,
             nodePool = nodePool
         )
     }

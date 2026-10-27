@@ -331,14 +331,14 @@ fun WelcomeScreen(
             val hasWallet by viewModel.hasWallet.collectAsState()
             val accounts by viewModel.accounts.collectAsState()
 
-            // Wordmark with the app mark beside it. KaChat Wallet's name says what it is, so there is
+            // Wordmark with the app mark beside it. KaPay's name says what it is, so there is
             // no tagline under it (owner's call, iOS wallet 089a03f).
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Text(
-                    text = "KaChat Wallet",
+                    text = "KaPay",
                     style = MaterialTheme.typography.headlineLarge.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 36.sp
@@ -351,7 +351,7 @@ fun WelcomeScreen(
                     // load - it throws "Only VectorDrawables and rasterized asset types are
                     // supported" and takes the whole welcome screen down with it.
                     painter = painterResource(id = R.drawable.kachat_wallet_logo),
-                    contentDescription = "KaChat Wallet",
+                    contentDescription = "KaPay",
                     modifier = Modifier.size(40.dp).clip(RoundedCornerShape(9.dp))
                 )
             }
@@ -480,7 +480,7 @@ fun WelcomeScreen(
         // (iOS: 10pt above the safe area), so the height budget that keeps Create and Import on
         // screen is untouched and a 3-button bar never covers it.
         Text(
-            text = "KaChat Wallet ${com.kachat.app.util.AppVersion.display}",
+            text = "KaPay ${com.kachat.app.util.AppVersion.display}",
             fontSize = 11.sp,
             color = LocalAppColors.current.textSecondary,
             modifier = Modifier

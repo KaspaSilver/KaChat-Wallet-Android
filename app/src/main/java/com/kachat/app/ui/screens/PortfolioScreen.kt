@@ -83,6 +83,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.TrendingDown
 import androidx.compose.material.icons.filled.TrendingUp
@@ -263,11 +264,33 @@ fun PortfolioScreen(
 
     val valuesHidden by viewModel.valuesHidden.collectAsState()
 
+    // The floating +'s half sheet: every way to add to, import into or export this portfolio
+    // (iOS wallet 59593af). Up here with the ledger's Select state, since the + hides while
+    // rows are being selected.
+    var showActions by remember { mutableStateOf(false) }
+    val selectingState = remember { mutableStateOf(false) }
+    val haptic = com.kachat.app.util.rememberHaptics()
+
     val dockInset = LocalDockInset.current
     Scaffold(
         containerColor = LocalAppColors.current.background,
         // The page runs on under the dock; its scroll ends with room to clear it.
         contentWindowInsets = WindowInsets(0),
+        // The floating glass + in the bottom-right corner, above the dock - the Addresses tab's
+        // button (iOS wallet 59593af `actionsButton`). Gone while selecting rows.
+        floatingActionButton = {
+            if (!selectingState.value) {
+                com.kachat.app.ui.theme.IosGlassFab(
+                    modifier = Modifier.padding(bottom = dockInset),
+                    onClick = {
+                        haptic(com.kachat.app.util.IosHaptic.IMPACT_LIGHT)
+                        showActions = true
+                    },
+                    icon = Icons.Default.Add,
+                    contentDescription = stringResource(R.string.ab_actions_a11y),
+                )
+            }
+        },
         topBar = {
             MainPageHeader(
                 title = stringResource(R.string.portfolio),
@@ -310,8 +333,9 @@ fun PortfolioScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
-                        // The last card scrolls clear of the dock it runs under.
-                        .padding(bottom = dockInset)
+                        // The last card scrolls clear of the dock it runs under, and the last
+                        // row out from under the floating + (iOS's 72 of bottom inset).
+                        .padding(bottom = dockInset + 72.dp)
                 ) {
                     PortfolioPickerHeader(
                         portfolios = portfolios,
@@ -364,6 +388,9 @@ fun PortfolioScreen(
                     // The Transactions section: its header 5 + 36 under the Fees card.
                     PortfolioTransactionsContent(
                         viewModel = viewModel,
+                        showActions = showActions,
+                        onShowActionsChange = { showActions = it },
+                        selectingState = selectingState,
                         modifier = Modifier
                             .padding(top = 41.dp)
                             .height(portfolioScreenHeight * 0.8f)
@@ -390,6 +417,11 @@ fun PortfolioScreen(
 @Composable
 private fun PortfolioTransactionsContent(
     viewModel: PortfolioViewModel,
+    /** The floating +'s actions sheet is up (PortfolioScreen owns the + itself). */
+    showActions: Boolean,
+    onShowActionsChange: (Boolean) -> Unit,
+    /** Select mode, shared with PortfolioScreen so the + steps aside while rows are picked. */
+    selectingState: androidx.compose.runtime.MutableState<Boolean>,
     showTitle: Boolean = true,
     modifier: Modifier = Modifier
 ) {
@@ -402,15 +434,13 @@ private fun PortfolioTransactionsContent(
     /** The transaction a long press is moving to another portfolio, while its sheet is up. */
     var movingTransaction by remember { mutableStateOf<PortfolioTransactionEntity?>(null) }
     val portfolios by viewModel.portfolios.collectAsState()
-    var showCsvMenu by remember { mutableStateOf(false) }
-    var showAddMenu by remember { mutableStateOf(false) }
     var showAddAddressDialog by remember { mutableStateOf(false) }
     /** Set for "Add Chatting Address": the address sheet imports this one straight away. */
     var addAddressPreset by remember { mutableStateOf<String?>(null) }
     // Multi-select over the ledger, matching iOS's EditMode on PortfolioTransactionsView. Deleting
     // one row has always been the row's own bin icon; deleting the forty rows a bad CSV import left
     // behind was forty taps and forty confirmations.
-    var selecting by remember { mutableStateOf(false) }
+    var selecting by selectingState
     var selectedIds by remember { mutableStateOf(setOf<String>()) }
     var showDeleteSelected by remember { mutableStateOf(false) }
     var isImportingAddress by remember { mutableStateOf(false) }
@@ -445,9 +475,7 @@ private fun PortfolioTransactionsContent(
                         }
                         viewModel.importCsv(android.net.Uri.fromFile(local)) { result ->
                             local.delete()
-                            val count = result.getOrNull() ?: 0
-                            if (count > 0) IosToasts.show("Imported $count transaction${if (count == 1) "" else "s"}")
-                            else IosToasts.error("Import failed. Check the CSV format")
+                            showCsvImportToast(result.getOrNull())
                         }
                     } catch (e: Exception) {
                         IosToasts.error(context.getString(R.string.pnc_import_failed, com.kachat.app.util.UserFacingError.message(e, "Please try again")))
@@ -459,23 +487,16 @@ private fun PortfolioTransactionsContent(
 
     val importCsvLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
-            viewModel.importCsv(uri) { result ->
-                // iOS: none imported reads as the format error, in red.
-                val count = result.getOrNull() ?: 0
-                if (count > 0) IosToasts.show("Imported $count transaction${if (count == 1) "" else "s"}")
-                else IosToasts.error("Import failed. Check the CSV format")
-            }
+            viewModel.importCsv(uri) { result -> showCsvImportToast(result.getOrNull()) }
         }
     }
 
     Column(modifier = modifier.fillMaxSize()) {
-        // iOS-style section header: "Transactions" title with the add and import/export menus
-        // on the same row (replaces the old floating action buttons at the bottom).
         // iOS: the inset-grouped section's header - HStack(spacing: 16) of "Transactions"
-        // (headline), then Select (subheadline semibold, accent), the 22pt plus.circle.fill and
-        // the 17pt semibold square.and.arrow.up.on.square; while selecting, Select All (a 22pt
-        // checkmark circle), the bin with the count, and Done. Lined up with the rows' text: 16
-        // of section margin plus 20 of row inset.
+        // (headline), then Select (subheadline semibold, accent); while selecting, Select All (a
+        // 22pt checkmark circle), the bin with the count, and Done. Adding, importing and
+        // exporting are under the floating + (iOS wallet 59593af). Lined up with the rows' text:
+        // 16 of section margin plus 20 of row inset.
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -494,8 +515,8 @@ private fun PortfolioTransactionsContent(
             }
             Spacer(Modifier.weight(1f))
             if (selecting) {
-                // Add and Import/Export step aside: while selecting, the only things worth doing to
-                // this list are picking rows, binning them, or leaving.
+                // The floating + steps aside: while selecting, the only things worth doing to this
+                // list are picking rows, binning them, or leaving.
                 val allPicked = selectedIds.size == transactions.size && transactions.isNotEmpty()
                 Icon(
                     if (allPicked) Icons.Default.CheckCircle else Icons.Outlined.CheckCircle,
@@ -537,158 +558,14 @@ private fun PortfolioTransactionsContent(
                     fontSize = 15.sp,
                     modifier = Modifier.clickable(enabled = transactions.isNotEmpty()) { selecting = true }
                 )
-                Box {
-                    Icon(
-                        Icons.Default.AddCircle,
-                        contentDescription = stringResource(R.string.add_transaction),
-                        tint = KaspaTeal,
-                        modifier = Modifier
-                            .size(26.dp)
-                            .clip(CircleShape)
-                            .clickable { showAddMenu = true }
-                    )
-                    if (showAddMenu) {
-                        // A sheet, not a popup: each option gets a line saying what it does - "Add
-                        // Kaspa Address" reads as a contact until you learn otherwise.
-                        ActionSheetContainer(
-                            title = "Add to Portfolio",
-                            subtitle = null,
-                            onDismiss = { showAddMenu = false },
-                        ) {
-                            ActionSheetRow(
-                                icon = Icons.Default.MonetizationOn,
-                                title = stringResource(R.string.add_transaction),
-                                subtitle = "Record a buy or a sell by hand.",
-                            ) {
-                                showAddMenu = false
-                                showAddDialog = true
-                            }
-                            ActionSheetRow(
-                                icon = Icons.Default.QrCodeScanner,
-                                title = stringResource(R.string.add_kaspa_address),
-                                subtitle = "Track an address's balance as part of this portfolio.",
-                            ) {
-                                showAddMenu = false
-                                addAddressPreset = null
-                                showAddAddressDialog = true
-                            }
-                            // One tap for the address KaChat itself spends from: its buys and
-                            // sells, and every network fee it paid (messages, handshakes,
-                            // payments) for the Fees Spent card.
-                            viewModel.chattingAddress?.let { chattingAddress ->
-                                ActionSheetRow(
-                                    icon = Icons.Default.Forum,
-                                    title = stringResource(R.string.portfolio_add_chatting_address),
-                                    subtitle = stringResource(R.string.portfolio_add_chatting_address_sub),
-                                ) {
-                                    showAddMenu = false
-                                    addAddressPreset = chattingAddress
-                                    showAddAddressDialog = true
-                                }
-                            }
-                        }
-                    }
-                }
-                Box {
-                    // square.and.arrow.up.on.square: the nearest Material glyph is the share box.
-                    Icon(
-                        Icons.Default.IosShare,
-                        contentDescription = "Import or export CSV",
-                        tint = KaspaTeal,
-                        modifier = Modifier
-                            .size(22.dp)
-                            .clickable { showCsvMenu = true }
-                    )
-                    if (showCsvMenu) {
-                        ActionSheetContainer(
-                            title = "Import or Export",
-                            subtitle = null,
-                            onDismiss = { showCsvMenu = false },
-                        ) {
-                            ActionSheetRow(
-                                icon = Icons.Default.FileUpload,
-                                title = stringResource(R.string.export_csv),
-                                subtitle = "Write this portfolio's transactions out to a file.",
-                            ) {
-                                showCsvMenu = false
-                                viewModel.exportCsv(
-                                    onReady = { uri ->
-                                        val intent = Intent(Intent.ACTION_SEND).apply {
-                                            type = "text/csv"
-                                            putExtra(Intent.EXTRA_STREAM, uri)
-                                            // clipData carries the URI grant to targets that read
-                                            // the stream off the ClipData rather than the extra.
-                                            clipData = ClipData.newRawUri("Portfolio CSV", uri)
-                                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                        }
-                                        // No share target installed at all throws rather than showing
-                                        // an empty chooser; say so instead of crashing the tab.
-                                        try {
-                                            context.startActivity(Intent.createChooser(intent, "Export Portfolio CSV"))
-                                        } catch (e: ActivityNotFoundException) {
-                                            IosToasts.error("No app available to share the CSV")
-                                        }
-                                    },
-                                    onUnavailable = { message -> IosToasts.error(message) }
-                                )
-                            }
-                            ActionSheetRow(
-                                icon = Icons.Default.FileDownload,
-                                title = stringResource(R.string.import_csv),
-                                subtitle = "Read transactions in from a file.",
-                            ) {
-                                showCsvMenu = false
-                                importCsvLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "text/plain", "*/*"))
-                            }
-                            // Export to / Import from Nextcloud - while an account is connected (iOS aa5d783).
-                            if (viewModel.nextcloud.isConnected) {
-                                ActionSheetRow(
-                                    icon = Icons.Default.CloudDownload,
-                                    title = stringResource(R.string.pnc_import),
-                                    subtitle = stringResource(R.string.pnc_import_sub),
-                                ) {
-                                    showCsvMenu = false
-                                    showNextcloudImporter = true
-                                }
-                                ActionSheetRow(
-                                    icon = Icons.Default.CloudUpload,
-                                    title = stringResource(R.string.pnc_export),
-                                    subtitle = stringResource(R.string.pnc_export_sub),
-                                ) {
-                                    showCsvMenu = false
-                                    // Same CSV as Export CSV, uploaded into the KaChat folder.
-                                    viewModel.exportCsv(
-                                        onReady = { uri ->
-                                            nextcloudScope.launch {
-                                                val (message, failed) = try {
-                                                    val bytes = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                                                        context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                                                    } ?: throw java.io.IOException("Couldn't write the CSV file")
-                                                    val name = uri.lastPathSegment?.substringAfterLast('/')?.takeIf { it.endsWith(".csv") }
-                                                        ?: "KaChat Portfolio ${System.currentTimeMillis()}.csv"
-                                                    // keepSpaces: the portfolio's name stays readable in Nextcloud (iOS 87b2a0b).
-                                                    val path = viewModel.nextcloud.uploadToKaChatFolder(bytes, name, "text/csv", keepSpaces = true)
-                                                    context.getString(R.string.pnc_saved_to, path) to false
-                                                } catch (e: Exception) {
-                                                    context.getString(R.string.pnc_export_failed, com.kachat.app.util.UserFacingError.message(e, "Please try again")) to true
-                                                }
-                                                if (failed) IosToasts.error(message) else IosToasts.show(message)
-                                            }
-                                        },
-                                        onUnavailable = { message -> IosToasts.error(message) }
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
             }
         }
 
         LazyColumn(
             modifier = Modifier.weight(1f),
             // Horizontal inset is per-item below (not here).
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp),
+            // room to scroll the last row out from under the floating + (iOS's 72 inset)
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp + 72.dp),
         ) {
             if (transactions.isEmpty()) {
                 // iOS emptyState: no card - the 44pt chart glyph, "No Transactions Yet" (title3
@@ -761,6 +638,127 @@ private fun PortfolioTransactionsContent(
                             )
                         }
                     }
+                }
+            }
+        }
+    }
+
+    // The floating +'s half sheet (iOS wallet 59593af `actionsSheet`): adding to this portfolio,
+    // then importing and exporting it. A sheet rather than a popup menu so each row can say what
+    // it does - "Add Kaspa Address" reads as a contact until you learn otherwise. Expanded from
+    // the start, so every option shows without dragging the sheet up.
+    if (showActions) {
+        val close = { onShowActionsChange(false) }
+        ActionSheetContainer(
+            title = stringResource(R.string.portfolio),
+            subtitle = null,
+            onDismiss = close,
+        ) {
+            PortfolioActionsSectionTitle(stringResource(R.string.pf_actions_add))
+            ActionSheetRow(
+                icon = Icons.Default.Edit,
+                title = stringResource(R.string.add_transaction),
+                subtitle = stringResource(R.string.pf_add_transaction_sub),
+            ) {
+                close()
+                showAddDialog = true
+            }
+            ActionSheetRow(
+                icon = Icons.Default.SwapHoriz,
+                title = stringResource(R.string.add_kaspa_address),
+                subtitle = stringResource(R.string.pf_add_kaspa_address_sub),
+            ) {
+                close()
+                addAddressPreset = null
+                showAddAddressDialog = true
+            }
+            // One tap for the address the wallet itself spends from: its buys and sells, and
+            // every network fee it paid for the Fees Spent card.
+            viewModel.chattingAddress?.let { chattingAddress ->
+                ActionSheetRow(
+                    icon = Icons.Default.Forum,
+                    title = stringResource(R.string.portfolio_add_chatting_address),
+                    subtitle = stringResource(R.string.portfolio_add_chatting_address_sub),
+                ) {
+                    close()
+                    addAddressPreset = chattingAddress
+                    showAddAddressDialog = true
+                }
+            }
+
+            PortfolioActionsSectionTitle(stringResource(R.string.pf_actions_import_export), topPadding = 8.dp)
+            ActionSheetRow(
+                icon = Icons.Default.FileDownload,
+                title = stringResource(R.string.import_csv),
+                subtitle = stringResource(R.string.pf_import_csv_sub),
+            ) {
+                close()
+                importCsvLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "text/plain", "*/*"))
+            }
+            ActionSheetRow(
+                icon = Icons.Default.FileUpload,
+                title = stringResource(R.string.export_csv),
+                subtitle = stringResource(R.string.pf_export_csv_sub),
+            ) {
+                close()
+                viewModel.exportCsv(
+                    onReady = { uri ->
+                        val intent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/csv"
+                            putExtra(Intent.EXTRA_STREAM, uri)
+                            // clipData carries the URI grant to targets that read the stream off
+                            // the ClipData rather than the extra.
+                            clipData = ClipData.newRawUri("Portfolio CSV", uri)
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+                        // No share target installed at all throws rather than showing an empty
+                        // chooser; say so instead of crashing the tab.
+                        try {
+                            context.startActivity(Intent.createChooser(intent, "Export Portfolio CSV"))
+                        } catch (e: ActivityNotFoundException) {
+                            IosToasts.error("No app available to share the CSV")
+                        }
+                    },
+                    onUnavailable = { message -> IosToasts.error(message) }
+                )
+            }
+            // Import from / Export to Nextcloud - while an account is connected (iOS aa5d783).
+            if (viewModel.nextcloud.isConnected) {
+                ActionSheetRow(
+                    icon = Icons.Default.CloudDownload,
+                    title = stringResource(R.string.pnc_import),
+                    subtitle = stringResource(R.string.pnc_import_sub),
+                ) {
+                    close()
+                    showNextcloudImporter = true
+                }
+                ActionSheetRow(
+                    icon = Icons.Default.CloudUpload,
+                    title = stringResource(R.string.pnc_export),
+                    subtitle = stringResource(R.string.pnc_export_sub),
+                ) {
+                    close()
+                    // Same CSV as Export CSV, uploaded into the KaChat folder.
+                    viewModel.exportCsv(
+                        onReady = { uri ->
+                            nextcloudScope.launch {
+                                val (message, failed) = try {
+                                    val bytes = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                        context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                                    } ?: throw java.io.IOException("Couldn't write the CSV file")
+                                    val name = uri.lastPathSegment?.substringAfterLast('/')?.takeIf { it.endsWith(".csv") }
+                                        ?: "${com.kachat.app.repository.PortfolioRepository.DEFAULT_EXPORT_NAME} ${System.currentTimeMillis()}.csv"
+                                    // keepSpaces: the portfolio's name stays readable in Nextcloud (iOS 87b2a0b).
+                                    val path = viewModel.nextcloud.uploadToKaChatFolder(bytes, name, "text/csv", keepSpaces = true)
+                                    context.getString(R.string.pnc_saved_to, path) to false
+                                } catch (e: Exception) {
+                                    context.getString(R.string.pnc_export_failed, com.kachat.app.util.UserFacingError.message(e, "Please try again")) to true
+                                }
+                                if (failed) IosToasts.error(message) else IosToasts.show(message)
+                            }
+                        },
+                        onUnavailable = { message -> IosToasts.error(message) }
+                    )
                 }
             }
         }
@@ -899,6 +897,32 @@ private fun PortfolioTransactionsContent(
             resolveKns = { input -> viewModel.resolveEverywhere(input) }
         )
     }
+}
+
+/** A caption over a group of the actions sheet's rows - iOS's `actionsSectionTitle`: caption
+ *  semibold, secondary, uppercase, 4 in from the rows' leading edge. */
+@Composable
+private fun PortfolioActionsSectionTitle(title: String, topPadding: androidx.compose.ui.unit.Dp = 0.dp) {
+    Text(
+        title.uppercase(),
+        color = LocalAppColors.current.textSecondary,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 12.sp,
+        modifier = Modifier.fillMaxWidth().padding(start = 4.dp, top = topPadding),
+    )
+}
+
+/** The toast after a CSV import: how many rows, and into which portfolio (iOS wallet 59593af
+ *  `importMessage`). None imported reads as the format error, in red. */
+private fun showCsvImportToast(result: com.kachat.app.repository.PortfolioRepository.CsvImportResult?) {
+    val count = result?.count ?: 0
+    if (count <= 0) {
+        IosToasts.error("Import failed. Check the CSV format")
+        return
+    }
+    val rows = if (count == 1) "1 transaction" else "$count transactions"
+    val names = result?.portfolioNames.orEmpty()
+    IosToasts.show(if (names.isEmpty()) "Imported $rows" else "Imported $rows into ${names.joinToString(", ")}")
 }
 
 /** "kaspa:qrabc...wxyz" — enough of each end to recognize the address without wrapping the dialog. */

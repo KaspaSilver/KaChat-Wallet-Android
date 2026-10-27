@@ -111,10 +111,7 @@ fun AppSecurityScreen(
 ) {
     AppSettingsPageScaffold(title = stringResource(R.string.security), onBack = onBack) {
         SettingsFormSection(title = stringResource(R.string.security)) {
-            SecuritySettingsItems(
-                walletViewModel = walletViewModel,
-                onNavigateToChildMode = onNavigateToChildMode
-            )
+            SecuritySettingsItems(walletViewModel = walletViewModel)
         }
     }
 }

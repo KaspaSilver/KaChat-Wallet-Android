@@ -151,7 +151,9 @@ class PortfolioManager @Inject constructor(
         normalizeSortOrder(walletAddress)
     }
 
-    suspend fun addPortfolio(name: String): PortfolioEntity? {
+    /** [makeActive] false adds it without switching to it (a CSV import naming a new portfolio,
+     *  iOS wallet 59593af). */
+    suspend fun addPortfolio(name: String, makeActive: Boolean = true): PortfolioEntity? {
         val address = walletManager.getAddress()
         val count = database.portfolioDefinitionDao().count(address)
         if (count >= MAX_PORTFOLIOS) return null
@@ -165,7 +167,7 @@ class PortfolioManager @Inject constructor(
         )
         ledgerStore.savePortfolios(listOf(entity))
         normalizeSortOrder(address)
-        setActivePortfolio(entity.id)
+        if (makeActive) setActivePortfolio(entity.id)
         return entity
     }
 

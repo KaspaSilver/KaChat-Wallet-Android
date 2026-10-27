@@ -119,7 +119,9 @@ import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import java.text.DateFormat
 import java.util.Date
 
-// "Send from Nextcloud" picker + Settings > Storage > Nextcloud UI — mirrors iOS's
+// Settings > Storage > Nextcloud (the Address Book and Portfolio backup, iOS wallet
+// NextcloudSettingsView), the KaChat-folder file picker the Address Book and Portfolio imports
+// use, and KaChat's "Send from Nextcloud" picker (dormant chat code) - mirrors iOS's
 // NextcloudPickerView.swift / the Nextcloud settings section. Browses the connected account's
 // files over WebDAV; picking a photo/video asks the server for a public /s/TOKEN share link via
 // OCS — the caller sends that link as a normal chat message, which the recipient's link-preview
@@ -708,48 +710,64 @@ fun NextcloudPdfViewerDialog(
     }
 }
 
+/** Reaches the app's Nextcloud services from the Settings > Storage > Nextcloud page. */
+@dagger.hilt.EntryPoint
+@dagger.hilt.InstallIn(dagger.hilt.components.SingletonComponent::class)
+interface NextcloudSettingsDeps {
+    fun nextcloud(): NextcloudService
+    fun nextcloudBackup(): com.kachat.app.services.NextcloudSyncService
+}
+
 /**
  * The sections of the Settings > Storage > Nextcloud page ([NextcloudStorageScreen] supplies the
- * Form page around them) - iOS's NextcloudSettingsView, section for section.
+ * Form page around them) - iOS wallet's NextcloudSettingsView (59593af, 5bab351), section for
+ * section. The wallet backs up the Address Book and the Portfolio, nothing else.
+ *
+ * Testnet: one row saying Nextcloud is off, with why in the footer.
  *
  * Not connected: "Server" (address, username and app password as plain rows in one card, the
- * https warning between them, the app-password footer), an error section when connecting failed,
- * and Connect in a section of its own.
+ * https warning between them, the footer saying what connecting does), an error section when
+ * connecting failed, and Connect in a section of its own.
  *
- * Connected: Connected Account (server, username); Start Folder with the + menu footer; Message
- * Backup (Automatic Sync, the one-service note, Last synced, Backup Folder, Back Up Messages Now,
- * Restore from Backup, the last backup, the outcome of a backup started here) with its footer;
- * Disconnect, confirmed by an alert, with its footer.
+ * Connected: Connected Account (server, username); Backup (Automatic Backup, Back Up Now, Restore
+ * Backup, then each backup file's last upload - or "No backup on this server yet." - and the
+ * outcome of a backup or restore started here) with the footer naming both files; Disconnect,
+ * confirmed by an alert, with its footer.
  */
 @Composable
-fun NextcloudSettingsSection(chatViewModel: ChatViewModel) {
+fun NextcloudSettingsSection() {
     val context = LocalContext.current
     val colors = LocalAppColors.current
-    val service = chatViewModel.nextcloud
+    val deps = remember {
+        dagger.hilt.android.EntryPointAccessors.fromApplication(context.applicationContext, NextcloudSettingsDeps::class.java)
+    }
+    val service = remember { deps.nextcloud() }
+    val backup = remember { deps.nextcloudBackup() }
     val account by service.account.collectAsState()
     val autoBackupEnabled by service.autoBackupEnabled.collectAsState()
-    val lastAutoSyncMs by chatViewModel.nextcloudLastAutoSyncMs.collectAsState()
-    val connectState by chatViewModel.nextcloudConnectState.collectAsState()
-    val backupState by chatViewModel.nextcloudBackupState.collectAsState()
-    val restorePhase by chatViewModel.restoreCoordinator.phase.collectAsState()
-    val backupInfo by chatViewModel.nextcloudBackupInfo.collectAsState()
+    val scope = rememberCoroutineScope()
     val is24Hour = is24HourClock()
 
-    var showStartFolderPicker by remember { mutableStateOf(false) }
-    var showBackupFolderPicker by remember { mutableStateOf(false) }
+    // iOS keeps all of this in the view's own @State: an outcome shows only for what was started
+    // on this visit. The work itself runs in NextcloudSyncService's scope, so leaving the page
+    // never cuts a backup or restore off half way.
+    var isConnecting by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var backupInfo by remember { mutableStateOf(NextcloudService.BackupInfo()) }
+    var isBackingUp by remember { mutableStateOf(false) }
+    var isRestoring by remember { mutableStateOf(false) }
+    var backupStatusMessage by remember { mutableStateOf<String?>(null) }
+    var backupErrorMessage by remember { mutableStateOf<String?>(null) }
     var showRestoreConfirm by remember { mutableStateOf(false) }
     var showDisconnectConfirm by remember { mutableStateOf(false) }
-    // iOS keeps a backup's outcome ("Backup uploaded." / the error) in the view's own state, so it
-    // shows only for a backup started on this visit; the view model's state outlives the page.
-    var backupStartedHere by remember { mutableStateOf(false) }
 
-    LaunchedEffect(account) {
-        if (account != null) chatViewModel.refreshNextcloudBackupInfo()
+    LaunchedEffect(account?.server) {
+        if (account != null) backupInfo = service.fetchWalletBackupInfo()
     }
 
     // Testnet: Nextcloud is off until mainnet is back (iOS af8ec68).
     if (service.isOffForTestnet) {
-        SettingsFormSection(title = null, footer = stringResource(R.string.nextcloud_off_on_testnet_footer)) {
+        SettingsFormSection(title = null, footer = stringResource(R.string.ncw_off_on_testnet_footer)) {
             Row(
                 modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).padding(horizontal = 16.dp, vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -767,27 +785,16 @@ fun NextcloudSettingsSection(chatViewModel: ChatViewModel) {
         var server by remember { mutableStateOf("") }
         var username by remember { mutableStateOf("") }
         var appPassword by remember { mutableStateOf("") }
-        // iOS's errorMessage: the https refusal, or why the connection failed (only for an
-        // attempt made on this visit).
-        var httpRefused by remember { mutableStateOf(false) }
-        var attemptedHere by remember { mutableStateOf(false) }
-        val connecting = connectState.status == ChatViewModel.ChatHistoryOpStatus.IN_PROGRESS
-        val canConnect = server.isNotBlank() && username.isNotBlank() && appPassword.isNotBlank() && !connecting
-        // Decision 3A: https only. Bare hostnames are fine (NextcloudService.normalizeServer
-        // defaults them to https, and refuses http:// as a backstop); an explicit http:// is
-        // flagged inline here and refused again by Connect.
+        val canConnect = server.isNotBlank() && username.isNotBlank() && appPassword.isNotBlank() && !isConnecting
+        // https only. Bare hostnames are fine (NextcloudService.normalizeServer defaults them to
+        // https, and refuses http:// as a backstop); an explicit http:// is flagged inline here
+        // and refused again by Connect.
         val serverIsPlainHttp = server.trim().lowercase().startsWith("http://")
         val useHttps = stringResource(R.string.nc_use_https)
-        val errorMessage = when {
-            httpRefused -> useHttps
-            attemptedHere && connectState.status == ChatViewModel.ChatHistoryOpStatus.FAILED ->
-                connectState.message ?: "Could not connect"
-            else -> null
-        }
 
         NcFormSection(
             title = stringResource(R.string.nc_server),
-            footers = listOf(stringResource(R.string.nc_app_password_footer)),
+            footers = listOf(stringResource(R.string.ncw_server_footer)),
         ) {
             NcFormField(
                 value = server,
@@ -814,9 +821,9 @@ fun NextcloudSettingsSection(chatViewModel: ChatViewModel) {
             )
         }
 
-        if (errorMessage != null) {
+        errorMessage?.let { message ->
             SettingsFormSection(title = null) {
-                NcCaptionRow(errorMessage, colors.danger)
+                NcCaptionRow(message, colors.danger)
             }
         }
 
@@ -825,19 +832,31 @@ fun NextcloudSettingsSection(chatViewModel: ChatViewModel) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable(enabled = canConnect) {
+                        // Refuse cleartext servers outright instead of attempting a connection.
                         if (server.trim().lowercase().startsWith("http://")) {
-                            httpRefused = true
-                        } else {
-                            httpRefused = false
-                            attemptedHere = true
-                            chatViewModel.connectNextcloud(server, username, appPassword)
+                            errorMessage = useHttps
+                            return@clickable
+                        }
+                        isConnecting = true
+                        errorMessage = null
+                        scope.launch {
+                            try {
+                                backup.connectAsync(server, username, appPassword).await()
+                                appPassword = ""
+                            } catch (e: kotlinx.coroutines.CancellationException) {
+                                throw e
+                            } catch (e: Exception) {
+                                errorMessage = UserFacingError.message(e, "Could not connect")
+                            } finally {
+                                isConnecting = false
+                            }
                         }
                     }
                     .heightIn(min = 52.dp)
                     .padding(horizontal = 16.dp, vertical = 14.dp),
                 contentAlignment = Alignment.Center
             ) {
-                if (connecting) {
+                if (isConnecting) {
                     com.kachat.app.ui.theme.IosActivityIndicator(modifier = Modifier.size(20.dp))
                 } else {
                     Text(
@@ -850,10 +869,7 @@ fun NextcloudSettingsSection(chatViewModel: ChatViewModel) {
             }
         }
     } else {
-        val backupInFlight = backupState.status == ChatViewModel.ChatHistoryOpStatus.IN_PROGRESS
-        val restoreInFlight = restorePhase is com.kachat.app.services.BackupRestoreCoordinator.Phase.Running
         val host = connected.server.toHttpUrlOrNull()?.host ?: connected.server
-        val allFiles = stringResource(R.string.pnc_all_files)
 
         SettingsFormSection(title = stringResource(R.string.nc_connected_account)) {
             NcValueRow(stringResource(R.string.nc_server), host, truncation = NcTruncation.MIDDLE)
@@ -861,97 +877,72 @@ fun NextcloudSettingsSection(chatViewModel: ChatViewModel) {
             NcValueRow(stringResource(R.string.nc_username), connected.username)
         }
 
-        // The old "Send Media via Nextcloud" switch is gone: Camera, Photo and Voice Message in a
-        // chat's + menu ask on chain or via Nextcloud every time. What that choice means for
-        // privacy still belongs here (iOS 8b13460).
         NcFormSection(
-            title = null,
+            title = stringResource(R.string.ncw_backup),
             footers = listOf(
-                stringResource(R.string.nextcloud_file_folder_footer),
-                stringResource(R.string.nextcloud_media_route_footer, NextcloudService.MEDIA_FOLDER_PATH),
+                stringResource(
+                    R.string.ncw_backup_footer,
+                    NextcloudService.ADDRESS_BOOK_FILE_NAME,
+                    NextcloudService.PORTFOLIO_FILE_NAME,
+                    NextcloudService.BACKUP_FOLDER_NAME,
+                ),
             ),
         ) {
-            NcValueRow(
-                stringResource(R.string.nc_start_folder),
-                connected.startFolder ?: allFiles,
-                truncation = NcTruncation.HEAD,
-                onClick = { showStartFolderPicker = true }
-            )
-        }
-
-        NcFormSection(
-            title = stringResource(R.string.nc_message_backup),
-            footers = listOf(
-                stringResource(R.string.nc_message_backup_footer, NextcloudService.BACKUP_FILE_NAME, NextcloudService.BACKUP_FOLDER_NAME),
-                stringResource(R.string.nextcloud_sync_address_book_portfolios),
-            ),
-        ) {
-            SettingsSwitchItem(stringResource(R.string.nc_automatic_sync), autoBackupEnabled) { enabled ->
-                chatViewModel.setNextcloudAutoSyncEnabled(enabled)
+            SettingsSwitchItem(stringResource(R.string.ncw_automatic_backup), autoBackupEnabled) { enabled ->
+                backup.setAutoBackupEnabled(enabled)
             }
-            SettingsDivider()
-            NcCaptionRow(stringResource(R.string.nc_auto_sync_one_service), colors.textSecondary)
-            lastAutoSyncMs?.let { ms ->
-                SettingsDivider()
-                NcValueRow(
-                    stringResource(R.string.nc_last_synced),
-                    com.kachat.app.util.IosDateStyle.mediumDateShortTime(ms, is24Hour),
-                    caption = true
-                )
-            }
-            SettingsDivider()
-            NcValueRow(
-                stringResource(R.string.nc_backup_folder),
-                connected.backupFolder ?: stringResource(R.string.nc_default_folder, NextcloudService.BACKUP_FOLDER_NAME),
-                truncation = NcTruncation.HEAD,
-                onClick = { showBackupFolderPicker = true }
-            )
             SettingsDivider()
             NcLabelButtonRow(
-                label = stringResource(R.string.nc_back_up_now),
+                label = stringResource(R.string.ncw_back_up_now),
                 icon = Icons.Outlined.UploadFile,
-                enabled = !backupInFlight && !restoreInFlight,
-                busy = backupInFlight,
+                enabled = !isBackingUp && !isRestoring,
+                busy = isBackingUp,
             ) {
-                backupStartedHere = true
-                chatViewModel.nextcloudBackupNow()
+                isBackingUp = true
+                backupStatusMessage = null
+                backupErrorMessage = null
+                scope.launch {
+                    try {
+                        backup.backUpNowAsync().await()
+                        backupInfo = service.fetchWalletBackupInfo()
+                        backupStatusMessage = context.getString(R.string.ncw_backed_up_message)
+                    } catch (e: kotlinx.coroutines.CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        backupErrorMessage = UserFacingError.message(e, "Backup failed")
+                    } finally {
+                        isBackingUp = false
+                    }
+                }
             }
             SettingsDivider(inset = IosRowTextInset)
             NcLabelButtonRow(
-                label = stringResource(R.string.nc_restore_from_backup),
+                label = stringResource(R.string.ncw_restore_backup),
                 icon = Icons.Outlined.FileDownload,
-                enabled = !backupInFlight && !restoreInFlight && backupInfo != null,
-                busy = restoreInFlight,
+                enabled = !isBackingUp && !isRestoring && !backupInfo.isEmpty,
+                busy = isRestoring,
             ) {
-                // Progress and the outcome show in the blocking restore modal
-                // (ChatRestoreProgressOverlay), not as rows here.
                 showRestoreConfirm = true
             }
-            val info = backupInfo
-            val modified = info?.modifiedMs
-            if (info != null && modified != null) {
-                SettingsDivider(inset = IosRowTextInset)
-                val size = info.size?.let { " · " + com.kachat.app.util.IosByteCount.format(context, it) } ?: ""
-                NcValueRow(
-                    stringResource(R.string.nc_last_backup),
-                    com.kachat.app.util.IosDateStyle.mediumDateShortTime(modified, is24Hour) + size,
-                    caption = true
-                )
-            } else if (info == null) {
-                SettingsDivider(inset = IosRowTextInset)
+            SettingsDivider(inset = IosRowTextInset)
+            if (backupInfo.isEmpty) {
                 NcCaptionRow(stringResource(R.string.nc_no_backup_yet), colors.textSecondary)
-            }
-            if (backupStartedHere && backupState.status == ChatViewModel.ChatHistoryOpStatus.SUCCESS) {
+            } else {
+                NcBackupFileRow(stringResource(R.string.ab_address_book), backupInfo.addressBook, is24Hour)
                 SettingsDivider()
-                NcCaptionRow(stringResource(R.string.nc_backup_uploaded), colors.success)
+                NcBackupFileRow(stringResource(R.string.portfolio), backupInfo.portfolio, is24Hour)
             }
-            if (backupStartedHere && backupState.status == ChatViewModel.ChatHistoryOpStatus.FAILED) {
+            backupStatusMessage?.let { message ->
                 SettingsDivider()
-                NcCaptionRow(backupState.message ?: "Backup failed", colors.danger)
+                NcCaptionRow(message, colors.success)
+            }
+            backupErrorMessage?.let { message ->
+                SettingsDivider()
+                NcCaptionRow(message, colors.danger)
             }
         }
 
-        SettingsFormSection(title = null, footer = stringResource(R.string.nc_disconnect_footer)) {
+        SettingsFormSection(title = null, footer = stringResource(R.string.ncw_disconnect_footer)) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -965,42 +956,29 @@ fun NextcloudSettingsSection(chatViewModel: ChatViewModel) {
         }
     }
 
-    if (showStartFolderPicker) {
-        NextcloudFolderSelectDialog(
-            service = service,
-            onDismiss = { showStartFolderPicker = false },
-            onSelect = { path ->
-                service.setStartFolder(path)
-                showStartFolderPicker = false
-            }
-        )
-    }
-    if (showBackupFolderPicker) {
-        NextcloudFolderSelectDialog(
-            service = service,
-            onDismiss = { showBackupFolderPicker = false },
-            onSelect = { path ->
-                // Selecting the root resets back to the default "KaChat" folder.
-                service.setBackupFolder(path)
-                showBackupFolderPicker = false
-                // The backup lives per folder - re-check what exists at the new destination.
-                chatViewModel.refreshNextcloudBackupInfo()
-            }
-        )
-    }
     if (showRestoreConfirm) {
         com.kachat.app.ui.theme.IosAlertDialog(
             onDismissRequest = { showRestoreConfirm = false },
             containerColor = colors.surface,
-            title = { Text(stringResource(R.string.nc_restore_from_backup), color = colors.textPrimary) },
-            text = { Text(stringResource(R.string.nc_restore_message), color = colors.textSecondary) },
+            title = { Text(stringResource(R.string.ncw_restore_backup), color = colors.textPrimary) },
+            text = { Text(stringResource(R.string.ncw_restore_message), color = colors.textSecondary) },
             confirmButton = {
                 TextButton(onClick = {
                     showRestoreConfirm = false
-                    backupStartedHere = false
-                    // Runs behind the blocking progress modal; the coordinator owns the work, so
-                    // leaving this page cannot interrupt the restore.
-                    chatViewModel.restoreFromNextcloud()
+                    isRestoring = true
+                    backupStatusMessage = null
+                    backupErrorMessage = null
+                    scope.launch {
+                        try {
+                            backupStatusMessage = restoreMessage(context, backup.restoreAsync().await())
+                        } catch (e: kotlinx.coroutines.CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            backupErrorMessage = UserFacingError.message(e, "Restore failed")
+                        } finally {
+                            isRestoring = false
+                        }
+                    }
                 }) {
                     Text(stringResource(R.string.nc_restore), color = KaspaTeal, fontWeight = FontWeight.Bold)
                 }
@@ -1021,7 +999,10 @@ fun NextcloudSettingsSection(chatViewModel: ChatViewModel) {
             confirmButton = {
                 TextButton(onClick = {
                     showDisconnectConfirm = false
-                    chatViewModel.disconnectNextcloud()
+                    service.disconnect()
+                    backupInfo = NextcloudService.BackupInfo()
+                    backupStatusMessage = null
+                    backupErrorMessage = null
                 }) {
                     Text(stringResource(R.string.nc_disconnect), color = colors.danger, fontWeight = FontWeight.Bold)
                 }
@@ -1033,6 +1014,32 @@ fun NextcloudSettingsSection(chatViewModel: ChatViewModel) {
             }
         )
     }
+}
+
+/** What a restore did, in one line (iOS `restoreMessage`). */
+private fun restoreMessage(context: android.content.Context, result: com.kachat.app.services.NextcloudSyncService.RestoreResult): String {
+    if (!result.changedAnything) return context.getString(R.string.ncw_already_up_to_date)
+    val parts = mutableListOf<String>()
+    if (result.addresses > 0) {
+        parts += context.getString(R.string.ncw_restored_address_book_counts, result.addressesAdded, result.addressesUpdated)
+    }
+    if (result.portfolioChanged) parts += context.getString(R.string.ncw_portfolio_restored)
+    return parts.joinToString(" ")
+}
+
+/** One backup file's last upload, or that it isn't on the server yet (iOS `backupFileRow`):
+ *  the date and size in `.caption`, secondary. */
+@Composable
+private fun NcBackupFileRow(title: String, file: NextcloudFile?, is24Hour: Boolean) {
+    val context = LocalContext.current
+    val modified = file?.modifiedMs
+    val value = when {
+        file != null && modified != null -> com.kachat.app.util.IosDateStyle.mediumDateShortTime(modified, is24Hour) +
+            (file.size?.let { " · " + com.kachat.app.util.IosByteCount.format(context, it) } ?: "")
+        file != null -> stringResource(R.string.ncw_backed_up)
+        else -> stringResource(R.string.ncw_not_backed_up_yet)
+    }
+    NcValueRow(title, value, caption = true)
 }
 
 /** iOS's tertiaryLabel, translucent as iOS draws it: a Form field's placeholder and a disabled

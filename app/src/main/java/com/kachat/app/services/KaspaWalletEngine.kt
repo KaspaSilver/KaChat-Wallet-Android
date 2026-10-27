@@ -16,6 +16,39 @@ import kotlin.math.ceil
 internal const val COIN_FETCH_NOT_CONNECTED = "Not connected to a Kaspa node yet. Try again in a moment."
 
 /**
+ * Testing a failed send (iOS wallet 59593af `SendFailureSimulation`, whose switch is the
+ * `KACHAT_FAIL_SEND=1` launch environment variable). Debug builds only: with the system property
+ * `debug.kachat.fail_send` set to 1 -
+ *
+ *     adb shell setprop debug.kachat.fail_send 1     (0, or a reboot, turns it off)
+ *
+ * - or [FORCE] set to true here, every plain Kaspa send ([KaspaWalletEngine.sendKaspa] with an
+ * amount and no payload: Send Kaspa, an address's Send, Compound UTXOs) fails after 1.5 s as if
+ * the phone were offline, so the swipe-up screen's "Failed" / Try Again can be seen without
+ * cutting the network. Nothing is built or broadcast. Release builds never look.
+ */
+internal object SendFailureSimulation {
+    /** Compile-time switch for testing without adb; keep false in commits. */
+    private const val FORCE = false
+    private const val PROPERTY = "debug.kachat.fail_send"
+
+    /** The simulated failure after the delay, or null (always in release builds). */
+    suspend fun failureIfEnabled(): Throwable? {
+        if (!com.kachat.app.BuildConfig.DEBUG) return null
+        if (!FORCE && kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { readProperty() } != "1") return null
+        kotlinx.coroutines.delay(1_500)
+        // iOS URLError(.notConnectedToInternet), as UserFacingError words it there
+        return IllegalStateException("No internet connection. Check your connection and try again.")
+    }
+
+    /** `getprop`, the public way an app reads a system property. */
+    private fun readProperty(): String? = runCatching {
+        val process = ProcessBuilder("getprop", PROPERTY).redirectErrorStream(true).start()
+        process.inputStream.bufferedReader().use { it.readText() }.trim().also { process.waitFor() }
+    }.getOrNull()
+}
+
+/**
  * KaspaWalletEngine — handles low-level transaction construction and broadcasting.
  * Follows the required send flow: Fetch UTXOs -> Build -> Sign -> Broadcast.
  */
@@ -172,6 +205,12 @@ class KaspaWalletEngine @Inject constructor(
         senderRedeemScript: ByteArray? = null
     ): Result<String> = sendMutex.withLock {
         try {
+            // Debug builds: a plain Kaspa send (Send Kaspa, Compound UTXOs) can be made to fail on
+            // purpose, before anything is built or broadcast (iOS wallet 59593af) - see
+            // [SendFailureSimulation].
+            if (payloadBytes == null && amountSompi > 0) {
+                SendFailureSimulation.failureIfEnabled()?.let { return Result.failure(it) }
+            }
             // A quantum-safe input carries its redeem script after the signature, so every input
             // is priced at that bigger size.
             val signatureScriptSize = senderRedeemScript

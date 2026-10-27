@@ -60,6 +60,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -420,8 +424,8 @@ private fun android.view.View.successHaptic() = com.kachat.app.util.Haptics.perf
 
 /** The device lock before any `.kachat` transaction is signed - the gate the seed phrase and
  *  private keys use (chat payments have none to copy), iOS `DeviceAuth.authenticate`. */
-private fun Context.kachatAuthorize(onSuccess: () -> Unit) {
-    authenticateWithDeviceCredential(title = getString(R.string.kn_auth_reason), onSuccess = onSuccess)
+private fun Context.kachatAuthorize(onFailure: () -> Unit = {}, onSuccess: () -> Unit) {
+    authenticateWithDeviceCredential(title = getString(R.string.kn_auth_reason), onSuccess = onSuccess, onFailure = onFailure)
 }
 
 // MARK: - The view model
@@ -1277,7 +1281,6 @@ fun KachatTxDoneSheet(done: KachatTxDone, onDismiss: () -> Unit, vm: KachatLiveV
     val explorerUrl = explorer.txUrl(done.txId)
     val stages by vm.actions.txStages.collectAsState()
     val stage = stages[done.txId] ?: if (done.accepted) KachatNamesActions.TxStage.SHOWN else KachatNamesActions.TxStage.SENT
-    val inBlock = stage == KachatNamesActions.TxStage.ACCEPTED || stage == KachatNamesActions.TxStage.SHOWN
     var browserUrl by remember { mutableStateOf<String?>(null) }
 
     // a transaction this sheet wasn't handed by `perform` (a profile save): follow it here
@@ -1347,14 +1350,7 @@ fun KachatTxDoneSheet(done: KachatTxDone, onDismiss: () -> Unit, vm: KachatLiveV
                             }
                         }
 
-                        Column(
-                            Modifier.padding(top = 18.dp, start = 20.dp, end = 20.dp).fillMaxWidth().sendKaspaGlass(16.dp).padding(14.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            KachatTxStep(stringResource(R.string.kn_step_sent), done = true)
-                            KachatTxStep(stringResource(R.string.kn_step_in_block), done = inBlock, active = !inBlock && stage != KachatNamesActions.TxStage.DROPPED)
-                            KachatTxStep(stringResource(R.string.kn_step_updated), done = stage == KachatNamesActions.TxStage.SHOWN, active = stage == KachatNamesActions.TxStage.ACCEPTED)
-                        }
+                        KachatTxStageSteps(done.txId, accepted = done.accepted, vm = vm, modifier = Modifier.padding(top = 18.dp, start = 20.dp, end = 20.dp))
 
                         Row(
                             Modifier.padding(top = 12.dp, start = 20.dp, end = 20.dp).fillMaxWidth().sendKaspaGlass(14.dp)
@@ -1399,6 +1395,27 @@ fun KachatTxDoneSheet(done: KachatTxDone, onDismiss: () -> Unit, vm: KachatLiveV
         ) {
             InAppBrowserScreen(url = url, title = runCatching { java.net.URI(url).host }.getOrNull() ?: "", onClose = { browserUrl = null })
         }
+    }
+}
+
+/**
+ * A name transaction's progress, followed on a node: sent, in a block, showing in KaPay (iOS
+ * 5bab351 `KachatTxStageSteps`). In the receipt half sheet ([KachatTxDoneSheet]) and on the
+ * swipe-up screen after a purchase ([KachatTxSheet] with a [KachatSwipeUp]). [accepted]: already
+ * known to be in a block.
+ */
+@Composable
+fun KachatTxStageSteps(txId: String, vm: KachatLiveViewModel, modifier: Modifier = Modifier, accepted: Boolean = false) {
+    val stages by vm.actions.txStages.collectAsState()
+    val stage = stages[txId] ?: if (accepted) KachatNamesActions.TxStage.SHOWN else KachatNamesActions.TxStage.SENT
+    val inBlock = stage == KachatNamesActions.TxStage.ACCEPTED || stage == KachatNamesActions.TxStage.SHOWN
+    Column(
+        modifier.fillMaxWidth().sendKaspaGlass(16.dp).padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        KachatTxStep(stringResource(R.string.kn_step_sent), done = true)
+        KachatTxStep(stringResource(R.string.kn_step_in_block), done = inBlock, active = !inBlock && stage != KachatNamesActions.TxStage.DROPPED)
+        KachatTxStep(stringResource(R.string.kn_step_updated), done = stage == KachatNamesActions.TxStage.SHOWN, active = stage == KachatNamesActions.TxStage.ACCEPTED)
     }
 }
 
@@ -1761,6 +1778,35 @@ fun KachatRegistrationCard(registration: PendingRegistration, vm: KachatLiveView
 }
 
 // MARK: - Hub: pages
+
+/**
+ * Swipe left / right anywhere on the .kachat marketplace to the next / previous of its tabs
+ * (Marketplace, Available, Expired, Activity) - iOS wallet 040f91a `KachatMarketView.pageSwipe()`,
+ * as on the Chess screen. Read alongside the screen's own gestures, never instead of them, so
+ * the vertical scroll, the search field and the tiles keep working: a lift-off at least 50 dp
+ * sideways, and 1.5 times as far sideways as up or down, moves one tab. Put it on the container
+ * that holds the scrolling column (not on the column itself), so the finger is measured against
+ * a screen that stays put while the column scrolls.
+ */
+fun Modifier.kachatPageSwipe(pageCount: Int, page: () -> Int, onPage: (Int) -> Unit): Modifier =
+    pointerInput(pageCount) {
+        val switchDistance = 50.dp.toPx()
+        awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+            var last = down.position
+            while (true) {
+                val event = awaitPointerEvent(PointerEventPass.Initial)
+                val change = event.changes.firstOrNull { it.id == down.id } ?: return@awaitEachGesture
+                last = change.position
+                if (!change.pressed) break
+            }
+            val dx = last.x - down.position.x
+            val dy = last.y - down.position.y
+            if (kotlin.math.abs(dx) <= switchDistance || kotlin.math.abs(dx) <= kotlin.math.abs(dy) * 1.5f) return@awaitEachGesture
+            val index = page()
+            if (dx < 0 && index + 1 < pageCount) onPage(index + 1) else if (dx > 0 && index > 0) onPage(index - 1)
+        }
+    }
 
 /**
  * Marketplace: names for sale (iOS 0765ce0 `KachatLiveMarketPage`). [vm] is null where the registry
@@ -2410,7 +2456,10 @@ fun KachatBusyNetworkNotice() {
  * notice when the network is busy), the cost, and slide to confirm - the destructive ones show
  * their warning in red above it; the slide itself is the confirmation (iOS e67074c) - then the
  * device lock, then the transaction. Ends on a receipt that follows it into a block
- * ([KachatTxDoneSheet]).
+ * ([KachatTxDoneSheet]). With [swipeUp] (buying a name, iOS 5bab351) it confirms with a swipe up,
+ * like Send Kaspa, instead of the slide: the screen goes up into the BlockDAG
+ * ([SwipeUpToSendScreen]), then shows the transaction and its progress ([KachatTxStageSteps]) in
+ * place of the receipt, or Failed with Try Again.
  */
 @Composable
 fun KachatTxSheet(
@@ -2431,6 +2480,8 @@ fun KachatTxSheet(
      *  it's sent. Null: the full-screen form with Cancel. */
     onBack: (() -> Unit)? = null,
     backTitle: String = "",
+    /** Confirm with a swipe up instead of the slide (iOS 5bab351 `swipeUp`); full-screen forms only. */
+    swipeUp: KachatSwipeUp? = null,
     inputs: @Composable ColumnScope.() -> Unit = {},
 ) {
     val colors = LocalAppColors.current
@@ -2545,9 +2596,12 @@ fun KachatTxSheet(
                     exactFeerate = planFeerate, maxNetworkFee = plan?.networkFee
                 )
                 txId = id
-                view.successHaptic()
                 onDone(id)
-                done = KachatTxDone(id, doneTitle)
+                // the swipe-up screen shows it (and gives the haptic) itself
+                if (swipeUp == null) {
+                    view.successHaptic()
+                    done = KachatTxDone(id, doneTitle)
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -2559,7 +2613,20 @@ fun KachatTxSheet(
         }
     }
 
-    fun authorize() = context.kachatAuthorize { send() }
+    fun authorize() {
+        // swipe-up: busy at once, since its screen is already sending through the device check,
+        // and a refused check is its "Failed" (iOS 5bab351)
+        if (swipeUp != null) {
+            sending = true
+            sendError = null
+        }
+        context.kachatAuthorize(onFailure = {
+            if (swipeUp != null) {
+                sendError = context.getString(R.string.kn_not_confirmed_nothing_sent)
+                sending = false
+            }
+        }) { send() }
+    }
 
     val form: @Composable ColumnScope.() -> Unit = {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -2644,11 +2711,14 @@ fun KachatTxSheet(
                         Icons.Default.Layers, contentDescription = null,
                         tint = colors.textSecondary, modifier = Modifier.size(15.dp).padding(top = 1.dp)
                     )
-                    Text(stringResource(R.string.kn_combines_coins_on_slide), color = colors.textSecondary, fontSize = 13.sp)
+                    Text(
+                        stringResource(if (swipeUp == null) R.string.kn_combines_coins_on_slide else R.string.kn_combines_coins_on_swipe),
+                        color = colors.textSecondary, fontSize = 13.sp
+                    )
                 }
             }
 
-            if (txId == null) {
+            if (txId == null && swipeUp == null) {
                 // The slide is the confirmation: no second prompt, even for the destructive ones
                 // (their warning is the red card above).
                 Box(Modifier.padding(top = 4.dp)) {
@@ -2663,7 +2733,30 @@ fun KachatTxSheet(
             sendError?.let { Text(it, color = colors.danger, fontSize = 13.sp, modifier = Modifier.fillMaxWidth()) }
         }
     }
-    if (onBack != null) {
+    if (swipeUp != null) {
+        val explorer by vm.settings.kaspaExplorer.collectAsState(initial = com.kachat.app.models.KaspaExplorer.default)
+        // What leaves the wallet: everything the transaction spends from it less what comes back.
+        val payer = payerInfo ?: vm.myKey?.let { me -> vm.actions.myAddress?.let { it to me } }
+        val spentSompi = plan?.let { p -> payer?.let { maxOf(0L, -KachatLive.balanceChange(p, it.second)) } }
+        SwipeUpToSendScreen(
+            screenTitle = swipeUp.screenTitle,
+            onCancel = onClose,
+            barTitle = swipeUp.bar,
+            isBusy = sending,
+            isEnabled = plan != null && !building && txId == null,
+            amountSompi = spentSompi,
+            recipient = swipeUp.recipient,
+            sent = txId?.let { SentTransaction(it, spentSompi, swipeUp.recipient) },
+            failureMessage = sendError,
+            labels = swipeUp.labels,
+            outcome = txId?.let { id -> @Composable { KachatTxStageSteps(id, vm) } },
+            explorerUrl = { explorer.txUrl(it) },
+            onDone = onClose,
+            onSwipe = { authorize() },
+        ) {
+            Column(Modifier.padding(16.dp).padding(bottom = 24.dp), content = form)
+        }
+    } else if (onBack != null) {
         KachatSheetStep(title, backTitle = backTitle, onBack = onBack, onDone = onClose, finished = txId != null, content = form)
     } else {
         KachatLiveForm(title = title, onClose = onClose, finished = txId != null, content = form)
@@ -2673,24 +2766,35 @@ fun KachatTxSheet(
     done?.let { KachatTxDoneSheet(it, onDismiss = { done = null; onClose() }, vm = vm) }
 }
 
+/**
+ * How a [KachatTxSheet] confirms with a swipe up (iOS 5bab351 `KachatSwipeUp`): the screen's
+ * title, the bar's words, what the sending screen says, and what it is for ("name.kachat").
+ */
+data class KachatSwipeUp(
+    val screenTitle: String,
+    val bar: String,
+    val labels: SwipeUpLabels,
+    val recipient: String? = null,
+)
+
 // MARK: - Claim
 
 /**
  * Claim a free name, in a sheet (iOS `KachatClaimSheet`): 1 or 2 years; price x years to miners,
  * the bond and the registry deposit (both back on release), the commit (back at registration),
- * network fees, total and what the chatting address has. Claim starts the registration (commit,
- * then the driver registers), and the sheet then turns into that registration's progress half
- * sheet (iOS 61fb0fc) - from the marketplace and from Your Domains alike. Swiping it away leaves
- * the claim running: the .kachat screen's claims button lists it (iOS b219bb0).
+ * network fees, total and what the chatting address has. Swipe up to claim, like Send Kaspa (iOS
+ * 5bab351, [SwipeUpToSendScreen]): the screen goes up into the BlockDAG while the commit goes out,
+ * then shows "Claim Started" with the registration's progress ([KachatClaimOutcome]), or Failed
+ * with Try Again - from the marketplace and from Your Domains alike. Closing it leaves the claim
+ * running: the .kachat screen's claims button lists it (iOS b219bb0).
  *
- * Opens at full height (iOS's large detent) and can be pulled to half (medium); the progress opens
- * at half.
+ * Opens at full height (iOS's large detent) and can be pulled to half (medium). While the swipe's
+ * screen is up it can't be swiped away, only closed with Done (iOS `interactiveDismissDisabled`).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun KachatClaimSheet(target: KachatClaimTarget, onClose: () -> Unit, onStarted: () -> Unit = {}, vm: KachatLiveViewModel = hiltViewModel()) {
     val context = LocalContext.current
-    val view = LocalView.current
     val scope = rememberCoroutineScope()
     val manifest by vm.service.manifest.collectAsState()
     val pending by vm.actions.pending.collectAsState()
@@ -2711,7 +2815,9 @@ fun KachatClaimSheet(target: KachatClaimTarget, onClose: () -> Unit, onStarted: 
     val maxYears = manifest?.params?.maxYears ?: 2L
     val registration = progressId?.let { id -> pending.firstOrNull { it.id == id } }
     val close by rememberUpdatedState(onClose)
-    val sheetState = rememberModalBottomSheetState()
+    // The swipe-up screen is up (sending, or showing how it went): not swiped away meanwhile.
+    var swipeSending by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(confirmValueChange = { it != SheetValue.Hidden || !swipeSending })
 
     fun dismiss() {
         scope.launch { sheetState.hide() }.invokeOnCompletion { close() }
@@ -2769,16 +2875,22 @@ fun KachatClaimSheet(target: KachatClaimTarget, onClose: () -> Unit, onStarted: 
     fun start() {
         // the price shown is the most the registration will ever pay (iOS 4f5d95e)
         val q = quote
-        if (q == null || q.years != years) return
+        if (q == null || q.years != years) {
+            // the swipe's screen is waiting on it: say why nothing went out (iOS 5bab351)
+            startError = context.getString(R.string.kn_price_changed_swipe_again)
+            starting = false
+            return
+        }
         starting = true
         startError = null
         vm.launch {
             try {
                 vm.actions.startRegistration(target.name, years, maxPrice = q.price, feeTier = feeTier)
-                view.successHaptic()
+                // the swipe-up screen gives the haptic and shows the progress (iOS 5bab351)
                 onStarted()
                 progressId = vm.actions.pending.value.lastOrNull { it.name == target.name && it.isOpen }?.id
-                if (progressId == null) dismiss() else scope.launch { sheetState.partialExpand() }
+                // no registration to follow (it finished at once): nothing left to show
+                if (progressId == null) dismiss()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -2788,6 +2900,17 @@ fun KachatClaimSheet(target: KachatClaimTarget, onClose: () -> Unit, onStarted: 
         }
     }
 
+    /** The swipe let go: busy at once (the swipe screen is already sending), then the device
+     *  check, then the commit (iOS 5bab351 `authorizeAndStart`). */
+    fun authorizeAndStart() {
+        starting = true
+        startError = null
+        context.kachatAuthorize(onFailure = {
+            startError = context.getString(R.string.kn_not_confirmed_nothing_sent)
+            starting = false
+        }) { start() }
+    }
+
     com.kachat.app.ui.theme.IosSheetColors(grouped = true) {
         val colors = LocalAppColors.current
         ModalBottomSheet(
@@ -2795,9 +2918,9 @@ fun KachatClaimSheet(target: KachatClaimTarget, onClose: () -> Unit, onStarted: 
             shape = com.kachat.app.ui.theme.IosSheetShape,
             tonalElevation = com.kachat.app.ui.theme.IosSheetTonalElevation,
             windowInsets = androidx.compose.foundation.layout.WindowInsets.statusBars,
-            // A swipe, a tap outside or Back closes it - the form, or the progress (the claim keeps
-            // running; iOS b219bb0).
-            onDismissRequest = { close() },
+            // A swipe, a tap outside or Back closes the form; once the swipe's screen is up, its
+            // Done does (the claim keeps running; iOS b219bb0, 5bab351).
+            onDismissRequest = { if (!swipeSending) close() },
             sheetState = sheetState,
             containerColor = colors.background,
             dragHandle = { KachatSheetGrabber() },
@@ -2805,18 +2928,28 @@ fun KachatClaimSheet(target: KachatClaimTarget, onClose: () -> Unit, onStarted: 
             // The sheet runs down behind the navigation bar, as iOS's does behind the home indicator;
             // its content stays above it.
             Column(Modifier.navigationBarsPadding()) {
-                val shown = registration
-                if (progressId != null && shown != null) {
-                    KachatRegistrationProgressContent(shown, vm)
-                } else {
-                    Column(Modifier.fillMaxSize()) {
-                        // The inline navigation bar: Cancel (left) and "Claim Name", Cancel on glass.
-                        SheetNavBar(
-                            title = stringResource(R.string.kn_claim_name_title),
-                            leading = { SheetBarButton(stringResource(R.string.cancel), onClick = { dismiss() }) },
-                        )
+                // Its own inline bar (Cancel, "Claim Name"), which goes up with the swipe.
+                SwipeUpToSendScreen(
+                    screenTitle = stringResource(R.string.kn_claim_name_title),
+                    onCancel = { dismiss() },
+                    barTitle = stringResource(R.string.swipe_up_to_claim),
+                    isBusy = starting,
+                    isEnabled = quote?.affordable == true,
+                    amountSompi = quote?.total,
+                    recipient = "${target.name}.kachat",
+                    sent = null,
+                    failureMessage = startError,
+                    labels = SwipeUpLabels.Claim,
+                    succeeded = progressId != null,
+                    outcome = progressId?.let { id -> @Composable { KachatClaimOutcome(id, vm) } },
+                    onDone = { dismiss() },
+                    onSwipe = { authorizeAndStart() },
+                    // the sheet already sits clear of the status and navigation bars
+                    insets = androidx.compose.foundation.layout.WindowInsets(0),
+                    onSendingChange = { swipeSending = it },
+                ) {
                         Column(
-                            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).padding(bottom = 40.dp),
+                            Modifier.padding(16.dp).padding(bottom = 24.dp),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
                             KachatCard {
@@ -2942,19 +3075,30 @@ fun KachatClaimSheet(target: KachatClaimTarget, onClose: () -> Unit, onStarted: 
                                 Text(stringResource(R.string.kn_claim_footer), color = colors.textSecondary, fontSize = 13.sp, modifier = Modifier.fillMaxWidth())
                             }
 
-                            Box(Modifier.padding(top = 4.dp)) {
-                                SendActionButton(
-                                    title = stringResource(R.string.kn_claim_name_button, target.name),
-                                    isBusy = starting,
-                                    isEnabled = quote?.affordable == true,
-                                    onSend = { context.kachatAuthorize { start() } },
-                                )
-                            }
                             startError?.let { Text(it, color = colors.danger, fontSize = 13.sp, modifier = Modifier.fillMaxWidth()) }
                         }
-                    }
                 }
             }
+        }
+    }
+}
+
+/**
+ * A started claim's progress, under "Claim Started" on the swipe-up screen (iOS 5bab351
+ * `KachatClaimOutcome`): the registration's own card, and why the app should stay open until the
+ * name registers.
+ */
+@Composable
+private fun KachatClaimOutcome(registrationId: String, vm: KachatLiveViewModel) {
+    val pending by vm.actions.pending.collectAsState()
+    val registration = pending.firstOrNull { it.id == registrationId } ?: return
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        KachatRegistrationCard(registration, vm)
+        if (registration.needsDriving) {
+            Text(
+                stringResource(R.string.kn_keep_open_claiming),
+                color = LocalAppColors.current.textSecondary, fontSize = 13.sp, textAlign = TextAlign.Center
+            )
         }
     }
 }
@@ -3552,7 +3696,15 @@ fun KachatLiveBuySheet(info: NameInfo, onClose: () -> Unit, vm: KachatLiveViewMo
             KachatTxRow(stringResource(R.string.kn_expires), KachatLive.day(info.expiresAt)),
         ),
         operation = KachatNamesActions.Operation.Buy(info), operationKey = "buy-${KachatNames.hex(info.outpoint.txid)}",
-        onClose = onClose, vm = vm
+        onClose = onClose, vm = vm,
+        // swipe up to buy, like Send Kaspa: the BlockDAG, then "Name Bought" with the
+        // transaction's progress, or Failed with Try Again (iOS 5bab351)
+        swipeUp = KachatSwipeUp(
+            screenTitle = stringResource(R.string.kl_buy_name),
+            bar = stringResource(R.string.swipe_up_to_buy),
+            labels = SwipeUpLabels.Buy,
+            recipient = info.display,
+        ),
     )
 }
 

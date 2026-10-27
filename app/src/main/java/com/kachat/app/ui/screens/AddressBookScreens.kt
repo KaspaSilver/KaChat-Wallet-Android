@@ -159,8 +159,8 @@ fun AddressBookScreen(
         contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0),
         topBar = {
             // iOS's bar, with or without entries: the connection dot and the balance centred, and
-            // "Addresses" large under it, as the other tabs show their titles (iOS wallet 1314382).
-            MainPageHeader(title = stringResource(R.string.addresses), onBack = onBack)
+            // "Address Book" large under it - its name again since it left the dock (iOS wallet 040f91a).
+            MainPageHeader(title = stringResource(R.string.ab_address_book), onBack = onBack)
         },
         // Add and Import / Export live behind one floating glass + (like Chats'), not in the bar
         // (iOS wallet 06b5e8a).
@@ -1098,7 +1098,7 @@ fun AddressBookPickerSheet(
         BackHandler(onBack = close)
         Column(Modifier.fillMaxSize()) {
             SheetNavBar(
-                title = stringResource(R.string.addresses),
+                title = stringResource(R.string.ab_address_book),
                 leading = { SheetBarButton(stringResource(R.string.cancel), onClick = close) },
                 trailing = {
                     if (isMultiple) {

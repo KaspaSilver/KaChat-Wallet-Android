@@ -16,14 +16,15 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Where a wallet's portfolios are saved, and what Nextcloud Automatic Sync needs from them
+ * Where a wallet's portfolios are saved, and what the Nextcloud backup needs from them
  * (iOS `PortfolioLedgerStore`, 11f1548). Every portfolio and ledger-row write goes through here:
  *
  * - a portfolio or row that is new, or changed in anything but its stamp, is stamped
  *   `updatedAtMillis` now - centrally, at save, as iOS's `PortfolioLedgerStore.stamped`;
  * - a deleted portfolio or row is recorded as a tombstone (per wallet), so a merge or restore
  *   never brings it back; a deleted portfolio takes its rows and fees with it;
- * - any change marks the backup dirty like a message does ([NextcloudSyncService.noteMessageActivity]).
+ * - any change marks the backup to upload ([NextcloudSyncService.noteBackupDataChanged], iOS
+ *   wallet 59593af `NextcloudService.noteBackupDataChanged`).
  *
  * The seed "Portfolio 1" and a restore's merged result are written as they are, unstamped and
  * without marking anything ([insertSeed], [importFromArchive]), as on iOS.
@@ -35,7 +36,7 @@ import javax.inject.Singleton
 class PortfolioLedgerStore @Inject constructor(
     @ApplicationContext context: Context,
     private val database: KaChatDatabase,
-    // Lazy: NextcloudSyncService reaches this class back through the export service.
+    // Lazy: NextcloudSyncService reads and merges the portfolios through this class.
     private val nextcloudSyncService: dagger.Lazy<NextcloudSyncService>,
 ) {
     private val gson = Gson()
@@ -189,7 +190,7 @@ class PortfolioLedgerStore @Inject constructor(
     }
 
     // -------------------------------------------------------------------------
-    // Nextcloud sync
+    // Nextcloud backup (KaPay Portfolio.json)
     // -------------------------------------------------------------------------
 
     /**
@@ -271,9 +272,9 @@ class PortfolioLedgerStore @Inject constructor(
         return true
     }
 
-    /** A portfolio edit: the backup owes an upload, like a message. */
+    /** A portfolio edit: with Automatic Backup on, the backup uploads a few seconds later. */
     private fun noteChanged() {
-        runCatching { nextcloudSyncService.get().noteMessageActivity() }
+        runCatching { nextcloudSyncService.get().noteBackupDataChanged() }
     }
 
     companion object {

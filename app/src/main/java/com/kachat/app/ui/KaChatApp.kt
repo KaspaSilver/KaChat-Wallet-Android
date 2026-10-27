@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Book
 import androidx.compose.material.icons.outlined.Memory
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.BubbleChart
 import androidx.compose.material.icons.filled.AlternateEmail
@@ -97,7 +98,8 @@ sealed class Screen(val route: String, val label: String, val icon: ImageVector)
      */
     val usesKaspaLogo: Boolean get() = this is KaspaHub
 
-    object Settings    : Screen("settings",     "Settings",     Icons.Default.Settings)
+    // A dock tab in KaPay, Settings last (iOS wallet 040f91a); its gear matches KaChat's (59593af).
+    object Settings    : Screen("settings",     "Settings",     Icons.Outlined.Settings)
     object Chats       : Screen("chats",        "Chats",        Icons.Default.Forum)
     object Portfolio   : Screen("portfolio",    "Portfolio",    Icons.Default.PieChart)
     // KaChat Wallet calls it "Wallet" in the dock, with a wallet symbol, like KaPosts' wallet tab
@@ -130,8 +132,8 @@ sealed class Screen(val route: String, val label: String, val icon: ImageVector)
     // Address Book (iOS AppTab.addressBook, 00767a4) - Kaspa Hub > Address Book: saved Kaspa
     // addresses with names, per wallet, kept in KaChat (it replaced syncing with the phone's
     // Contacts). Your own saved addresses, so Simple Mode shows it.
-    // KaChat Wallet calls it "Addresses" (owner's call, iOS 9cb6e40).
-    object AddressBook : Screen("address_book", "Addresses",    Icons.Outlined.Book)
+    // "Address Book" again since it left the dock for the Wallet tab (iOS wallet 040f91a).
+    object AddressBook : Screen("address_book", "Address Book", Icons.Outlined.Book)
     // KaChat Bots (5.2.1, iOS AppTab.kachatBots, 82ab31d) - Kaspa Hub > KaChat Bots: Block Reward
     // Tracker, Wallet Tracker, Price Bot and Kaspa Answers; tapping one opens a chat with it.
     // Ordinary chats with the bots, so Simple Mode shows it.
@@ -155,13 +157,15 @@ private fun dockOwnerRoute(route: String?): String? = when (route) {
     "broadcast_channel/{channelName}" -> Screen.Broadcasts.route
     "chat/{contactId}?paymentMode={paymentMode}", "group_chat/{groupId}" -> Screen.Chats.route
     "cold_storage_detail/{accountId}", "cold_storage_tx_history/{address}" -> Screen.ColdStorage.route
+    "settings_section/{sectionKey}" -> Screen.Settings.route
+    Screen.AddressBook.route -> Screen.Profile.route
     "help", "manage_addresses", "identity_address_detail", "spending_address_detail/{index}",
     "kns_domains" -> Screen.Profile.route
     "portfolio_price_chart", "portfolio_value_chart", "portfolio_hashrate_chart" -> Screen.Portfolio.route
     "broadcast_room_info/{channelName}" -> Screen.Broadcasts.route
     Screen.Chess.route, Screen.Broadcasts.route, Screen.KaPosts.route, Screen.Portfolio.route,
     Screen.Swap.route, Screen.ColdStorage.route, Screen.KaspaWebsites.route,
-    Screen.KachatNames.route, Screen.KachatStats.route, Screen.AddressBook.route,
+    Screen.KachatNames.route, Screen.KachatStats.route,
     Screen.KachatBots.route -> route
     else -> null
 }
@@ -196,17 +200,17 @@ val Screen.hubTitle: String
 val PINNED_DOCK_ROUTES = listOf(Screen.Profile.route)
 
 /**
- * KaChat Wallet's dock, fixed (iOS wallet `AppTab.defaultDock`): Portfolio, Storage, Wallet (the
- * Profile) in the middle, .kachat and Addresses. There is no Chats, no Kaspa Hub and no Customize
- * Dock; [resolveDock] reads this rather than a saved arrangement.
+ * KaPay's dock, fixed (iOS wallet `AppTab.dock`): Portfolio, Storage, Wallet (the Profile) in
+ * the middle, .kachat and Settings (040f91a). There is no Chats, Kaspa Hub or Customize Dock;
+ * [resolveDock] reads this rather than a saved arrangement.
  */
-val WALLET_DOCK = listOf(Screen.Portfolio, Screen.ColdStorage, Screen.Profile, Screen.KachatNames, Screen.AddressBook)
+val WALLET_DOCK = listOf(Screen.Portfolio, Screen.ColdStorage, Screen.Profile, Screen.KachatNames, Screen.Settings)
 
 /**
- * KaChat Wallet's home (iOS wallet `AppTab.home`): where the app opens, and where it lands when
- * the screen it was on goes away - the part Chats plays in KaChat.
+ * KaPay's home (iOS wallet `AppTab.home`, 59593af): the Wallet tab, the middle of the dock -
+ * where the app opens and where it lands when the screen it was on goes away.
  */
-val HOME_ROUTE = Screen.Portfolio.route
+val HOME_ROUTE = Screen.Profile.route
 
 /**
  * ChangeNOW Swap, off for now (iOS f94db5a). An in-app crypto exchange - a third-party one like
@@ -217,18 +221,14 @@ val HOME_ROUTE = Screen.Portfolio.route
  */
 const val SWAP_FEATURE_ENABLED = false
 
-/** Routes that are part of the Settings stack - a sheet on iOS (see IosSheetColors). */
-val SETTINGS_SHEET_ROUTES = setOf(
-    "settings", "settings_section/{sectionKey}", "storage_nextcloud",
-    "cache_settings", "child_mode_settings", "connection_settings", "language_settings",
-    "currency_settings", "kaspa_explorer_settings", "notification_settings",
-    "wallet_notification_settings", "quick_reaction_settings",
-)
+/** Routes drawn as iOS's Settings sheet (see IosSheetColors). None in KaPay: Settings is a dock
+ *  tab (iOS wallet 040f91a), and its pages are pushed inside it. */
+val SETTINGS_SHEET_ROUTES = emptySet<String>()
 
-/** Tabs besides the pinned one. KaChat Wallet: the wallet's own four; every other KaChat feature stays off. */
+/** Tabs besides the pinned one: the wallet's own four. */
 val ASSIGNABLE_TAB_ROUTES = listOf(
     Screen.Portfolio.route, Screen.ColdStorage.route,
-    Screen.KachatNames.route, Screen.AddressBook.route,
+    Screen.KachatNames.route, Screen.Settings.route,
 )
 
 /** Route strings for tabs that can never be hidden — see [resolveTabOrder]. */
@@ -253,7 +253,8 @@ val bottomNavItems = listOf(
     Screen.Swap,
     Screen.Broadcasts,
     Screen.KaspaWebsites,
-    Screen.Chess
+    Screen.Chess,
+    Screen.Settings,
 )
 
 /** The dock renders at most this many items (matches iOS's AppTab.maxDockItems). */
@@ -323,13 +324,9 @@ fun resolveTabOrder(routes: List<String>, hiddenTabs: Set<String>, childMode: Bo
  * - arrangement can leave the app without them.
  */
 fun resolveDock(dockRoutes: List<String>, hiddenTabs: Set<String>, childMode: Boolean = false): List<Screen> =
-    // KaChat Wallet's dock is fixed: always [WALLET_DOCK], minus anything switched off (Simple
-    // Mode hides .kachat). A saved arrangement is ignored, so nothing it says can take a tab away
-    // or bring a KaChat one in (iOS wallet AppTab.visible).
-    WALLET_DOCK.filter { screen ->
-        (screen.route in ALWAYS_VISIBLE_TAB_ROUTES || screen.route !in hiddenTabs) &&
-            !(childMode && screen.route in CHILD_MODE_HIDDEN_ROUTES)
-    }
+    // KaPay's dock is fixed: always [WALLET_DOCK] (iOS wallet `AppTab.dock`). A saved arrangement
+    // or hidden-tab list is ignored, and there is no Simple Mode to hide .kachat (59593af).
+    WALLET_DOCK
 
 /**
  * What the Kaspa Hub grid actually shows: its candidates, minus anything hidden, minus anything
@@ -498,6 +495,8 @@ fun MainShell(
             dest.route == "chess_tournament/{tournamentId}" ||
             // Help is pushed inside the Profile tab on iOS (ProfileHelpView): its tab bar stays.
             dest.route == "help" ||
+            // Settings' category pages keep the dock, as iOS's tab keeps its bar (040f91a).
+            dest.route == "settings_section/{sectionKey}" ||
             // So are Manage Addresses, its address pages and Your Domains (NavigationLinks in
             // ContactsView / ManageAddressesView), the Portfolio charts (navigationDestination)
             // and a public room's info page - all keep iOS's tab bar.
@@ -1297,11 +1296,17 @@ fun MainShell(
             // Settings isn't a bottom-tab destination (matches iOS - reached one tap in from
             // Profile's gear icon), so it gets the normal NavHost-level fade like any other
             // pushed detail screen, not the instant tab-swap treatment below.
-            composable(Screen.Settings.route) {
-                // The sheet runs on under the system bar in its own colour, as iOS's does under the
-                // home indicator; only its content stops above it.
+            // KaPay: Settings is a dock tab (iOS wallet 040f91a) - the instant tab swap, no Done
+            // button, its content stopping above the dock.
+            composable(
+                Screen.Settings.route,
+                enterTransition = { EnterTransition.None },
+                exitTransition = { ExitTransition.None },
+                popEnterTransition = { EnterTransition.None },
+                popExitTransition = { ExitTransition.None }
+            ) {
                 Box(modifier = Modifier.background(LocalAppColors.current.background).padding(bottom = innerPadding.calculateBottomPadding())) {
-                    SettingsScreen(navController, walletViewModel = walletViewModel)
+                    SettingsScreen(navController, walletViewModel = walletViewModel, isDockTab = true)
                 }
             }
             // The four bottom-tab destinations get an instant swap, overriding the NavHost-level
@@ -1694,11 +1699,15 @@ fun MainShell(
                 }
             }
 
+            // A category page, pushed inside the Settings tab with the dock still showing, as iOS's
+            // NavigationStack keeps its tab bar.
             composable("settings_section/{sectionKey}") { backStackEntry ->
-                SettingsScreen(
-                    navController = navController,
-                    sectionKey = backStackEntry.arguments?.getString("sectionKey")
-                )
+                Box(modifier = Modifier.background(LocalAppColors.current.background).padding(bottom = innerPadding.calculateBottomPadding())) {
+                    SettingsScreen(
+                        navController = navController,
+                        sectionKey = backStackEntry.arguments?.getString("sectionKey")
+                    )
+                }
             }
 
             // Settings > Storage sub-pages, one per backup provider (see StorageScreens.kt) -
@@ -1819,8 +1828,9 @@ fun MainShell(
             }
             composable(Screen.AddressBook.route) {
                 CompositionLocalProvider(com.kachat.app.ui.screens.LocalDockInset provides innerPadding.calculateBottomPadding()) {
+                    // Opened from the Wallet tab now (iOS wallet 040f91a), so it has a way back.
                     com.kachat.app.ui.screens.AddressBookScreen(
-                        onBack = null,
+                        onBack = { navController.popBackStack() },
                         onOpenChat = { address -> navController.navigate("chat/$address") },
                         walletViewModel = walletViewModel,
                     )

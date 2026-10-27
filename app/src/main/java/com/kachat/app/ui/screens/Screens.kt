@@ -3663,7 +3663,10 @@ fun ProfileScreen(
     }
     // Donate: the Send screen, addressed to KaChat's donation address (iOS e7cc0d5, 8bc86f8).
     var showDonateSheet by remember { mutableStateOf(false) }
-    var showLogoutConfirmation by remember { mutableStateOf(false) }
+    // The floating Send and Receive button (iOS wallet 5bab351) and what its tiles open.
+    var showWalletActions by remember { mutableStateOf(false) }
+    var showSendSheet by remember { mutableStateOf(false) }
+    var showRequestPayment by remember { mutableStateOf(false) }
 
     val knsInscribeState by viewModel.knsInscribeState.collectAsState()
     val pendingKnsCommit by viewModel.pendingKnsCommit.collectAsState()
@@ -4201,13 +4204,12 @@ fun ProfileScreen(
                 onClick = { navController.navigate("kns_domains") },
             )
 
-            // Settings as a card in the list rather than a glyph in the chrome - it belongs with
-            // the other destinations you tap into from here, and it is the entry point to
-            // everything the app can be configured to do.
+            // KaPay: Settings is its own dock tab, and the Address Book opens from here (iOS
+            // wallet 040f91a addressBookSection).
             ProfileLinkRow(
-                label = stringResource(R.string.settings),
-                icon = Icons.Outlined.Settings,
-                onClick = { navController.navigate("settings") },
+                label = stringResource(R.string.ab_address_book),
+                icon = Icons.Outlined.Book,
+                onClick = { navController.navigate(com.kachat.app.ui.Screen.AddressBook.route) },
             )
 
             ProfileLinkRow(
@@ -4216,29 +4218,7 @@ fun ProfileScreen(
                 onClick = { navController.navigate("help") },
             )
 
-            // iOS logOutSection: red "Log Out" on the left, the red
-            // rectangle.portrait.and.arrow.right on the right, no chevron.
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .iosGlass(18.dp)
-                    .clickable { showLogoutConfirmation = true }
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    stringResource(R.string.log_out),
-                    color = LocalAppColors.current.danger,
-                    fontSize = 17.sp,
-                    modifier = Modifier.weight(1f),
-                )
-                Icon(
-                    Icons.AutoMirrored.Filled.Logout,
-                    contentDescription = null,
-                    tint = LocalAppColors.current.danger,
-                    modifier = Modifier.size(22.dp),
-                )
-            }
+            // Log Out moved to the Settings tab, its last row (iOS wallet 040f91a).
 
             // Bottom-most section on Profile - merges what used to be a separate "Info" section
             // (just "Created") with Settings' old "About" section (Version/Website/Support
@@ -4311,13 +4291,24 @@ fun ProfileScreen(
             // Moved here from Settings > Actions - Profile is where the rest of the
             // account-level actions (address management, About) already live.
 
-            // Room for the last card to scroll clear of the dock it runs under.
-            Spacer(modifier = Modifier.height(dockInset + 16.dp))
+            // Room for the last card to scroll clear of the dock it runs under, and out from
+            // under the floating Send and Receive button (iOS wallet 6d4bf75).
+            Spacer(modifier = Modifier.height(dockInset + 16.dp + 56.dp))
         }
 
         PullToRefreshContainer(
             state = pullRefreshState,
             modifier = Modifier.align(Alignment.TopCenter)
+        )
+
+        // KaChat's floating up/down arrow, bottom right above the dock (iOS wallet 5bab351):
+        // Send Kaspa, Receive Kaspa and Request Payment. (iOS hides it under its KNS save banner;
+        // Android's profile save has no banner.)
+        WalletActionsButton(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 16.dp, bottom = dockInset + 16.dp),
+            onClick = { showWalletActions = true },
         )
 
         }
@@ -4344,17 +4335,36 @@ fun ProfileScreen(
         )
     }
 
-    // Half sheet rather than a dialog, matching every other chooser in the app - and it gives
-    // the consequence a row of its own beside the action, which a dialog of bare verbs cannot.
-    if (showLogoutConfirmation) {
-        ConfirmActionSheet(
-            title = stringResource(R.string.log_out),
-            confirmTitle = stringResource(R.string.log_out),
-            confirmSubtitle = "Signs out of this account. Wallet and message data stay on this device.",
-            confirmIcon = Icons.AutoMirrored.Filled.Logout,
-            onConfirm = { viewModel.logout() },
-            onDismiss = { showLogoutConfirmation = false },
+    // The floating button's half sheet, then the tile picked once it is down (iOS wallet
+    // 5bab351): Send from the main address with nothing filled in, the Receive Kaspa page, or a
+    // new payment request.
+    if (showWalletActions) {
+        WalletActionsSheet(
+            onDismiss = { showWalletActions = false },
+            onPick = { action ->
+                when (action) {
+                    WalletAction.SEND -> showSendSheet = true
+                    WalletAction.RECEIVE -> showAcceptPaymentQr = true
+                    WalletAction.REQUEST -> showRequestPayment = true
+                }
+            },
         )
+    }
+    if (showSendSheet) {
+        IosFullSheet(onDismissed = { showSendSheet = false }, swipeToDismiss = false) { close ->
+            SpendingAddressSendFlow(
+                fromAddress = address ?: "",
+                balanceSompi = identityBalanceSompi,
+                title = stringResource(R.string.chats_send_kaspa),
+                viewModel = viewModel,
+                portfolioViewModel = portfolioViewModel,
+                onDone = close,
+                presentedAsSheet = true,
+            )
+        }
+    }
+    if (showRequestPayment) {
+        CreatePaymentRequestSheet(walletViewModel = viewModel, onDismissed = { showRequestPayment = false })
     }
 }
 
@@ -5235,12 +5245,24 @@ fun ManageAddressesScreen(
     var discoverySummary by remember { mutableStateOf<String?>(null) }
     val pullRefreshState = rememberPullToRefreshState()
 
-    // The spending addresses in number order, #0 first, under the chatting address (iOS 245a5d2).
     val domainOwningAddresses by viewModel.domainOwningAddresses.collectAsState()
     // Quantum-safe rows whose key a spend has put on chain (their shield is off for good).
     val quantumSpentAddresses by viewModel.quantumSpentAddresses.collectAsState()
+    // The spending addresses under the Chatting Address: unused ones first, newest first - so a
+    // freshly generated address lands right under the Chatting Address - then the used ones in
+    // number order (iOS wallet 59593af). One still being checked counts as unused until its
+    // check says otherwise.
     val visibleAddresses = remember(addresses) {
-        addresses.filterNot { it.hidden }.sortedBy { it.index }
+        fun used(a: com.kachat.app.services.WalletService.SpendingAddressEntry) = a.everUsed || a.balanceSompi > 0
+        addresses.filterNot { it.hidden }.sortedWith { a, b ->
+            val aUsed = used(a)
+            val bUsed = used(b)
+            when {
+                aUsed != bUsed -> if (aUsed) 1 else -1
+                aUsed -> a.index.compareTo(b.index)
+                else -> b.index.compareTo(a.index)
+            }
+        }
     }
     val hiddenAddresses = remember(addresses) { addresses.filter { it.hidden } }
 
@@ -6151,8 +6173,10 @@ fun SpendingAddressSendFlow(
     // Custom fee, edited in place on the fee row (SendFeeControls), as on iOS.
     var isEditingFee by remember { mutableStateOf(false) }
     var customFeeText by remember { mutableStateOf("") }
-    /// The completed send, driving the sent-confirmation half sheet.
+    /// The completed send, which the swipe-up screen shows as Sent (iOS wallet 59593af).
     var sentTransaction by remember { mutableStateOf<SentTransaction?>(null) }
+    /** Why the last send failed, for the swipe-up screen's Failed (iOS wallet 59593af). */
+    var sendError by remember { mutableStateOf<String?>(null) }
     // This presentation's own sends (iOS's per-sheet isSending/sentTransaction): one closed
     // mid-send leaves its send running in the view model, and its outcome is never shown here
     // or on the next send screen.
@@ -6366,12 +6390,12 @@ fun SpendingAddressSendFlow(
                     txId = txId,
                     amountSompi = KaspaUnit.sompiFromUserText(amountInput)?.takeIf { it > 0 },
                     // A compound is a self-send: naming the address it just came from reads as a
-                    // mistake, so it just says how much moved.
-                    recipient = recipientInput.takeIf { !isCompoundMode },
+                    // mistake, so it just says how much moved. A resolved name shows as the name.
+                    recipient = (knsResolvedDomain ?: recipientInput.trim()).takeIf { !isCompoundMode },
                 )
             }
         } else {
-            IosToasts.error(result.exceptionOrNull()?.message ?: context.getString(R.string.withdrawal_failed))
+            sendError = UserFacingError.message(result.exceptionOrNull(), context.getString(R.string.withdrawal_failed))
         }
         viewModel.sends.consume(sendId)
     }
@@ -6379,16 +6403,7 @@ fun SpendingAddressSendFlow(
     // Back is Cancel, and Cancel closes the send at any time, as iOS's does - mid-send too.
     BackHandler { onDone() }
 
-    sentTransaction?.let { sent ->
-        SentConfirmationSheet(
-            transaction = sent,
-            explorerName = kaspaExplorer.displayName,
-            explorerUrl = kaspaExplorer.txUrl(sent.txId),
-        ) {
-            sentTransaction = null
-            onDone()
-        }
-    }
+    // No confirmation sheet: the swipe-up screen itself shows Sent or Failed (iOS wallet 59593af).
 
     // The recipient scanner and coin control are sheets over the send, as iOS's
     // SpendingAddressWithdrawView and WithdrawKaspaView present QRScannerView and CoinControlView.
@@ -6475,6 +6490,7 @@ fun SpendingAddressSendFlow(
     // Not while the fee preview is being worked out: the send passes the preview's extra.
     val canSend = !isSending && hasValidRecipient && (amountSompi ?: 0) > 0 && !isPreviewingFee
     val send: () -> Unit = {
+        sendError = null
         amountSompi?.takeIf { canSend }?.let {
             val request = activeRequest
             val recipient = effectiveAddress.trim()
@@ -6522,43 +6538,33 @@ fun SpendingAddressSendFlow(
         }
     }
 
-    Scaffold(
-        containerColor = LocalAppColors.current.background,
-        contentWindowInsets = if (presentedAsSheet) WindowInsets(0, 0, 0, 0) else ScaffoldDefaults.contentWindowInsets,
-        topBar = {
-            CenterAlignedTopAppBar(
-                windowInsets = if (presentedAsSheet) WindowInsets(0, 0, 0, 0) else TopAppBarDefaults.windowInsets,
-                title = {
-                    Text(
-                        when {
-                            isCompoundMode -> stringResource(R.string.compound_utxos)
-                            activeRequest != null -> stringResource(R.string.pr_payment_request)
-                            else -> title
-                        },
-                        color = LocalAppColors.current.textPrimary,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                navigationIcon = {
-                    if (presentedAsSheet) {
-                        SheetBarButton(stringResource(R.string.cancel), onClick = onDone, modifier = Modifier.padding(start = 12.dp))
-                    } else {
-                        SheetBarBackButton(onClick = onDone, modifier = Modifier.padding(start = 12.dp))
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = LocalAppColors.current.background)
-            )
-        }
-    ) { padding ->
-        // The layout of the 1:1 chat's Send KAS sheet, from the shared Send Kaspa pieces (iOS
-        // 4d0324f): recipient, the big amount, Available, fee and coin control, and the send
-        // button in the column. The confirmation is a half sheet (SentConfirmationSheet), not a
-        // page that replaced this form - so every send in the app finishes the same way.
+    // Swipe the bar up to send: the whole screen moves up into the BlockDAG while it goes out,
+    // then Sent with the transaction, or Failed with the error and Try Again (iOS wallet 59593af
+    // SwipeUpToSendScrollView). Its header (Cancel, the title) moves with the swipe.
+    SwipeUpToSendScreen(
+        screenTitle = when {
+            isCompoundMode -> stringResource(R.string.compound_utxos)
+            activeRequest != null -> stringResource(R.string.pr_payment_request)
+            else -> title
+        },
+        onCancel = onDone,
+        barTitle = stringResource(if (isCompoundMode) R.string.swipe_up_to_consolidate else R.string.swipe_up_to_send),
+        isBusy = isSending,
+        isEnabled = canSend,
+        amountSompi = amountSompi,
+        recipient = if (isCompoundMode) null else (knsResolvedDomain ?: effectiveAddress.trim()).takeIf { it.isNotEmpty() },
+        sent = sentTransaction,
+        failureMessage = sendError,
+        explorerUrl = { kaspaExplorer.txUrl(it) },
+        onDone = {
+            sentTransaction = null
+            onDone()
+        },
+        onSwipe = send,
+        insets = if (presentedAsSheet) WindowInsets(0, 0, 0, 0) else WindowInsets.systemBars,
+    ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp)
                 .padding(top = 12.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp),
@@ -6651,12 +6657,9 @@ fun SpendingAddressSendFlow(
                 onCoinControl = { if (!isSending) showCoinControl = true },
             )
 
-            SendActionButton(
-                title = stringResource(if (isCompoundMode) R.string.slide_to_consolidate else R.string.slide_to_send),
-                isBusy = isSending,
-                isEnabled = canSend,
-                onSend = send,
-            )
+            sendError?.let {
+                Text(it, color = LocalAppColors.current.danger, fontSize = 13.sp, textAlign = TextAlign.Center)
+            }
         }
     }
 }
@@ -9240,7 +9243,10 @@ fun SettingsScreen(
     walletViewModel: WalletViewModel = hiltViewModel(),
     connectionViewModel: ConnectionViewModel = hiltViewModel(),
     chatViewModel: ChatViewModel = hiltViewModel(),
-    settingsViewModel: SettingsViewModel = hiltViewModel()
+    settingsViewModel: SettingsViewModel = hiltViewModel(),
+    /** KaPay shows Settings as its own dock tab (iOS wallet 040f91a `isDockTab`): no Done button,
+     *  the large "Settings" title under the bar. */
+    isDockTab: Boolean = false,
 ) {
     val balance by walletViewModel.fullBalance.collectAsState()
     val dotColorHex by connectionViewModel.dotColorHex.collectAsState()
@@ -9310,6 +9316,10 @@ fun SettingsScreen(
                     title = settingsSectionTitle(sectionKey),
                     onBack = { navController.popBackStack() },
                 )
+            } else if (isDockTab) {
+                // The Settings tab (iOS wallet 040f91a): the connection dot and the balance in the
+                // bar, "Settings" large under it, no Done.
+                MainPageHeader(title = stringResource(R.string.settings))
             } else {
             // iOS's Settings sheet toolbar: the connection dot and Done in glass, the balance
             // between them - no title.
@@ -9387,12 +9397,34 @@ fun SettingsScreen(
                             navController.navigate("seed_phrase")
                         }
                     }
-                    SettingsDivider(inset = IosRowTextInset)
-                    SettingsActionItem(stringResource(R.string.danger_zone), Icons.Outlined.Warning, LocalAppColors.current.danger, showChevron = true) {
-                        navController.navigate("settings_section/danger_zone")
-                    }
+                    // No Danger Zone: iOS has none (KaPay's wipes are the account list's Delete).
                     }
                 }
+                // Log Out, its own section at the bottom - moved here from the Wallet tab (iOS
+                // wallet 040f91a): a red label and its red icon, no chevron.
+                var showLogoutConfirmation by remember { mutableStateOf(false) }
+                Surface(
+                    color = LocalAppColors.current.surface,
+                    shape = RoundedCornerShape(26.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    SettingsActionItem(stringResource(R.string.log_out), Icons.AutoMirrored.Filled.Logout, LocalAppColors.current.danger, labelColor = LocalAppColors.current.danger) {
+                        showLogoutConfirmation = true
+                    }
+                }
+                // Half sheet rather than a dialog, matching every other chooser in the app - and
+                // it gives the consequence a row of its own beside the action.
+                if (showLogoutConfirmation) {
+                    ConfirmActionSheet(
+                        title = stringResource(R.string.log_out),
+                        confirmTitle = stringResource(R.string.log_out),
+                        confirmSubtitle = "Signs out of this account. Its data stays on this device.",
+                        confirmIcon = Icons.AutoMirrored.Filled.Logout,
+                        onConfirm = { walletViewModel.logout() },
+                        onDismiss = { showLogoutConfirmation = false },
+                    )
+                }
+                Spacer(Modifier.height(24.dp))
             }
 
             if (sectionKey == "customization") {
@@ -9411,10 +9443,7 @@ fun SettingsScreen(
                 SettingsFormSection(title = stringResource(R.string.security)) {
                     // Shared with the accounts screen's App Settings (see AppSettingsScreen.kt) -
                     // every row is app-wide, so both entry points render the exact same items.
-                    SecuritySettingsItems(
-                        walletViewModel = walletViewModel,
-                        onNavigateToChildMode = { navController.navigate("child_mode_settings") }
-                    )
+                    SecuritySettingsItems(walletViewModel = walletViewModel)
                 }
             }
 
@@ -9438,7 +9467,7 @@ fun SettingsScreen(
                         "Everything you have switched on below can reach you, even when the app is closed. Turning this off silences all of it."
                     } else if (!notificationPermissionGranted) {
                         // Android only: the OS permission is a separate switch here.
-                        "Android has notifications switched off for KaChat. Turning this on will ask for permission."
+                        "Android has notifications switched off for KaPay. Turning this on will ask for permission."
                     } else {
                         "Turn this on to receive anything you have switched on below, even when the app is closed."
                     },
@@ -9455,15 +9484,27 @@ fun SettingsScreen(
                     }
                 }
 
-                // One page per feature, in iOS's order and symbols (bubbles, banknote).
-                SettingsFormSection(title = stringResource(R.string.notifications)) {
-                    SettingsNavigationItem(stringResource(R.string.chats), Icons.Outlined.Forum, onClick = {
-                        navController.navigate("notification_settings")
-                    })
-                    SettingsDivider(inset = IosRowTextInset)
-                    SettingsNavigationItem(stringResource(R.string.notifications_wallet), Icons.Outlined.Payments, onClick = {
-                        navController.navigate("wallet_notification_settings")
-                    })
+                // KaPay's Notifications is one page (iOS wallet 59593af NotificationsHubPage): the
+                // master switch above, then Address Activity, then sound and vibration.
+                val addressActivityEnabled by settingsViewModel.addressActivityNotificationsEnabled.collectAsState()
+                val soundEnabled by settingsViewModel.notificationSoundEnabled.collectAsState()
+                val vibrationEnabled by settingsViewModel.notificationVibrationEnabled.collectAsState()
+                SettingsFormSection(title = null, footer = stringResource(R.string.address_activity_footer)) {
+                    SettingsSwitchItem(stringResource(R.string.address_activity), addressActivityEnabled) {
+                        settingsViewModel.setAddressActivityNotificationsEnabled(it)
+                    }
+                }
+                SettingsFormSection(
+                    title = stringResource(R.string.sound_vibration),
+                    footer = stringResource(R.string.wallet_notification_sound_footer),
+                ) {
+                    SettingsSwitchItem(stringResource(R.string.play_sound), soundEnabled) {
+                        settingsViewModel.setNotificationSoundEnabled(it)
+                    }
+                    SettingsDivider()
+                    SettingsSwitchItem(stringResource(R.string.vibration), vibrationEnabled) {
+                        settingsViewModel.setNotificationVibrationEnabled(it)
+                    }
                 }
             }
 
@@ -9597,9 +9638,11 @@ fun SettingsScreen(
                     })
                 }
 
+                // What Nextcloud is for in KaPay: a backup of the Address Book and the Portfolio
+                // (iOS wallet 59593af).
                 SettingsFormSection(
-                    title = stringResource(R.string.cloud_storage),
-                    footer = "Your own Nextcloud server is the only place messages sync to. Nothing is stored with Google or Apple.",
+                    title = stringResource(R.string.ncw_backup),
+                    footer = stringResource(R.string.storage_nextcloud_footer),
                 ) {
                     SettingsNavigationItem(stringResource(R.string.nextcloud), Icons.Default.Cloud, onClick = {
                         navController.navigate("storage_nextcloud")
@@ -10563,7 +10606,6 @@ fun SettingsFooter(text: String) {
 @Composable
 fun SecuritySettingsItems(
     walletViewModel: WalletViewModel,
-    onNavigateToChildMode: () -> Unit
 ) {
     val biometricSeedPhraseEnabled by walletViewModel.biometricSeedPhraseEnabled.collectAsState()
     val biometricAccountLoginEnabled by walletViewModel.biometricAccountLoginEnabled.collectAsState()
@@ -10603,20 +10645,7 @@ fun SecuritySettingsItems(
             walletViewModel.setBiometricSpendingKeyEnabled(it)
         },
     )
-    SettingsDivider()
-    // Child Mode (matches iOS Settings > Security > Child Mode). NEVER biometric-gated - the
-    // whole point is that the device owner (the child) can pass fingerprint/face unlock but
-    // must not know the parent's password. Fully functional with no account active: the
-    // password record and enabled flag are device-global (ChildModeService/DataStore).
-    val childModeEnabled by walletViewModel.childModeEnabled.collectAsState()
-    // iOS: the lock.shield symbol, On / Off in caption.
-    SettingsNavigationItem(
-        stringResource(R.string.child_mode),
-        com.kachat.app.ui.theme.IosSymbols.LockShield,
-        if (childModeEnabled) stringResource(R.string.on) else stringResource(R.string.off),
-        valueFontSize = 12.sp,
-        onClick = onNavigateToChildMode
-    )
+    // No Simple (Child) Mode: KaPay removed it (iOS wallet 59593af).
 }
 
 /**
@@ -11555,6 +11584,9 @@ private fun AddressBookSection(viewModel: ConnectionViewModel) {
 fun ConnectionSettingsScreen(onBack: () -> Unit, viewModel: ConnectionViewModel = hiltViewModel()) {
     val network by viewModel.network.collectAsState()
     val knsApiUrl by viewModel.knsApiUrl.collectAsState()
+    // The .kachat indexer (Domains), editable (iOS wallet 59593af).
+    val indexerUrl by viewModel.indexerUrl.collectAsState()
+    var editingKachatIndexerUrl by remember { mutableStateOf(false) }
     val kaspaRestApiUrl by viewModel.kaspaRestApiUrl.collectAsState()
     val pushIndexerUrl by viewModel.pushIndexerUrl.collectAsState()
     val scrollState = rememberScrollState()
@@ -11611,14 +11643,17 @@ fun ConnectionSettingsScreen(onBack: () -> Unit, viewModel: ConnectionViewModel 
             }
             2 -> {
             // .kachat first: it is what every address field resolves before anything else (iOS 6ac48a7).
-            SettingsFormSection(title = stringResource(R.string.kn_kachat_names), footer = stringResource(R.string.kachat_names_resolved_first_footer)) {
-                val isMainnet = network.equals("mainnet", ignoreCase = true)
-                // Read through the chat indexer above when it serves this network's names, else
-                // straight from the chain (KachatNamesRegistry, iOS 5df42b4, ef6b21e).
+            // Names are read through this indexer when it serves this network's registry and keeps
+            // up, else straight from the chain (KachatNamesRegistry.chooseSource) - editable so
+            // anyone can run their own (iOS wallet 59593af), with where names are read from now.
+            SettingsFormSection(title = stringResource(R.string.kn_kachat_names), footer = KACHAT_INDEXER_FOOTER) {
                 ConnectionUrlField(
-                    label = "KaChat Names (.kachat)",
-                    value = stringResource(if (isMainnet) R.string.kn_live_on_mainnet else R.string.kn_live_testnet_registry)
+                    label = ".kachat Indexer URL",
+                    value = indexerUrl,
+                    onClick = { editingKachatIndexerUrl = true }
                 )
+                SettingsDivider()
+                KachatNamesSourceRow()
             }
             // The other name services this app reads (see NameServicesClient). Shown, not
             // editable; the .kas URL follows the selected network.
@@ -11642,6 +11677,92 @@ fun ConnectionSettingsScreen(onBack: () -> Unit, viewModel: ConnectionViewModel 
 
             Spacer(modifier = Modifier.height(100.dp))
         }
+        }
+    }
+
+    // The .kachat indexer, typed in (iOS wallet 59593af): https only, blank for KaChat's own.
+    if (editingKachatIndexerUrl) {
+        var draft by remember { mutableStateOf(indexerUrl) }
+        var rejected by remember { mutableStateOf(false) }
+        com.kachat.app.ui.theme.IosAlertDialog(
+            onDismissRequest = { editingKachatIndexerUrl = false },
+            containerColor = LocalAppColors.current.surface,
+            title = { Text(".kachat Indexer URL", color = LocalAppColors.current.textPrimary, fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    com.kachat.app.ui.theme.IosTextField(
+                        value = draft,
+                        onValueChange = { draft = it; rejected = false },
+                        singleLine = true,
+                        isError = rejected,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        if (rejected) "The URL must start with https://" else "Leave blank for KaChat's own indexer",
+                        color = if (rejected) Color(0xFFE57373) else LocalAppColors.current.textSecondary,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (viewModel.setKachatIndexerUrl(draft)) editingKachatIndexerUrl = false else rejected = true
+                }) { Text("Save", color = KaspaTeal) }
+            },
+            dismissButton = {
+                TextButton(onClick = { editingKachatIndexerUrl = false }) {
+                    Text(stringResource(R.string.cancel), color = LocalAppColors.current.textSecondary)
+                }
+            }
+        )
+    }
+}
+
+/** Settings > Connection > Domains' .kachat footer (iOS wallet 59593af). */
+private const val KACHAT_INDEXER_FOOTER =
+    "Resolved first, everywhere you can type an address. Leave the indexer blank for KaChat's own, or " +
+        "enter one you run yourself. If it can't be reached, serves a different registry or falls " +
+        "behind the network, names are read straight from the chain instead, which is slower. " +
+        "Buying, selling and claiming always re-check the chain."
+
+/**
+ * "Reading names from": the .kachat source KachatNamesRegistry last chose (iOS wallet 59593af
+ * `kachatSourceLabel`) - the indexer and its host, or the chain when the indexer isn't usable.
+ */
+@Composable
+private fun KachatNamesSourceRow() {
+    val colors = LocalAppColors.current
+    Row(
+        modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp).padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text("Reading names from", color = colors.textPrimary, fontSize = 17.sp, modifier = Modifier.weight(1f))
+        if (!com.kachat.app.services.kachatnames.KachatNamesService.isLaunched) {
+            Text("Not live on this network", color = colors.textSecondary, fontSize = 15.sp, textAlign = TextAlign.End)
+            return@Row
+        }
+        val vm: KachatLiveViewModel = hiltViewModel()
+        val source by vm.registry.source.collectAsState()
+        val refreshing by vm.registry.isRefreshing.collectAsState()
+        val lastError by vm.registry.lastError.collectAsState()
+        LaunchedEffect(Unit) { runCatching { vm.registry.refreshIfStale() } }
+        Column(horizontalAlignment = Alignment.End) {
+            when (val s = source) {
+                is com.kachat.app.services.kachatnames.KachatNamesRegistry.Source.Indexer -> {
+                    Text("Indexer", color = colors.textSecondary, fontSize = 15.sp)
+                    Text(runCatching { java.net.URI(s.base).host }.getOrNull() ?: s.base, color = colors.textSecondary, fontSize = 12.sp)
+                }
+                com.kachat.app.services.kachatnames.KachatNamesRegistry.Source.Chain -> {
+                    Text("The chain", color = colors.textSecondary, fontSize = 15.sp)
+                    Text("Indexer not usable right now", color = colors.textSecondary, fontSize = 12.sp)
+                }
+                null -> if (refreshing) {
+                    com.kachat.app.ui.theme.IosActivityIndicator(color = colors.textSecondary, modifier = Modifier.size(18.dp))
+                } else {
+                    Text(if (lastError == null) "Checking..." else "Couldn't check", color = colors.textSecondary, fontSize = 15.sp)
+                }
+            }
         }
     }
 }
