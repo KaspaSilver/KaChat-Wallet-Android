@@ -96,5 +96,6 @@ JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" ./gradle
 ```
 
 Other KaChat Android projects on this machine share the Kotlin compile daemon; when it is busy,
-add `-Pkotlin.compiler.execution.strategy=in-process`. Claude may build and run on the emulator
-(`Pixel_8`). Release and Play builds are the owner's.
+add `-Pkotlin.compiler.execution.strategy=in-process`. Claude may compile to catch build errors,
+but never runs the app on an emulator or device: the owner does all testing. Release and Play
+builds are the owner's too.
