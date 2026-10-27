@@ -80,7 +80,6 @@ import com.kachat.app.repository.AppSettingsRepository
 import com.kachat.app.ui.theme.KaspaTeal
 import com.kachat.app.ui.theme.LocalAppColors
 import com.kachat.app.viewmodels.WalletViewModel
-import com.kachat.app.viewmodels.ChatViewModel
 import kotlin.math.roundToInt
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -91,59 +90,32 @@ import androidx.compose.material.icons.filled.CheckCircle
  * Top-level navigation destinations.
  */
 sealed class Screen(val route: String, val label: String, val icon: ImageVector) {
-    /**
-     * True for tabs drawn with the bundled Kaspa mark instead of a Material icon. [icon] stays a
-     * real ImageVector so anything not taught about the drawable still renders something sensible
-     * rather than nothing.
-     */
-    val usesKaspaLogo: Boolean get() = this is KaspaHub
-
     // A dock tab in KaPay, Settings last (iOS wallet 040f91a); its gear matches KaChat's (59593af).
     object Settings    : Screen("settings",     "Settings",     Icons.Outlined.Settings)
-    object Chats       : Screen("chats",        "Chats",        Icons.Default.Forum)
     object Portfolio   : Screen("portfolio",    "Portfolio",    Icons.Default.PieChart)
     // KaChat Wallet calls it "Wallet" in the dock, with a wallet symbol, like KaPosts' wallet tab
     // (iOS AppTab.profile in the wallet). The route stays "profile".
     object Profile     : Screen("profile",      "Wallet",       Icons.Outlined.AccountBalanceWallet)
-    object Swap        : Screen("swap",         "Swap",         Icons.Default.SwapHoriz)
     // Labeled "Storage" (not "Cold Storage") and always in the default tab set, matching iOS's
     // AppTab.coldStorage — hideable like Portfolio/Swap via Settings > Customization > Menu, but
     // no longer a separate opt-in reached through Portfolio's old "Cold Storage Devices" row.
     object ColdStorage : Screen("cold_storage", "Storage",      Icons.Default.Security)
-    object KaPosts     : Screen("kaposts",      "KaPosts",      Icons.Default.NoteAlt)
-    // Named "Public Chats" everywhere a person reads it, matching iOS's AppTab.publicChats title.
-    // The route stays "broadcasts": it is persisted in saved dock arrangements, and the thread id,
-    // the share links and the on-chain subtype are all still broadcast-named on the wire.
-    object Broadcasts  : Screen("broadcasts",   "Public Chats", Icons.Default.Sensors)
     // A placeable tab like any other, matching iOS's AppTab.apps - it can sit in the dock or in
     // the Kaspa Hub, and it can be reordered in either. It used to be a hardcoded tile appended
     // to the Hub grid with no Screen behind it, which is exactly why Customize Dock could not
     // see it. Labeled "Websites" in the dock (the bar truncates hard); "Kaspa Websites" in full.
     object KaspaWebsites : Screen("kaspa_websites", "Websites", Icons.Default.Public)
-    // Chess tournaments (5.1) - placeable like the others, in the Hub by default (iOS AppTab.chess).
-    object Chess       : Screen("chess",        "Chess",        Icons.Default.GridOn)
     // .kachat names (5.2) - Kaspa Hub > .kachat: the marketplace for KaChat's own names (claim,
     // buy and sell, trustless). UI only until the name service is built (iOS AppTab.kachatNames).
     // Drawn as the ".kachat" wordmark wherever tabs are drawn (see tabIconPainter).
     object KachatNames : Screen("kachat_names", ".kachat",      Icons.Default.AlternateEmail)
-    // KaChat Stats (5.2) - KaChat's transactions on Kaspa by kind, from the indexers' /stats
-    // (iOS AppTab.kachatStats). Read-only, so Simple Mode shows it.
-    object KachatStats : Screen("kachat_stats", "Stats",        Icons.Default.BarChart)
     // Address Book (iOS AppTab.addressBook, 00767a4) - Kaspa Hub > Address Book: saved Kaspa
     // addresses with names, per wallet, kept in KaChat (it replaced syncing with the phone's
     // Contacts). Your own saved addresses, so Simple Mode shows it.
     // "Address Book" again since it left the dock for the Wallet tab (iOS wallet 040f91a).
     object AddressBook : Screen("address_book", "Address Book", Icons.Outlined.Book)
-    // KaChat Bots (5.2.1, iOS AppTab.kachatBots, 82ab31d) - Kaspa Hub > KaChat Bots: Block Reward
-    // Tracker, Wallet Tracker, Price Bot and Kaspa Answers; tapping one opens a chat with it.
-    // Ordinary chats with the bots, so Simple Mode shows it.
-    object KachatBots  : Screen("kachat_bots",  "Bots",         Icons.Outlined.Memory)
-    // Holds whatever of the above is turned on but not in the dock - see [kaspaHubSections].
-    // Route stays "kaspa_hub" once shipped: it is persisted in saved dock arrangements.
-    object KaspaHub    : Screen("kaspa_hub",    "Kaspa Hub",    Icons.Default.BubbleChart)
-    // The old "+ More" pseudo-tab (opened Customize Dock from the dock itself) is gone —
-    // Customize Dock is reached via Settings > Customization instead. The dock still caps at
-    // MAX_DOCK_ITEMS, with over-cap KaPosts/Broadcasts riding the Chats-slot cycle.
+    // The chat tabs (Chats, KaPosts, Public Chats, Chess, Swap, Stats, Bots) and Kaspa Hub went
+    // with the chats (iOS wallet 301ebfb).
 }
 
 /**
@@ -153,20 +125,14 @@ sealed class Screen(val route: String, val label: String, val icon: ImageVector)
  */
 private fun dockOwnerRoute(route: String?): String? = when (route) {
     null -> null
-    "chess_mode/{mode}", "chess_tournament/{tournamentId}" -> Screen.Chess.route
-    "broadcast_channel/{channelName}" -> Screen.Broadcasts.route
-    "chat/{contactId}?paymentMode={paymentMode}", "group_chat/{groupId}" -> Screen.Chats.route
     "cold_storage_detail/{accountId}", "cold_storage_tx_history/{address}" -> Screen.ColdStorage.route
     "settings_section/{sectionKey}" -> Screen.Settings.route
     Screen.AddressBook.route -> Screen.Profile.route
     "help", "manage_addresses", "identity_address_detail", "spending_address_detail/{index}",
     "kns_domains" -> Screen.Profile.route
     "portfolio_price_chart", "portfolio_value_chart", "portfolio_hashrate_chart" -> Screen.Portfolio.route
-    "broadcast_room_info/{channelName}" -> Screen.Broadcasts.route
-    Screen.Chess.route, Screen.Broadcasts.route, Screen.KaPosts.route, Screen.Portfolio.route,
-    Screen.Swap.route, Screen.ColdStorage.route, Screen.KaspaWebsites.route,
-    Screen.KachatNames.route, Screen.KachatStats.route,
-    Screen.KachatBots.route -> route
+    Screen.Portfolio.route, Screen.ColdStorage.route, Screen.KaspaWebsites.route,
+    Screen.KachatNames.route -> route
     else -> null
 }
 
@@ -177,12 +143,8 @@ private fun dockOwnerRoute(route: String?): String? = when (route) {
  */
 val Screen.hubTitle: String
     get() = when (this) {
-        Screen.Swap -> "ChangeNOW Swap"
         Screen.KaspaWebsites -> "Kaspa Websites"
-        Screen.Chess -> "Chess Online"
         Screen.KachatNames -> ".kachat Domains"
-        Screen.KachatStats -> "KaChat Stats"
-        Screen.KachatBots -> "KaChat Bots"
         else -> label
     }
 
@@ -212,15 +174,6 @@ val WALLET_DOCK = listOf(Screen.Portfolio, Screen.ColdStorage, Screen.Profile, S
  */
 val HOME_ROUTE = Screen.Profile.route
 
-/**
- * ChangeNOW Swap, off for now (iOS f94db5a). An in-app crypto exchange - a third-party one like
- * ChangeNOW included - is being treated by the stores as needing exchange licensing in every
- * country the app ships to, so Swap is hidden everywhere: [resolveDock] and [kaspaHubSections] are
- * the choke points every dock, Hub and Customize Dock reader goes through. The code stays, so
- * turning it back on is this one line.
- */
-const val SWAP_FEATURE_ENABLED = false
-
 /** Routes drawn as iOS's Settings sheet (see IosSheetColors). None in KaPay: Settings is a dock
  *  tab (iOS wallet 040f91a), and its pages are pushed inside it. */
 val SETTINGS_SHEET_ROUTES = emptySet<String>()
@@ -240,20 +193,12 @@ val ALWAYS_VISIBLE_TAB_ROUTES = setOf(Screen.Profile.route)
 // Portfolio, Chats, KaPosts, Profile - with Cold Storage, Swap and the websites list still
 // ENABLED but living inside Kaspa Hub rather than competing for a dock slot.
 val bottomNavItems = listOf(
-    Screen.KaspaHub,
     Screen.Portfolio,
-    Screen.Chats,
-    Screen.KaPosts,
     Screen.Profile,
     Screen.ColdStorage,
     Screen.AddressBook,
     Screen.KachatNames,
-    Screen.KachatStats,
-    Screen.KachatBots,
-    Screen.Swap,
-    Screen.Broadcasts,
     Screen.KaspaWebsites,
-    Screen.Chess,
     Screen.Settings,
 )
 
@@ -273,11 +218,8 @@ val ASSIGNABLE_DOCK_SLOTS: Int get() = MAX_DOCK_ITEMS - PINNED_DOCK_ROUTES.size
  * restores exactly the arrangement the user had before.
  */
 val CHILD_MODE_HIDDEN_ROUTES = setOf(
-    Screen.Swap.route, Screen.KaPosts.route, Screen.Broadcasts.route,
     // A browser onto the open web - the one tab most obviously not for a child's phone.
     Screen.KaspaWebsites.route,
-    // Public tournaments with strangers, paid per move (iOS hides Chess in Child Mode too).
-    Screen.Chess.route,
     // A marketplace - buying and selling with real KAS - so Simple Mode hides it, like Swap.
     Screen.KachatNames.route
 )
@@ -297,10 +239,7 @@ fun resolveTabOrder(routes: List<String>, hiddenTabs: Set<String>, childMode: Bo
     val byRoute = bottomNavItems.associateBy { it.route }
     val resolved = routes.mapNotNull { byRoute[it] }
     val missing = bottomNavItems.filter { it !in resolved }
-    // Public Chats moved INTO the Chats screen as its third tab, so the rooms are no longer a
-    // destination of their own. The Screen stays so a dock arrangement saved by an older build
-    // still decodes; it simply never renders (iOS keeps the AppTab case for the same reason).
-    val ordered = (resolved + missing).filterNot { it.route == Screen.Broadcasts.route }
+    val ordered = resolved + missing
     var visible = ordered.filter { it.route in ALWAYS_VISIBLE_TAB_ROUTES || it.route !in hiddenTabs }
     if (childMode) {
         visible = visible.filter { it.route !in CHILD_MODE_HIDDEN_ROUTES }
@@ -355,14 +294,6 @@ fun kaspaHubSections(
 @Composable
 fun KaChatApp(
     walletViewModel: WalletViewModel = hiltViewModel(),
-    pendingContactId: String? = null,
-    onPendingContactHandled: () -> Unit = {},
-    pendingChannelName: String? = null,
-    onPendingChannelHandled: () -> Unit = {},
-    pendingGroupId: String? = null,
-    onPendingGroupHandled: () -> Unit = {},
-    pendingOpenGroups: Boolean = false,
-    onPendingOpenGroupsHandled: () -> Unit = {},
     pendingWalletActivityKind: String? = null,
     onPendingWalletActivityHandled: () -> Unit = {},
     pendingOwnAddress: String? = null,
@@ -385,14 +316,6 @@ fun KaChatApp(
     } else {
         MainShell(
             walletViewModel = walletViewModel,
-            pendingContactId = pendingContactId,
-            onPendingContactHandled = onPendingContactHandled,
-            pendingChannelName = pendingChannelName,
-            onPendingChannelHandled = onPendingChannelHandled,
-            pendingGroupId = pendingGroupId,
-            onPendingGroupHandled = onPendingGroupHandled,
-            pendingOpenGroups = pendingOpenGroups,
-            onPendingOpenGroupsHandled = onPendingOpenGroupsHandled,
             pendingWalletActivityKind = pendingWalletActivityKind,
             onPendingWalletActivityHandled = onPendingWalletActivityHandled,
             pendingOwnAddress = pendingOwnAddress,
@@ -450,15 +373,6 @@ private fun sharedColdStorageViewModel(
 @Composable
 fun MainShell(
     walletViewModel: WalletViewModel = hiltViewModel(),
-    chatViewModel: ChatViewModel = hiltViewModel(),
-    pendingContactId: String? = null,
-    onPendingContactHandled: () -> Unit = {},
-    pendingChannelName: String? = null,
-    onPendingChannelHandled: () -> Unit = {},
-    pendingGroupId: String? = null,
-    onPendingGroupHandled: () -> Unit = {},
-    pendingOpenGroups: Boolean = false,
-    onPendingOpenGroupsHandled: () -> Unit = {},
     pendingWalletActivityKind: String? = null,
     onPendingWalletActivityHandled: () -> Unit = {},
     pendingOwnAddress: String? = null,
@@ -469,45 +383,29 @@ fun MainShell(
     // The whole stack, for the dock to light the tab a pushed screen sits in.
     val dockBackStack by navController.currentBackStack.collectAsState()
     val currentDestination = navBackStackEntry?.destination
-    // The broadcasts list isn't one of the four real tabs, but it's still a top-level browsing
-    // screen (like Chats) rather than a "pushed" detail screen — the bottom nav should stay put
-    // and stay functional there, not disappear the way it does for chat/chat_info/etc. A broadcast
-    // room itself gets the same treatment (unlike a 1:1 chat thread) — it's still just browsing/
-    // participating in a public room, one tap away from Chats/Profile, not a private conversation
-    // you'd want to maximize screen space for.
+    // The tabs keep the dock, and so do the screens pushed inside them that iOS keeps its tab
+    // bar over.
     val onTabRoute = currentDestination?.hierarchy?.any { dest ->
         bottomNavItems.any { it.route == dest.route } ||
-            dest.route == Screen.KaPosts.route ||
-            dest.route == "broadcasts" || dest.route == "broadcast_channel/{channelName}" ||
-            // A chat keeps the tab bar too: iOS's ChatDetailView / GroupChatDetailView sit inside
-            // the Chats tab with its bar showing, the composer above it.
-            dest.route == "chat/{contactId}?paymentMode={paymentMode}" ||
-            dest.route == "group_chat/{groupId}" ||
             // Cold Storage keeps its dock the whole way down, the way iOS's tab bar does: an
             // account and one of its addresses are still browsing your own holdings, not a
             // "pushed" screen you want the full height for.
             dest.route == "cold_storage_detail/{accountId}" ||
             dest.route == "cold_storage_tx_history/{address}" ||
-            // Chess keeps its dock while you are choosing and watching - the game itself is the
-            // one place that takes the whole screen (and the waiting room covers everything on
-            // its own). Browsing rooms is browsing, one tap from anywhere else.
-            dest.route == "chess_mode/{mode}" ||
-            dest.route == "chess_tournament/{tournamentId}" ||
             // Help is pushed inside the Profile tab on iOS (ProfileHelpView): its tab bar stays.
             dest.route == "help" ||
             // Settings' category pages keep the dock, as iOS's tab keeps its bar (040f91a).
             dest.route == "settings_section/{sectionKey}" ||
             // So are Manage Addresses, its address pages and Your Domains (NavigationLinks in
-            // ContactsView / ManageAddressesView), the Portfolio charts (navigationDestination)
-            // and a public room's info page - all keep iOS's tab bar.
+            // ContactsView / ManageAddressesView) and the Portfolio charts (navigationDestination)
+            // - all keep iOS's tab bar.
             dest.route == "manage_addresses" ||
             dest.route == "identity_address_detail" ||
             dest.route == "spending_address_detail/{index}" ||
             dest.route == "kns_domains" ||
             dest.route == "portfolio_price_chart" ||
             dest.route == "portfolio_value_chart" ||
-            dest.route == "portfolio_hashrate_chart" ||
-            dest.route == "broadcast_room_info/{channelName}"
+            dest.route == "portfolio_hashrate_chart"
     } == true
 
     // The dock renders straight from the persisted arrangement (WalletViewModel.tabOrder, via
@@ -517,132 +415,20 @@ fun MainShell(
     val persistedTabOrder by walletViewModel.tabOrder.collectAsState()
     val hiddenTabs by walletViewModel.hiddenTabs.collectAsState()
     val hideBottomBar by walletViewModel.hideBottomBar.collectAsState()
-    // Child Mode strips Swap/KaPosts/Broadcasts from the dock AND the Chats-slot cycle - derived
-    // fresh on every render, never baked into the stored dock prefs (see CHILD_MODE_HIDDEN_ROUTES).
+    // Child Mode hides CHILD_MODE_HIDDEN_ROUTES - derived fresh on every render, never baked into
+    // the stored dock prefs.
     val childModeEnabled by walletViewModel.childModeEnabled.collectAsState()
     val dockRoutes by walletViewModel.dockTabs.collectAsState()
     val localTabOrder = resolveDock(dockRoutes, hiddenTabs, childModeEnabled)
     val currentTopRoute = currentDestination?.route
 
-    // Blocking progress for the account's first full sync, which the setup wizard deferred.
-    // Escapable on purpose: a sync can stall on a slow indexer, and a dialog with no way out
-    // would be worse than an incomplete chat list.
-    val initialSyncPhase by chatViewModel.initialSyncPhase.collectAsState()
-    if (initialSyncPhase != null) {
-        val finished = initialSyncPhase == ChatViewModel.InitialSyncPhase.Finished
-        var canSkip by remember { mutableStateOf(false) }
-        LaunchedEffect(Unit) { kotlinx.coroutines.delay(20_000); canSkip = true }
-        Dialog(
-            onDismissRequest = { if (finished) chatViewModel.clearInitialSyncPhase() },
-            properties = DialogProperties(dismissOnBackPress = finished, dismissOnClickOutside = false)
-        ) {
-            Column(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(LocalAppColors.current.surface)
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                if (finished) {
-                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = KaspaTeal, modifier = Modifier.size(36.dp))
-                    Spacer(Modifier.height(12.dp))
-                    Text("You're all set", color = LocalAppColors.current.textPrimary, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(6.dp))
-                    Text("Your chats and history are up to date.", color = LocalAppColors.current.textSecondary, fontSize = 13.sp)
-                    Spacer(Modifier.height(16.dp))
-                    TextButton(onClick = { chatViewModel.clearInitialSyncPhase() }) {
-                        Text("Done", color = KaspaTeal, fontWeight = FontWeight.Bold)
-                    }
-                } else {
-                    com.kachat.app.ui.theme.IosActivityIndicator(color = KaspaTeal, strokeWidth = 3.dp, modifier = Modifier.size(36.dp))
-                    Spacer(Modifier.height(14.dp))
-                    Text("Setting up your account", color = LocalAppColors.current.textPrimary, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(6.dp))
-                    Text(initialSyncPhase?.label ?: "Starting", color = LocalAppColors.current.textSecondary, fontSize = 13.sp)
-                    Spacer(Modifier.height(10.dp))
-                    Text(
-                        "Downloading everything this account has on chain. It only takes this long once.",
-                        color = LocalAppColors.current.textSecondary,
-                        fontSize = 11.sp,
-                        textAlign = TextAlign.Center
-                    )
-                    if (canSkip) {
-                        Spacer(Modifier.height(10.dp))
-                        TextButton(onClick = { chatViewModel.clearInitialSyncPhase() }) {
-                            Text("Continue anyway", color = KaspaTeal)
-                        }
-                    }
-                }
-            }
-        }
-    }
-    // Child Mode just turned on (or the app landed on a now-hidden screen): snap home (Portfolio).
-    // Covers the three hidden tab routes plus Broadcasts' pushed room screen.
+    // Child Mode just turned on (or the app landed on a now-hidden screen): snap home.
     LaunchedEffect(childModeEnabled, currentTopRoute) {
-        if (childModeEnabled && currentTopRoute != null && (
-                currentTopRoute in CHILD_MODE_HIDDEN_ROUTES ||
-                    currentTopRoute.startsWith("broadcast_channel/")
-                )
-        ) {
+        if (childModeEnabled && currentTopRoute != null && currentTopRoute in CHILD_MODE_HIDDEN_ROUTES) {
             navController.popBackStack(HOME_ROUTE, false)
         }
     }
 
-
-    // Tapping a notification for a message/handshake/payment jumps straight to that
-    // conversation, matching what a real chat app does — otherwise you'd land on the
-    // chat list and have to go find it yourself.
-    LaunchedEffect(pendingContactId) {
-        if (pendingContactId != null) {
-            navController.navigate("chat/$pendingContactId")
-            onPendingContactHandled()
-        }
-    }
-
-    // Same idea for a notify-enabled broadcast channel's new message notification. Child Mode:
-    // a stray broadcast notification tap (e.g. one delivered before the mode was switched on, or
-    // a remote push that raced the re-registration) must not route into the hidden feature -
-    // land on the main Chats screen instead. Read race-free (suspend, not the StateFlow's `false`
-    // initial value) so a cold-start tap can't slip through before DataStore loads.
-    // Activity-scoped, only to start the notification prefetch; the room keeps its own instance.
-    val notificationBroadcastViewModel: com.kachat.app.viewmodels.BroadcastViewModel = hiltViewModel()
-    LaunchedEffect(pendingChannelName) {
-        if (pendingChannelName != null) {
-            // The name can come straight off a server push payload (see MainActivity's
-            // applyFcmNotificationTarget), so it gets the same sanitizing the share-link path
-            // uses - an unnormalized or hostile name would otherwise be pasted raw into the
-            // route and land on nothing.
-            val channel = com.kachat.app.ui.screens.KaChatLink.sanitizeChannelName(pendingChannelName)
-            if (channel == null || walletViewModel.isChildModeEnabled()) {
-                navController.popBackStack(HOME_ROUTE, false)
-            } else {
-                // Newest rows first, alongside the navigation rather than after it.
-                notificationBroadcastViewModel.prefetchNewest(channel)
-                navController.navigate("broadcast_channel/$channel")
-            }
-            onPendingChannelHandled()
-        }
-    }
-
-    // Same idea for a group chat notification.
-    LaunchedEffect(pendingGroupId) {
-        if (pendingGroupId != null) {
-            navController.navigate("group_chat/$pendingGroupId")
-            onPendingGroupHandled()
-        }
-    }
-
-    // A group notification that names no local group (a "you were added" push, or a group push
-    // this device could not resolve or ingest): the Chats list, whose circles row is where the
-    // new group appears once the next sync lands - as specific as that tap can get now the Group
-    // Chats page is gone (iOS a062577). Better than a group_chat/<blinded id> route that
-    // resolves to an empty, unusable thread.
-    LaunchedEffect(pendingOpenGroups) {
-        if (pendingOpenGroups) {
-            navController.popBackStack(HOME_ROUTE, false)
-            onPendingOpenGroupsHandled()
-        }
-    }
 
     // Wallet address-activity receipt ("Received X KAS" on a spending or cold-storage address).
     // Cold storage has its own tab; spending addresses live in Manage Addresses, which is a real
@@ -686,73 +472,14 @@ fun MainShell(
                 address = address,
                 walletViewModel = walletViewModel,
                 coldStorageViewModel = { sharedColdStorageViewModel(navController) },
-                onOpenChat = { contact ->
-                    ownAddressSheet = null
-                    navController.navigate("chat/$contact")
-                },
                 onDismiss = { ownAddressSheet = null },
             )
         }
     }
 
-    // Customize Dock (Settings > Customization, Kaspa Hub's customize button): a sheet above the
-    // whole shell, as iOS's MainTabView presents it, never a route. It edits the dock live, and
-    // the dock rebuilds on every move (key(dockArrangementKey) below); hosted here, outside the
-    // NavHost and the dock, nothing that rebuild does can close it or reset it. The activity's
-    // WalletViewModel, the one the dock itself reads.
-    val customizeDockOpen by CustomizeDock.isOpen.collectAsState()
-    if (customizeDockOpen) {
-        CustomizeDockSheet(
-            walletViewModel = walletViewModel,
-            onDismiss = { CustomizeDock.isOpen.value = false },
-        )
-    }
-
     // A .kachat registration in flight: its progress half sheet, back up after a relaunch (iOS 61fb0fc).
     com.kachat.app.ui.screens.KachatRegistrationPresenter()
 
-    // Incoming system-share (text/link/image shared from another app — see MainActivity.
-    // handleShareIntent): a direct-share pick carries the chosen conversation and opens the
-    // in-place compose sheet directly; a plain "KaChat" share target lands on the Chats list,
-    // whose banner asks the user to pick the chat, and the thread they open hands the share to
-    // the same sheet.
-    val pendingShare by com.kachat.app.services.ShareIntake.pending.collectAsState()
-    LaunchedEffect(pendingShare) {
-        val share = pendingShare ?: return@LaunchedEffect
-        if (share.targetContactId != null) {
-            // Direct-share pick: the conversation is already known, so go straight to the in-place
-            // compose sheet (matching iOS's share extension) instead of dropping the user into the
-            // chat with a silently pre-filled composer.
-            com.kachat.app.services.ShareIntake.pending.value = null
-            if (!share.isExpired()) {
-                com.kachat.app.services.ShareIntake.compose.value = com.kachat.app.services.ShareCompose(
-                    contactId = share.targetContactId,
-                    text = share.text,
-                    imageUris = share.imageUris
-                )
-            }
-        } else {
-            // Untargeted: surface the Chats list wherever the user currently is; whichever chat
-            // the user opens next hands the share to the same compose sheet.
-            navController.popBackStack(HOME_ROUTE, false)
-        }
-    }
-
-    // The in-place share compose sheet, rendered above the whole shell so it survives whatever
-    // screen is underneath (see ShareComposeSheet).
-    val shareCompose by com.kachat.app.services.ShareIntake.compose.collectAsState()
-    shareCompose?.let { compose ->
-        ShareComposeSheet(
-            share = compose,
-            onOpenChat = { contactId -> navController.navigate("chat/$contactId") },
-            onDismiss = { com.kachat.app.services.ShareIntake.compose.value = null },
-            chatViewModel = chatViewModel
-        )
-    }
-
-    // KaPosts share/deep links (kachat://kapost/<txid>, https://kachat.app/post/…):
-    // surface the KaPosts tab; KaPostsScreen itself consumes the pending txid and opens the
-    // post's thread once visible.
     // A .kachat name notification: the .kachat screen opens the name (iOS beeedd4). The name stays
     // pending until that screen takes it, so a cold start lands on it too.
     val pendingKachatName by com.kachat.app.ui.screens.KachatDeepLink.pendingName.collectAsState()
@@ -763,61 +490,9 @@ fun MainShell(
         }
     }
 
-    val pendingKaPostTxId by KaPostsDeepLink.pendingPostTxId.collectAsState()
-    LaunchedEffect(pendingKaPostTxId) {
-        if (pendingKaPostTxId != null) {
-            // Child Mode: KaPosts links (universal https://.../post/<txid> and kachat://kapost/...)
-            // no-op to the main Chats screen instead of opening the hidden feature.
-            if (walletViewModel.isChildModeEnabled()) {
-                KaPostsDeepLink.pendingPostTxId.value = null
-                KaPostsDeepLink.pendingFocusReplyTxId.value = null
-                navController.popBackStack(HOME_ROUTE, false)
-            } else {
-                navController.navigate(Screen.KaPosts.route) { launchSingleTop = true }
-            }
-        }
-    }
-
-    // Broadcast room share/deep links (kachat://broadcast/<channel>,
-    // https://kachat.app/broadcast/…) and taps on an in-app room-invite card. The name has
-    // already been normalized and validated by BroadcastDeepLink.request; a room that isn't one of
-    // the curated ones carries a join request that BroadcastChannelScreen consumes on open, so it
-    // lands in the user's own channel list rather than disappearing when they navigate away.
-    // Someone's profile link (kachat://profile/<address>, https://kachat.app/u/<address>, or a
-    // tapped KaChat Profile card). It opens User Info for anyone - contact or not - with Open Chat
-    // one tap away and their name and avatar to check who the link is for before writing to them
-    // (iOS 81df734). Your own shows your own card, and you are never added as your own contact
-    // (iOS 95f50ca); someone new gets the same auto-added contact a tapped public chat sender
-    // does. Chats are not hidden by Simple Mode: no gate.
-    val pendingProfileAddress by com.kachat.app.ui.screens.ProfileDeepLink.pendingAddress.collectAsState()
-    LaunchedEffect(pendingProfileAddress) {
-        val address = pendingProfileAddress ?: return@LaunchedEffect
-        com.kachat.app.ui.screens.ProfileDeepLink.consumePending()
-        val mine = walletViewModel.address.value
-        when {
-            mine != null && mine.equals(address, ignoreCase = true) ->
-                navController.navigate("chat_info/$mine")
-            else -> chatViewModel.openProfile(address) { navController.navigate("chat_info/$it") }
-        }
-    }
-
     // A payment request tapped, pasted or opened from outside the app (iOS c6851d6
     // PaymentRequestSheetPresenter): Send Kaspa with it filled in, or your own to copy or share.
-    com.kachat.app.ui.screens.PaymentRequestSheetHost(walletViewModel = walletViewModel, chatViewModel = chatViewModel)
-
-    val pendingBroadcastLinkChannel by BroadcastDeepLink.pendingChannel.collectAsState()
-    LaunchedEffect(pendingBroadcastLinkChannel) {
-        val channel = pendingBroadcastLinkChannel ?: return@LaunchedEffect
-        BroadcastDeepLink.consumePending()
-        // Child Mode hides Broadcasts entirely - a link must not route into it, and must not
-        // silently join a room either. Read race-free (suspend), same as the notification path.
-        if (walletViewModel.isChildModeEnabled()) {
-            BroadcastDeepLink.clearJoinRequests()
-            navController.popBackStack(HOME_ROUTE, false)
-        } else {
-            navController.navigate("broadcast_channel/$channel")
-        }
-    }
+    com.kachat.app.ui.screens.PaymentRequestSheetHost(walletViewModel = walletViewModel)
 
     // KaChat Wallet shows no welcome guide after an account is added - KaChat's walks through
     // chats and the dock, which the wallet doesn't have (iOS wallet MainTabView) - so nothing waits
@@ -825,7 +500,7 @@ fun MainShell(
     val pendingWelcomeGuide by walletViewModel.pendingWelcomeGuide.collectAsState()
     LaunchedEffect(pendingWelcomeGuide) {
         if (pendingWelcomeGuide) walletViewModel.consumePendingWelcomeGuide()
-        chatViewModel.releaseOnboardingHoldIfIdle()
+        walletViewModel.releaseOnboardingHoldIfIdle()
     }
 
     // KaChat Wallet asks once, the first time its tabs show, for permission to notify - KaChat
@@ -859,15 +534,10 @@ fun MainShell(
                     val dockNotifAddress by walletViewModel.address.collectAsState()
                     LaunchedEffect(dockNotifAddress) {
                         dockNotifVm.store.reloadIfNeeded()
-                        dockNotifVm.kaPostsUnseen.reloadIfNeeded()
                     }
                     val dockNotifEntries by dockNotifVm.store.entries.collectAsState()
                     val dockNotifLastSeen by dockNotifVm.store.lastSeenAt.collectAsState()
                     val dockNotifUnread = dockNotifEntries.count { it.timestampMs > dockNotifLastSeen }
-                    // KaPosts owns its own count, so its dock tab carries its own dot. Whether
-                    // KaPosts is in the dock at all is the user's arrangement; when it is not, the
-                    // count still waits on its bell inside KaPosts.
-                    val dockKaPostsUnseen by dockNotifVm.kaPostsUnseen.unseenCount.collectAsState()
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -938,8 +608,7 @@ fun MainShell(
                             }
                             if (underneath != null) return@run underneath
                             val owner = dockOwnerRoute(currentTopRoute) ?: return@run -1
-                            localTabOrder.indexOfFirst { it.route == owner }.takeIf { it >= 0 }
-                                ?: localTabOrder.indexOfFirst { it.route == Screen.KaspaHub.route }
+                            localTabOrder.indexOfFirst { it.route == owner }
                         }
                         // A new dock arrangement builds a fresh bar (iOS d7c3fcf keys its TabView the
                         // same way), so every icon, label and the glass lens start from the tabs the
@@ -1164,7 +833,6 @@ fun MainShell(
                                                 // decision gets made.
                                                 val badgeCount = when (screen) {
                                                     Screen.Profile -> dockNotifUnread
-                                                    Screen.KaPosts -> dockKaPostsUnseen
                                                     else -> 0
                                                 }
                                                 if (badgeCount > 0 && screen == Screen.Profile) {
@@ -1309,33 +977,6 @@ fun MainShell(
                     SettingsScreen(navController, walletViewModel = walletViewModel, isDockTab = true)
                 }
             }
-            // The four bottom-tab destinations get an instant swap, overriding the NavHost-level
-            // 150ms fade above just for these routes — that fade is a good fit for pushed detail
-            // screens, but a tab bar's own instant selected-tint feedback reads as sluggish when
-            // paired with any fade on the content behind it, however short.
-            composable(
-                Screen.Chats.route,
-                enterTransition = { EnterTransition.None },
-                exitTransition = { ExitTransition.None },
-                popEnterTransition = { EnterTransition.None },
-                popExitTransition = { ExitTransition.None }
-            ) {
-                // Runs on under the dock, as iOS's list runs on under its tab bar (LocalDockInset).
-                CompositionLocalProvider(com.kachat.app.ui.screens.LocalDockInset provides innerPadding.calculateBottomPadding()) {
-                    ChatsScreen(navController, walletViewModel, chatViewModel = chatViewModel)
-                }
-            }
-            composable(
-                Screen.KaPosts.route,
-                enterTransition = { EnterTransition.None },
-                exitTransition = { ExitTransition.None },
-                popEnterTransition = { EnterTransition.None },
-                popExitTransition = { ExitTransition.None }
-            ) {
-                CompositionLocalProvider(com.kachat.app.ui.screens.LocalDockInset provides innerPadding.calculateBottomPadding()) {
-                    KaPostsScreen(navController, walletViewModel = walletViewModel)
-                }
-            }
             composable(
                 Screen.Portfolio.route,
                 enterTransition = { EnterTransition.None },
@@ -1361,33 +1002,6 @@ fun MainShell(
                     )
                 }
             }
-            composable(
-                Screen.KaspaHub.route,
-                enterTransition = { EnterTransition.None },
-                exitTransition = { ExitTransition.None },
-                popEnterTransition = { EnterTransition.None },
-                popExitTransition = { ExitTransition.None }
-            ) {
-                CompositionLocalProvider(com.kachat.app.ui.screens.LocalDockInset provides innerPadding.calculateBottomPadding()) {
-                    KaspaHubScreen(
-                        navController = navController,
-                        walletViewModel = walletViewModel,
-                        chatViewModel = chatViewModel
-                    )
-                }
-            }
-            composable(
-                Screen.Swap.route,
-                enterTransition = { EnterTransition.None },
-                exitTransition = { ExitTransition.None },
-                popEnterTransition = { EnterTransition.None },
-                popExitTransition = { ExitTransition.None }
-            ) {
-                CompositionLocalProvider(com.kachat.app.ui.screens.LocalDockInset provides innerPadding.calculateBottomPadding()) {
-                    SwapScreen(navController = navController)
-                }
-            }
-
             // Full-screen KAS price / portfolio value charts, opened from the Portfolio squares.
             // Both share the Portfolio tab's PortfolioViewModel instance so price history / selected range / summary are already
             // loaded and stay consistent - the squares always push these from the Portfolio tab.
@@ -1492,7 +1106,6 @@ fun MainShell(
                         address = backStackEntry.arguments?.getString("address") ?: "",
                         onBack = { navController.popBackStack() },
                         viewModel = sharedViewModel,
-                        onOpenChat = { address -> navController.navigate("chat/$address") },
                     )
                 }
             }
@@ -1530,7 +1143,6 @@ fun MainShell(
                         index = backStackEntry.arguments?.getInt("index") ?: 0,
                         onBack = { navController.popBackStack() },
                         viewModel = walletViewModel,
-                        onOpenChat = { address -> navController.navigate("chat/$address") },
                     )
                 }
             }
@@ -1546,7 +1158,6 @@ fun MainShell(
                     IdentityAddressDetailScreen(
                         onBack = { navController.popBackStack() },
                         viewModel = walletViewModel,
-                        onOpenChat = { address -> navController.navigate("chat/$address") },
                     )
                 }
             }
@@ -1568,45 +1179,6 @@ fun MainShell(
                 AddressVisibilityScreen(
                     viewModel = walletViewModel,
                     onBack = { navController.popBackStack() }
-                )
-            }
-
-            composable(
-                "manage_addresses_pick/{target}",
-                arguments = listOf(navArgument("target") { type = NavType.StringType })
-            ) { backStackEntry ->
-                // Swap only ever sends the user here to pick where received KAS should land
-                // (target == "to") - the old "pick which address to auto-send KAS from" flow
-                // (target == "from") went with Swap's auto-send. It used to open Manage
-                // Addresses, a MANAGEMENT screen: rename, hide, QR, consolidate, activate, none
-                // of which is the question being asked, and one wrong tap there changes your
-                // primary address. Matches iOS's Choose Address now.
-                SwapAddressPickerScreen(
-                    viewModel = walletViewModel,
-                    onBack = { navController.popBackStack() },
-                    onAddressPicked = { entry ->
-                        val swapEntry = navController.getBackStackEntry(Screen.Swap.route)
-                        swapEntry.savedStateHandle.set("picked_to_index", entry.index)
-                        navController.popBackStack(Screen.Swap.route, false)
-                    }
-                )
-            }
-
-            composable(
-                "manage_addresses_hidden_pick/{target}",
-                arguments = listOf(navArgument("target") { type = NavType.StringType })
-            ) { _ ->
-                ManageAddressesHiddenScreen(
-                    viewModel = walletViewModel,
-                    onBack = { navController.popBackStack() },
-                    onAddressPicked = { entry ->
-                        // Swap only ever sends the user here to pick where received KAS should
-                        // land - the old "pick which address to auto-send KAS from" flow was
-                        // removed along with Swap's auto-send.
-                        val swapEntry = navController.getBackStackEntry(Screen.Swap.route)
-                        swapEntry.savedStateHandle.set("picked_to_index", entry.index)
-                        navController.popBackStack(Screen.Swap.route, false)
-                    }
                 )
             }
 
@@ -1661,40 +1233,11 @@ fun MainShell(
                 )
             }
 
-            composable(
-                "welcome_guide?startAtUserType={startAtUserType}&onboarding={onboarding}",
-                arguments = listOf(
-                    navArgument("startAtUserType") { type = NavType.BoolType; defaultValue = false },
-                    // Explicit presentation context (never inferred from persisted markers):
-                    // true only for auto-presented onboarding runs, which are unskippable end
-                    // to end. Help replays keep the default false and stay skippable.
-                    navArgument("onboarding") { type = NavType.BoolType; defaultValue = false }
-                )
-            ) { backStackEntry ->
-                WelcomeGuideScreen(
-                    walletViewModel = walletViewModel,
-                    startAtUserType = backStackEntry.arguments?.getBoolean("startAtUserType") ?: false,
-                    isOnboardingRun = backStackEntry.arguments?.getBoolean("onboarding") ?: false,
-                    onFinished = {
-                        // The import run is over — a later Help replay of this same guide must not
-                        // offer "Change Chatting Address" again (see WelcomeGuideFundingStep).
-                        walletViewModel.clearJustImportedWallet()
-                        // Everything the account owns starts syncing now, behind a dialog: a
-                        // half-populated chat list invites taps on chats whose history has not
-                        // landed yet.
-                        chatViewModel.runInitialSyncAfterOnboarding()
-                        navController.popBackStack()
-                    }
-                )
-            }
-
             composable("kns_domains") {
                 CompositionLocalProvider(com.kachat.app.ui.screens.LocalDockInset provides innerPadding.calculateBottomPadding()) {
                     KnsDomainsScreen(
                         viewModel = walletViewModel,
                         onBack = { navController.popBackStack() },
-                        // Message on a .kachat name's owner (testnet).
-                        onOpenChat = { address -> navController.navigate("chat/$address") }
                     )
                 }
             }
@@ -1760,12 +1303,6 @@ fun MainShell(
                 )
             }
 
-            composable("child_mode_settings") {
-                ChildModeSettingsScreen(
-                    onBack = { navController.popBackStack() }
-                )
-            }
-
             composable("open_source_licenses") {
                 OpenSourceLicensesScreen(onBack = { navController.popBackStack() })
             }
@@ -1806,24 +1343,12 @@ fun MainShell(
                 )
             }
 
-            composable("quick_reaction_settings") {
-                QuickReactionSettingsScreen(
-                    onBack = { navController.popBackStack() }
-                )
-            }
-
-            // Chess tournaments (5.1): the lobby as a dock tab, and the screens it opens.
+            // The .kachat names marketplace, a dock tab.
             composable(Screen.KachatNames.route) {
                 CompositionLocalProvider(com.kachat.app.ui.screens.LocalDockInset provides innerPadding.calculateBottomPadding()) {
                     com.kachat.app.ui.screens.KachatMarketScreen(
-                        onBack = null,
-                        onOpenChat = { address -> navController.navigate("chat/$address") }
+                        onBack = null
                     )
-                }
-            }
-            composable(Screen.KachatStats.route) {
-                CompositionLocalProvider(com.kachat.app.ui.screens.LocalDockInset provides innerPadding.calculateBottomPadding()) {
-                    com.kachat.app.ui.screens.KaChatStatsScreen(onBack = null)
                 }
             }
             composable(Screen.AddressBook.route) {
@@ -1831,48 +1356,10 @@ fun MainShell(
                     // Opened from the Wallet tab now (iOS wallet 040f91a), so it has a way back.
                     com.kachat.app.ui.screens.AddressBookScreen(
                         onBack = { navController.popBackStack() },
-                        onOpenChat = { address -> navController.navigate("chat/$address") },
                         walletViewModel = walletViewModel,
                     )
                 }
             }
-            composable(Screen.KachatBots.route) {
-                CompositionLocalProvider(com.kachat.app.ui.screens.LocalDockInset provides innerPadding.calculateBottomPadding()) {
-                    com.kachat.app.ui.screens.KaChatBotsScreen(
-                        onBack = null,
-                        onOpenChat = { address -> navController.navigate("chat/$address") },
-                        chatViewModel = chatViewModel,
-                    )
-                }
-            }
-            composable(Screen.Chess.route) {
-                CompositionLocalProvider(com.kachat.app.ui.screens.LocalDockInset provides innerPadding.calculateBottomPadding()) {
-                    com.kachat.app.ui.screens.ChessHomeScreen(navController)
-                }
-            }
-            // One screen per kind of game, chosen on the home screen.
-            composable("chess_mode/{mode}") { entry ->
-                val mode = runCatching {
-                    com.kachat.app.ui.screens.ChessLobbyMode.valueOf(entry.arguments?.getString("mode").orEmpty())
-                }.getOrDefault(com.kachat.app.ui.screens.ChessLobbyMode.DUEL)
-                // The floating dock stays on this screen: it runs on under it (LocalDockInset).
-                CompositionLocalProvider(com.kachat.app.ui.screens.LocalDockInset provides innerPadding.calculateBottomPadding()) {
-                    com.kachat.app.ui.screens.ChessTournamentsScreen(mode, navController, onBack = { navController.popBackStack() })
-                }
-            }
-            composable("chess_tournament/{tournamentId}") { entry ->
-                CompositionLocalProvider(com.kachat.app.ui.screens.LocalDockInset provides innerPadding.calculateBottomPadding()) {
-                    com.kachat.app.ui.screens.ChessTournamentScreen(entry.arguments?.getString("tournamentId").orEmpty(), navController)
-                }
-            }
-            composable("chess_tournament_game/{tournamentId}/{gameId}") { entry ->
-                com.kachat.app.ui.screens.ChessTournamentGameScreen(
-                    entry.arguments?.getString("tournamentId").orEmpty(),
-                    entry.arguments?.getString("gameId").orEmpty(),
-                    navController,
-                )
-            }
-
             // Reachable as a dock tab now, not only as a Hub section.
             @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
             composable("kaspa_websites") {
@@ -1889,192 +1376,6 @@ fun MainShell(
                 }
             }
 
-            composable(
-                "broadcasts",
-                enterTransition = { EnterTransition.None },
-                exitTransition = { ExitTransition.None },
-                popEnterTransition = { EnterTransition.None },
-                popExitTransition = { ExitTransition.None }
-            ) {
-                // A dock/cycle page since 4.0 (see the Chats-slot cycle) with the floating
-                // bottom nav visible over it: runs on under it, as Chats/Profile do.
-                CompositionLocalProvider(com.kachat.app.ui.screens.LocalDockInset provides innerPadding.calculateBottomPadding()) {
-                    BroadcastListScreen(
-                        navController = navController,
-                        onBack = { navController.popBackStack() }
-                    )
-                }
-            }
-
-            composable(
-                "broadcast_room_info/{channelName}",
-                arguments = listOf(navArgument("channelName") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val room = backStackEntry.arguments?.getString("channelName") ?: ""
-                CompositionLocalProvider(com.kachat.app.ui.screens.LocalDockInset provides innerPadding.calculateBottomPadding()) {
-                    BroadcastRoomInfoScreen(
-                        channelName = room,
-                        onBack = { navController.popBackStack() },
-                        onOpenHiddenUsers = { navController.navigate("broadcast_hidden_users/$room") }
-                    )
-                }
-            }
-
-            composable(
-                "broadcast_hidden_users/{channelName}",
-                arguments = listOf(navArgument("channelName") { type = NavType.StringType })
-            ) { backStackEntry ->
-                BroadcastHiddenUsersScreen(
-                    channelName = backStackEntry.arguments?.getString("channelName") ?: "",
-                    onBack = { navController.popBackStack() }
-                )
-            }
-
-            composable("broadcast_channel/{channelName}") { backStackEntry ->
-                val channelName = backStackEntry.arguments?.getString("channelName") ?: return@composable
-                // The messages run on under the compose bar and the dock, as iOS's do under its
-                // tab bar; the compose bar floats just above the dock (LocalDockInset). Only while
-                // the dock is actually visible: once the keyboard opens, the dock goes behind it
-                // anyway, and this screen's own bottomBar already applies imePadding() to clear
-                // the keyboard itself — reserving both at once left a dead black gap between the
-                // message input and the keyboard.
-                val imeVisible = WindowInsets.isImeVisible
-                CompositionLocalProvider(com.kachat.app.ui.screens.LocalDockInset provides if (imeVisible) 0.dp else innerPadding.calculateBottomPadding()) {
-                    BroadcastChannelScreen(
-                        channelName = channelName,
-                        onBack = { navController.popBackStack() },
-                        navController = navController
-                    )
-                }
-            }
-
-            // `group` is an optional query-style arg (defaults false) so the tab-aware create
-            // button can open this screen straight into group-builder mode from the Group Chats tab.
-            composable(
-                "create_chat?group={group}",
-                arguments = listOf(navArgument("group") { type = NavType.BoolType; defaultValue = false })
-            ) { backStackEntry ->
-                val startInGroupMode = backStackEntry.arguments?.getBoolean("group") ?: false
-                CreateChatScreen(
-                    onBack = { navController.popBackStack() },
-                    onChatCreated = { address ->
-                        navController.navigate("chat/$address") {
-                            popUpTo(Screen.Chats.route)
-                        }
-                    },
-                    onGroupCreated = { groupId ->
-                        navController.navigate("group_chat/$groupId") {
-                            popUpTo(Screen.Chats.route)
-                        }
-                    },
-                    startInGroupMode = startInGroupMode,
-                    chatViewModel = chatViewModel
-                )
-            }
-
-            composable("group_chat/{groupId}") { backStackEntry ->
-                val groupId = backStackEntry.arguments?.getString("groupId") ?: return@composable
-                // The messages run on under the dock and the composer sits just above it, as the
-                // public room's does (see there).
-                val imeVisible = WindowInsets.isImeVisible
-                CompositionLocalProvider(com.kachat.app.ui.screens.LocalDockInset provides if (imeVisible) 0.dp else innerPadding.calculateBottomPadding()) {
-                    GroupChatThreadScreen(navController = navController, groupId = groupId, chatViewModel = chatViewModel, walletViewModel = walletViewModel)
-                }
-            }
-
-            composable("group_chat_info/{groupId}") { backStackEntry ->
-                val groupId = backStackEntry.arguments?.getString("groupId") ?: return@composable
-                GroupChatInfoScreen(navController = navController, groupId = groupId, chatViewModel = chatViewModel)
-            }
-
-            // Message Requests - people who wrote first and aren't accepted (iOS f7ca401).
-            composable("message_requests") {
-                com.kachat.app.ui.screens.MessageRequestsScreen(navController = navController, chatViewModel = chatViewModel)
-            }
-
-            // Chat thread — navigated to from ChatsScreen. paymentMode is an optional query-style
-            // arg (defaults false) so a "Pay in Kaspa" shortcut elsewhere (e.g. a broadcast
-            // sender's avatar menu) can land the user straight in payment-entry mode.
-            composable(
-                "chat/{contactId}?paymentMode={paymentMode}",
-                arguments = listOf(navArgument("paymentMode") { type = NavType.BoolType; defaultValue = false })
-            ) { backStackEntry ->
-                val contactId = backStackEntry.arguments?.getString("contactId") ?: return@composable
-                val startInPaymentMode = backStackEntry.arguments?.getBoolean("paymentMode") ?: false
-                // The messages run on under the dock and the composer sits just above it, as the
-                // public room's does (see there).
-                val imeVisible = WindowInsets.isImeVisible
-                CompositionLocalProvider(com.kachat.app.ui.screens.LocalDockInset provides if (imeVisible) 0.dp else innerPadding.calculateBottomPadding()) {
-                    ChatThreadScreen(
-                        navController = navController,
-                        contactId = contactId,
-                        chatViewModel = chatViewModel,
-                        walletViewModel = walletViewModel,
-                        startInPaymentMode = startInPaymentMode
-                    )
-                }
-            }
-
-            composable("chess_game/{contactId}/{gameId}") { backStackEntry ->
-                val contactId = backStackEntry.arguments?.getString("contactId") ?: return@composable
-                val gameId = backStackEntry.arguments?.getString("gameId") ?: return@composable
-                ChessGameScreen(
-                    navController = navController,
-                    contactId = contactId,
-                    gameId = gameId,
-                    chatViewModel = chatViewModel
-                )
-            }
-
-            composable("chat_info/{contactId}") { backStackEntry ->
-                val contactId = backStackEntry.arguments?.getString("contactId") ?: return@composable
-                ChatInfoScreen(
-                    contactId = contactId,
-                    onBack = { navController.popBackStack() },
-                    // Replaces this screen rather than stacking on it, so Back from the chat
-                    // returns where User Info was opened from instead of to User Info again.
-                    onOpenChat = { id ->
-                        navController.popBackStack()
-                        navController.navigate("chat/$id")
-                    },
-                    onNavigateToPhotoSettings = { id -> navController.navigate("contact_photo_settings/$id") },
-                    onNavigateToNotificationSettings = { id -> navController.navigate("contact_notification_settings/$id") },
-                    onNavigateToDomains = { id -> navController.navigate("contact_domains/$id") }
-                )
-            }
-
-            composable(
-                "contact_domains/{contactId}",
-                arguments = listOf(navArgument("contactId") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val contactId = backStackEntry.arguments?.getString("contactId") ?: return@composable
-                ContactDomainsScreen(
-                    contactId = contactId,
-                    onBack = { navController.popBackStack() }
-                )
-            }
-
-            composable(
-                "contact_photo_settings/{contactId}",
-                arguments = listOf(navArgument("contactId") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val contactId = backStackEntry.arguments?.getString("contactId") ?: return@composable
-                ContactPhotoSettingsScreen(
-                    contactId = contactId,
-                    onBack = { navController.popBackStack() }
-                )
-            }
-
-            composable(
-                "contact_notification_settings/{contactId}",
-                arguments = listOf(navArgument("contactId") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val contactId = backStackEntry.arguments?.getString("contactId") ?: return@composable
-                ContactNotificationSettingsScreen(
-                    contactId = contactId,
-                    onBack = { navController.popBackStack() }
-                )
-            }
         }
         }
 
@@ -2114,7 +1415,6 @@ private fun OwnAddressHistorySheet(
     address: String,
     walletViewModel: WalletViewModel,
     coldStorageViewModel: @Composable () -> com.kachat.app.viewmodels.ColdStorageViewModel,
-    onOpenChat: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val coldViewModel = coldStorageViewModel()
@@ -2146,14 +1446,12 @@ private fun OwnAddressHistorySheet(
                         OwnAddressResolution.Chatting -> IdentityAddressDetailScreen(
                             onBack = onDismiss,
                             viewModel = walletViewModel,
-                            onOpenChat = onOpenChat,
                             closesWithDone = true,
                         )
                         is OwnAddressResolution.Spending -> SpendingAddressTxHistoryScreen(
                             index = target.entry.index,
                             onBack = onDismiss,
                             viewModel = walletViewModel,
-                            onOpenChat = onOpenChat,
                             fallbackEntry = target.entry,
                             closesWithDone = true,
                         )
@@ -2161,7 +1459,6 @@ private fun OwnAddressHistorySheet(
                             address = target.row.address,
                             onBack = onDismiss,
                             viewModel = coldViewModel,
-                            onOpenChat = onOpenChat,
                             resolvedRow = target.row,
                             closesWithDone = true,
                         )

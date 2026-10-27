@@ -98,10 +98,8 @@ class KaspaWalletEngine @Inject constructor(
         spent.removeAll { key -> (pendingRecordedAtMs[key] ?: 0L) < cutoff }
         change.removeAll { (pendingRecordedAtMs[outpointKey(it.outpoint)] ?: 0L) < cutoff }
         pendingRecordedAtMs.entries.removeAll { it.value < cutoff }
-        // A coin a scheduled post is waiting to spend is not available to anything else, or the
-        // signed transaction would be invalid by the time its moment came (iOS's
-        // KaPostsScheduledStore.filterReserved, applied at the same choke point).
-        val available = KaPostsScheduledStore.filterReserved(freshUtxos)
+        // No coin is reserved for a scheduled post any more (iOS wallet 301ebfb).
+        val available = freshUtxos
         val ownScriptHex = try { KaspaAddress.getScriptPublicKey(address) } catch (_: Exception) { null }
         return reconcilePendingUtxos(available, spent, change, ownScriptHex)
     }
@@ -512,100 +510,6 @@ class KaspaWalletEngine @Inject constructor(
         }
     }
 
-    /**
-     * A chat payment whose From is one of the spending addresses (iOS 6333dd3
-     * `sendPaymentInternal(sourceSpendingIndex:)`): spent from [sourceSpendingIndex]'s address and
-     * signed with that address's own key. The coins are picked the normal way - the largest
-     * first, just enough for the amount and fee, at most
-     * [KaspaUtxoSelector.MAX_INPUTS_PER_TRANSACTION] - or, with coin control, exactly the picked
-     * ones; whatever is not spent stays on the source address. The change goes to a never-used
-     * quantum-safe (KIP-22) address, checked on chain first ([WalletManager.verifyFreshQuantumIndex]
-     * with [isAddressUsed]); when it can't be derived a legacy source takes the change back, a
-     * quantum source fails the send (IOS-104 / AND-052). It is
-     * revealed (listed in Manage Addresses) once the send succeeds; it is never made the primary - nothing rotates a primary any more. A quantum source
-     * spends with its redeem script after each signature, and is marked spent (its shield comes
-     * off) once the network takes it. A failed/rejected send moves nothing, safe to retry.
-     */
-    suspend fun sendSpendingPayment(
-        toAddress: String,
-        amountSompi: Long,
-        sourceSpendingIndex: Int,
-        feeRateOverride: Long? = null,
-        /** The payment's `kchat:1:pay:` payload when it carries a memo (see
-         *  [com.kachat.app.util.MessageProtocol.buildPaymentPayload]); null for a plain payment. */
-        payloadBytes: ByteArray? = null,
-        /** Coin control: spend exactly these coins of the source address (resolved against the
-         *  fresh fetch in [sendKaspa]). null = automatic selection. */
-        manualUtxos: List<UtxoEntry>? = null,
-        /** Fast / Priority / custom extra on top of the base fee, paid exactly. */
-        extraFeeSompi: Long = 0L,
-        /** Whether an address already has on-chain history (WalletService.spendingAddressUsedState;
-         *  null = can't tell): the fresh change slot is checked with it first (iOS da2c8e2). */
-        isAddressUsed: suspend (String) -> Boolean?,
-    ): Result<String> {
-        // The account the source is derived from: its change slot is probed and picked there too
-        // (iOS fb2323e, IOS-109 / AND-056 follow-up).
-        val owner = walletManager.getActiveAccount()?.address
-        val sourceSpendingAddress = walletManager.deriveSpendingAddress(sourceSpendingIndex)
-        val spendingPrivateKey = walletManager.getSpendingPrivateKeyBytes(sourceSpendingIndex)
-        // A quantum-safe source (KIP-22) spends with its redeem script pushed after the signature.
-        val isQuantumSource = WalletManager.isQuantumIndex(sourceSpendingIndex)
-        val senderRedeemScript = if (isQuantumSource) {
-            walletManager.quantumRedeemScript(sourceSpendingIndex)
-                ?: return Result.failure(IllegalStateException("Could not derive the quantum address's key"))
-        } else null
-        // Change always lands on a brand-new quantum-safe slot (iOS `nextFreshQuantumIndex`):
-        // never an address used before, and its key stays hidden until IT spends. Picked now,
-        // revealed only once the network takes the send - a failed send burns no slot - and held
-        // as in flight meanwhile, so a concurrent send or Request Payment reservation can't get
-        // the same one. The slot is checked on chain first: one that already has history (used
-        // from another device, or past where a restore looked) is skipped (iOS
-        // `verifiedFreshQuantumIndex`, IOS-101 / AND-049). Slot and address both come from the
-        // account the source was derived from, whichever is active once the probe returns (iOS
-        // fb2323e `verifiedFreshQuantumSlot`, IOS-109 / AND-056 follow-up).
-        val picked = owner?.let { walletManager.verifiedFreshQuantumChange(owner = it, isUsed = isAddressUsed) }
-        val pick = if (picked != null && (picked.index == sourceSpendingIndex || picked.address.equals(sourceSpendingAddress, ignoreCase = true))) {
-            walletManager.finishQuantumChangePick(picked, reveal = false)
-            null
-        } else picked
-        // If it can't be derived a legacy source takes its change back (iOS); a quantum source's
-        // spend reveals its key, and change back to it would park funds on a revealed key - the
-        // send stops instead (iOS da2c8e2, IOS-104 / AND-052).
-        if (pick == null && isQuantumSource) {
-            return Result.failure(IllegalStateException(appContext.getString(com.kachat.app.R.string.quantum_next_address_failed)))
-        }
-        val result = try {
-            sendKaspa(
-                toAddress = toAddress,
-                amountSompi = amountSompi,
-                payloadBytes = payloadBytes,
-                fromAddress = sourceSpendingAddress,
-                signingPrivateKey = spendingPrivateKey,
-                changeAddress = pick?.address ?: sourceSpendingAddress,
-                feeRateOverride = feeRateOverride,
-                // Coin control: only the chosen coins are spent (iOS 62c2773). Otherwise the normal
-                // largest-first selection, as a chatting-address payment - the fee preview and Max
-                // price the same coins (ChatViewModel.paymentFeeInputs / paymentMaxCoins).
-                manualUtxos = manualUtxos,
-                extraFeeSompi = extraFeeSompi,
-                senderRedeemScript = senderRedeemScript,
-            )
-        } catch (e: Throwable) {
-            // Interrupted with the outcome unknown: revealed, as revealing a slot is always safe
-            // and handing out one that may hold change is not.
-            pick?.let { walletManager.finishQuantumChangePick(it, reveal = true) }
-            throw e
-        }
-        // Revealed, not made primary (iOS revealSpendingAddress), only when the send went
-        // through; a failed send gives it back. Both writes go to the account this send started
-        // on (the pick's own, and [owner]), even if another is active by now; nothing once it was
-        // removed (iOS ca09dd0, IOS-109 / AND-056).
-        pick?.let { walletManager.finishQuantumChangePick(it, reveal = result.isSuccess) }
-        // a spend reveals the key for good: the shield comes off (KIP-22)
-        if (result.isSuccess && isQuantumSource) walletManager.markQuantumAddressSpent(sourceSpendingAddress, owner = owner)
-        return result
-    }
-
     /** Live quoted fee rate (sompi per mass-gram), floored at the network minimum - mirrors
      *  [ColdStorageSendEngine.fetchQuotedFeeRateSompiPerGram]. Falls back to the minimum on any
      *  request failure. Extracted out of [sendKaspa] so [WalletViewModel]'s max-amount estimate
@@ -688,90 +592,6 @@ class KaspaWalletEngine @Inject constructor(
         }
     }
 
-    /** A signed transaction that has NOT been submitted: its id, its bytes, and what it spends. */
-    data class SignedPayloadTx(
-        val txId: String,
-        val transaction: RawTransaction,
-        val spentOutpoints: List<String>,
-    )
-
-    /**
-     * Builds and signs a payload-carrying self-send WITHOUT submitting it - what a scheduled post
-     * is: signed now, sent later (KAPOSTS_INDEXER.md section 5.10).
-     *
-     * Confirmed coins only: a transaction that may sit for days must not chain onto an
-     * unconfirmed change output, which could be re-organised away under it. The coins it spends
-     * are the caller's to reserve (see [KaPostsScheduledStore]); nothing is recorded as pending
-     * here, because nothing has been broadcast.
-     */
-    suspend fun buildSignedPayloadSelfSend(
-        payloadBytes: ByteArray,
-        fromAddress: String = walletManager.getAddress(),
-        signingPrivateKey: ByteArray = walletManager.getPrivateKeyBytes(),
-        feeRateOverride: Long? = null,
-    ): Result<SignedPayloadTx> = sendMutex.withLock {
-        try {
-            val api = networkService.kaspaRestApi.value
-                ?: return Result.failure(IllegalStateException("Network service unavailable"))
-            val fetched = nodePoolManager.getUtxosByAddress(fromAddress) ?: api.getUtxos(fromAddress)
-            val confirmed = filterSpendableCoinbase(reconcileUtxos(fromAddress, fetched))
-                .filter { it.utxoEntry.blockDaaScore > 0L }
-            if (confirmed.isEmpty()) {
-                return Result.failure(IllegalStateException("No confirmed coins are available to schedule a post with. Wait for a confirmation and try again."))
-            }
-            val feeRate = feeRateOverride?.coerceAtLeast(KaspaMass.MINIMUM_FEE_RATE_SOMPI_PER_GRAM)
-                ?: fetchQuotedFeeRateSompiPerGram()
-            val scriptHex = KaspaAddress.getScriptPublicKey(fromAddress)
-            val selection = selectUtxosAndCalculateFee(
-                utxos = confirmed,
-                amountSompi = 0,
-                feeRateSompiPerGram = feeRate,
-                payloadBytes = payloadBytes,
-                recipientScriptLen = scriptHex.length / 2,
-                changeScriptLen = scriptHex.length / 2,
-            )
-            if (selection.totalSelected < selection.requiredAmount) {
-                return Result.failure(IllegalStateException("Insufficient funds: Needed ${selection.requiredAmount}, have ${selection.totalSelected}"))
-            }
-            if (selection.selectedUtxos.size > KaspaUtxoSelector.MAX_INPUTS_PER_TRANSACTION) {
-                return Result.failure(IllegalStateException(
-                    "This needs more than ${KaspaUtxoSelector.MAX_INPUTS_PER_TRANSACTION} inputs. Compound (consolidate) this address's coins first."
-                ))
-            }
-            // A self-send carries its whole value as change: the post is the payload, not a payment.
-            val inputAmounts = selection.selectedUtxos.map { it.utxoEntry.amount }
-            if (selection.changeAmount <= 0 || !KaspaMass.fitsStorageMass(inputAmounts, listOf(selection.changeAmount))) {
-                return Result.failure(IllegalStateException("Insufficient funds to cover the network fee"))
-            }
-            val rawTx = RawTransaction(
-                inputs = selection.selectedUtxos.map { RawInput(previousOutpoint = it.outpoint, signatureScript = "") },
-                outputs = listOf(
-                    RawOutputWithVersion(
-                        amount = selection.changeAmount,
-                        scriptPublicKey = ScriptPublicKeyWithVersion(scriptHex, 0),
-                    )
-                ),
-                gas = 0,
-                payload = payloadBytes.joinToString("") { "%02x".format(it) },
-            )
-            val signedTx = KaspaTransactionSigner.signTransaction(
-                rawTx = rawTx,
-                utxos = selection.selectedUtxos,
-                privateKey = signingPrivateKey,
-            )
-            return Result.success(
-                SignedPayloadTx(
-                    txId = com.kachat.app.util.KaspaTransactionId.compute(signedTx),
-                    transaction = signedTx,
-                    spentOutpoints = signedTx.inputs.map { outpointKey(it.previousOutpoint) },
-                )
-            )
-        } catch (e: Exception) {
-            Log.e("KaspaWalletEngine", "Could not build a scheduled transaction", e)
-            return Result.failure(e)
-        }
-    }
-
     /**
      * The network fee a payload-carrying self-send from [fromAddress] would pay right now: the
      * transaction [sendKaspa] would build for `sendKaspa(toAddress = fromAddress, amountSompi = 0,
@@ -833,19 +653,6 @@ class KaspaWalletEngine @Inject constructor(
         val spent = UtxoMath.total(selection.selectedUtxos.map { it.utxoEntry.amount })
         val back = UtxoMath.total(signed.outputs.map { it.amount })
         maxOf(0L, spent - back)
-    }
-
-    /**
-     * Submits a transaction that was signed earlier - the phone's own fallback for a scheduled
-     * post the indexer never took. Returns the id the node gives it.
-     */
-    suspend fun submitSignedTransaction(transaction: RawTransaction): String {
-        // A submit error is checked against the network before it counts (audit IOS-014).
-        val txId = nodePoolManager.submitConfirmingKnown(transaction, networkService.kaspaRestApi.value) {
-            nodePoolManager.submitWaitingForParent(transaction, allowOrphan = false)
-        }
-        try { refreshAfterSubmit(transaction) } catch (_: Exception) {}
-        return txId
     }
 
     /** After a delayed submit: the coins it spent are gone, so nothing may pick them again. */

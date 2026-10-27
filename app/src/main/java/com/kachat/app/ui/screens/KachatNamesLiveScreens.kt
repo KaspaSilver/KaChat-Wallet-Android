@@ -71,8 +71,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kachat.app.R
-import com.kachat.app.models.ContactEntity
-import com.kachat.app.repository.ChatRepository
 import com.kachat.app.services.AddressBookManager
 import com.kachat.app.services.WalletManager
 import com.kachat.app.services.WalletService
@@ -450,7 +448,6 @@ class KachatLiveViewModel @Inject constructor(
     val wallet: WalletService,
     /** The block explorer picked in Settings, for the finished-transaction sheet (iOS 0870fcc). */
     val settings: com.kachat.app.repository.AppSettingsRepository,
-    private val chatRepository: ChatRepository,
     private val walletManager: WalletManager,
 ) : ViewModel() {
     sealed class Search {
@@ -643,21 +640,6 @@ class KachatLiveViewModel @Inject constructor(
      *  (iOS's unstructured `Task`). */
     fun launch(block: suspend () -> Unit) {
         viewModelScope.launch { block() }
-    }
-
-    /**
-     * Opens (or starts) a 1:1 chat with [address] (iOS `KachatLive.message`): its contact row is
-     * created first, as a tapped profile link's is (ChatViewModel.openProfile), then [onReady].
-     */
-    fun message(address: String, onReady: (String) -> Unit) {
-        viewModelScope.launch {
-            if (chatRepository.getContact(address) == null) {
-                chatRepository.addContact(
-                    ContactEntity(id = address, walletAddress = walletManager.getAddress(), alias = null, knsName = null, publicKeyHex = null)
-                )
-            }
-            onReady(address)
-        }
     }
 
     /** "Address #3" (or its name) for one of this wallet's addresses, else null
@@ -3152,7 +3134,6 @@ object KachatManageMenu {
 fun KachatLiveNameDetailScreen(
     initial: NameInfo,
     onBack: () -> Unit,
-    onOpenChat: (String) -> Unit,
     vm: KachatLiveViewModel = hiltViewModel(),
 ) {
     val colors = LocalAppColors.current
@@ -3516,23 +3497,7 @@ fun KachatLiveNameDetailScreen(
                                     }
                                 }
                             }
-                            if (!ownedByWallet && ownerAddress != null) {
-                                val messageLabel = stringResource(R.string.kl_message)
-                                Spacer(Modifier.width(8.dp))
-                                // A fixed round button: as a "Message" label it was squeezed by the
-                                // address beside it (which never shrinks) into a tall, empty capsule (iOS 395863e).
-                                Box(
-                                    Modifier
-                                        .size(44.dp)
-                                        .clip(CircleShape)
-                                        .background(KaspaTeal.copy(alpha = 0.18f))
-                                        .clickable(role = androidx.compose.ui.semantics.Role.Button) { vm.message(ownerAddress, onOpenChat) }
-                                        .semantics { contentDescription = messageLabel },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(Icons.Outlined.Forum, contentDescription = null, tint = KaspaTeal, modifier = Modifier.size(20.dp))
-                                }
-                            }
+                            // No Message button: the wallet has no chats (iOS wallet 301ebfb).
                         }
                     }
 

@@ -1,15 +1,9 @@
 package com.kachat.app.services
 
-import com.kachat.app.util.HandshakeAliasPolicy
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.kachat.app.models.ContactEntity
-import com.kachat.app.models.HandshakePayload
-import com.kachat.app.models.MessageEntity
-import com.kachat.app.repository.ChatRepository
 import com.kachat.app.util.KaspaAddress
-import com.kachat.app.util.MessageProtocol
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -35,14 +29,10 @@ class WalletService @Inject constructor(
     private val networkService: NetworkService,
     private val walletManager: WalletManager,
     private val walletEngine: KaspaWalletEngine,
-    private val chatRepository: ChatRepository,
     private val knsService: KnsService,
     /** .k and .kaspa names for the chatting-address scan (iOS 7a5b157). */
     private val nameServices: NameServicesClient,
     private val knsInscriptionEngine: KnsInscriptionEngine,
-    /** Writes the `saved_handshake` note after every handshake (XP-003). Lazy: the note service
-     *  sends through this one. */
-    private val contactNotesLazy: dagger.Lazy<ContactNoteService>,
     /** For the KNS transfer refusals' localized text (iOS 2a8ca5a). */
     @dagger.hilt.android.qualifiers.ApplicationContext private val appContext: android.content.Context,
 ) {
@@ -67,11 +57,6 @@ class WalletService @Inject constructor(
      *  a total of zero. */
     private val _spendingTotalBalance = MutableStateFlow<Long?>(null)
     val spendingTotalBalance: StateFlow<Long?> = _spendingTotalBalance.asStateFlow()
-
-    /** Amount sent with a handshake transaction: 0.2 KAS (matches iOS `handshakeAmount`). */
-    private val HANDSHAKE_AMOUNT_SOMPI = 20_000_000L
-
-    data class SendResult(val txId: String, val payloadHex: String)
 
     /**
      * The REST API client is built asynchronously off [AppSettingsRepository]'s persisted URL
@@ -151,10 +136,8 @@ class WalletService @Inject constructor(
     }
 
     /**
-     * Orchestrates a Kaspa payment: Fetch UTXOs -> Build -> Sign -> Broadcast. Identity-address
-     * sourced — used internally by [sendKasiaMessage]/[sendBroadcast]/[sendHandshake] below (all
-     * unqualified same-class calls to this exact method) as well as anything else that needs a
-     * plain identity-sourced send. "Pay in Kaspa" does NOT go through this — see [payInKaspa].
+     * Orchestrates a Kaspa payment: Fetch UTXOs -> Build -> Sign -> Broadcast, from the
+     * identity (chatting) address.
      * @return The transaction ID if successful.
      */
     suspend fun sendKaspa(
@@ -178,58 +161,6 @@ class WalletService @Inject constructor(
 
         if (result.isSuccess) {
             refreshBalance()
-            return result.getOrThrow()
-        } else {
-            throw result.exceptionOrNull() ?: Exception("Unknown error during Kaspa send")
-        }
-    }
-
-    /**
-     * Builds and signs a payload-carrying self-send without submitting it - a scheduled KaPost
-     * (see [KaspaWalletEngine.buildSignedPayloadSelfSend]). The coins it spends must be reserved
-     * by the caller until it goes out.
-     */
-    suspend fun buildSignedPayloadSelfSend(payloadBytes: ByteArray): Result<KaspaWalletEngine.SignedPayloadTx> =
-        walletEngine.buildSignedPayloadSelfSend(payloadBytes)
-
-    /** Submits a transaction signed earlier - the fallback path for a scheduled post. */
-    suspend fun submitSignedTransaction(transaction: RawTransaction): String {
-        val txId = walletEngine.submitSignedTransaction(transaction)
-        refreshBalance()
-        return txId
-    }
-
-    /**
-     * A chat payment whose From is one of the spending addresses (iOS 6333dd3
-     * `sendPayment(sourceSpendingIndex:)`) - see [KaspaWalletEngine.sendSpendingPayment]: signed
-     * with [sourceSpendingIndex]'s own key, change to a never-used address. A payment from the
-     * chatting address (the default From) goes through [sendKaspa] above instead.
-     * @return The transaction ID if successful.
-     */
-    suspend fun payInKaspa(
-        toAddress: String,
-        amountSompi: Long,
-        sourceSpendingIndex: Int,
-        feeRateOverride: Long? = null,
-        payloadBytes: ByteArray? = null,
-        /** Coin control on the source address (null = automatic selection) and the Fast /
-         *  Priority / custom extra fee (iOS 62c2773). */
-        manualUtxos: List<UtxoEntry>? = null,
-        extraFeeSompi: Long = 0L,
-    ): String {
-        val result = walletEngine.sendSpendingPayment(
-            toAddress = toAddress,
-            amountSompi = amountSompi,
-            sourceSpendingIndex = sourceSpendingIndex,
-            feeRateOverride = feeRateOverride,
-            payloadBytes = payloadBytes,
-            manualUtxos = manualUtxos,
-            extraFeeSompi = extraFeeSompi,
-            isAddressUsed = { spendingAddressUsedState(it) },
-        )
-
-        if (result.isSuccess) {
-            refreshSpendingBalance()
             return result.getOrThrow()
         } else {
             throw result.exceptionOrNull() ?: Exception("Unknown error during Kaspa send")
@@ -639,187 +570,6 @@ class WalletService @Inject constructor(
         return walletManager.generateNextQuantumAddress(account.owner)
     }
 
-    /**
-     * Sends an encrypted on-chain message (Kasia "comm" protocol) as a self-stash
-     * transaction. No handshake is required first: the message is tagged with the deterministic
-     * alias derived via ECDH from both addresses - the recipient can independently derive the
-     * exact same value and find it without ever seeing a handshake (see
-     * [WalletManager.theirDeterministicAlias]). Only a pre-existing legacy handshake chat - one
-     * whose handshake from an older build stored a random alias of ours - keeps writing on that
-     * alias (XP-003, [HandshakeAliasPolicy]).
-     *
-     * [firstContactTag] false: never the first-contact inbox tag - an invisible envelope that
-     * is not a message (a `payment_notice`, as iOS `sendEnvelopeInternal` sends it) must not use
-     * up the one tagged first message.
-     */
-    suspend fun sendKasiaMessage(toContactId: String, text: String, feeRateOverride: Long? = null, firstContactTag: Boolean = true): SendResult {
-        // Writing to someone is consent: their chat is accepted, and a block on them lifts
-        // (NO_HANDSHAKE_MESSAGING.md §4).
-        if (!toContactId.equals(walletManager.getAddress(), ignoreCase = true)) chatRepository.acceptChat(toContactId)
-        val recipientPubKey = KaspaAddress.decode(toContactId).second
-        val contact = chatRepository.getContact(toContactId)
-
-        val alias = HandshakeAliasPolicy.messageAlias(
-            handshakeComplete = contact?.handshakeComplete == true,
-            myAlias = contact?.myAlias,
-            deterministicAlias = walletManager.theirDeterministicAlias(toContactId),
-        )
-
-        val encrypted = MessageProtocol.encryptContextual(text, recipientPubKey)
-        // First contact carries their inbox tag so they can find it (NO_HANDSHAKE_MESSAGING.md §3).
-        val inboxTag = if (firstContactTag) chatRepository.firstContactInboxTag(toContactId) else null
-        val payloadBytes = MessageProtocol.buildCommPayload(alias, encrypted, inboxTag)
-
-        val txId = sendKaspa(toAddress = walletManager.getAddress(), amountSompi = 0, payloadBytes = payloadBytes, feeRateOverride = feeRateOverride)
-        // The one tagged first message is out - recorded only after the submit, so a failed send
-        // does not use the tag up.
-        if (inboxTag != null) chatRepository.noteInboxTagged(toContactId)
-        return SendResult(txId, payloadBytes.toHexString())
-    }
-
-    /**
-     * The payload [sendKasiaMessage] would put on chain for [text], built without sending it -
-     * what a ring push carries when the chain send itself failed (iOS CallService.requestRing
-     * builds its own the same way: the alias, the encrypted text, no inbox tag).
-     */
-    suspend fun buildKasiaPayloadHex(toContactId: String, text: String): String {
-        val recipientPubKey = KaspaAddress.decode(toContactId).second
-        val contact = chatRepository.getContact(toContactId)
-        val alias = HandshakeAliasPolicy.messageAlias(
-            handshakeComplete = contact?.handshakeComplete == true,
-            myAlias = contact?.myAlias,
-            deterministicAlias = walletManager.theirDeterministicAlias(toContactId),
-        )
-        val encrypted = MessageProtocol.encryptContextual(text, recipientPubKey)
-        return MessageProtocol.buildCommPayload(alias, encrypted, null).toHexString()
-    }
-
-    /**
-     * Sends a broadcast message to a public channel — a "bcast" self-stash transaction, same
-     * shape as [sendKasiaMessage] but never encrypted (broadcasts are plaintext by design, since
-     * they're public one-to-many channels rather than a 1:1 conversation — matches Kasia).
-     */
-    suspend fun sendBroadcast(channel: String, content: String, feeRateOverride: Long? = null): SendResult {
-        val payloadBytes = MessageProtocol.buildBcastPayload(channel, content)
-        val txId = sendKaspa(toAddress = walletManager.getAddress(), amountSompi = 0, payloadBytes = payloadBytes, feeRateOverride = feeRateOverride)
-        return SendResult(txId, payloadBytes.toHexString())
-    }
-
-    /**
-     * Sends a "handshake" transaction (0.2 KAS to the recipient) carrying our alias
-     * and encrypted for their address-derived public key.
-     *
-     * NOTE: [handshakeComplete] only reflects "we sent a handshake," not "the recipient
-     * acknowledged it" — the real protocol has no explicit handshake-ack message either.
-     * [isResponse] marks this as a reply to an incoming request (see [acceptHandshake]),
-     * which immediately activates the conversation locally rather than leaving it pending.
-     */
-    private suspend fun sendHandshake(toAddress: String, recipientPubKey: ByteArray, isResponse: Boolean = false): String {
-        val existing = chatRepository.getContact(toAddress)
-        // Our protocol alias (12 lowercase hex chars, which real clients validate) - NOT our
-        // human-readable account name. It is our actual outgoing alias for this contact
-        // (DETERMINISTIC_ALIASES.md §4.4, audit XP-003): the deterministic one for a new chat -
-        // the alias Desktop fetches under and a reinstall derives again - and a legacy random
-        // alias only for a chat that already has one from an older build. Never generated
-        // fresh. Accepting an incoming (legacy) handshake follows the same rule.
-        val myAlias = HandshakeAliasPolicy.handshakeAlias(
-            existingMyAlias = existing?.myAlias,
-            deterministicAlias = walletManager.theirDeterministicAlias(toAddress),
-        )
-
-        val payload = HandshakePayload(
-            alias = myAlias,
-            timestamp = System.currentTimeMillis(),
-            conversationId = null,
-            recipientAddress = toAddress,
-            isResponse = isResponse,
-            // Confirms both sides' aliases in one shot on a response — without this, a
-            // real Kasia client may not consider its side of the conversation fully
-            // active and so never start polling for our self-stashed messages.
-            theirAlias = if (isResponse) existing?.theirAlias else null
-        )
-        val json = Gson().toJson(payload)
-        val encrypted = MessageProtocol.encrypt(json, recipientPubKey)
-        val payloadBytes = MessageProtocol.buildHandshakePayload(encrypted)
-
-        // A handshake is recognised by its payload, not its amount. When this account cannot
-        // cover 0.2 KAS plus the fee - typically because its only coin IS the 0.2 KAS handshake
-        // it just received - the amount is reduced by the fee instead of failing, so the
-        // conversation can still be answered (mirrors iOS buildHandshakeTx).
-        val txId = sendKaspa(
-            toAddress = toAddress,
-            amountSompi = HANDSHAKE_AMOUNT_SOMPI,
-            payloadBytes = payloadBytes,
-            allowReducedAmount = true
-        )
-
-        chatRepository.addContact(
-            (existing ?: ContactEntity(id = toAddress, walletAddress = walletManager.getAddress(), alias = null, knsName = null, publicKeyHex = null))
-                .copy(
-                    publicKeyHex = recipientPubKey.toHexString(),
-                    handshakeComplete = true,
-                    conversationStatus = if (isResponse) "active" else (existing?.conversationStatus ?: "active"),
-                    myAlias = myAlias
-                )
-        )
-
-        // So the sender also sees a bubble for their own handshake in their own thread,
-        // matching the real reference apps — previously only the recipient ever got a local
-        // record of the handshake. A response (accepting an incoming request) reads as
-        // "[Handshake completed]" instead of the generic outreach text, since by definition
-        // accepting means the connection is now live, not still pending - matches the
-        // "🤝 Handshake completed" pill already shown for the other side of a completed
-        // handshake (see MessageBubble's `showCompleted`/`pillText`).
-        chatRepository.insertMessage(
-            MessageEntity(
-                id = txId,
-                contactId = toAddress,
-                walletAddress = walletManager.getAddress(),
-                type = MessageProtocol.TYPE_HANDSHAKE,
-                direction = "sent",
-                plaintextBody = if (isResponse) "[Handshake completed]" else "[Request to communicate]",
-                encryptedPayload = payloadBytes.toHexString(),
-                amountSompi = HANDSHAKE_AMOUNT_SOMPI,
-                blockTimestamp = System.currentTimeMillis()
-            )
-        )
-
-        // The iOS-shape `saved_handshake` note (alias, theirAlias, partnerAddress), so a reinstall
-        // of this seed finds the chat again - the handshake itself is sealed to the peer.
-        contactNotesLazy.get().onHandshakeSent(
-            partnerAddress = toAddress,
-            ourAlias = myAlias,
-            theirAlias = existing?.theirAlias,
-            isResponse = isResponse,
-        )
-
-        return txId
-    }
-
-    /**
-     * Accepts an incoming handshake request: sends a real reciprocal handshake
-     * transaction and activates the conversation locally. Declining is handled
-     * entirely client-side (see ChatViewModel.declineHandshake) — no transaction
-     * is sent for a decline, matching the real protocol/reference apps.
-     */
-    suspend fun acceptHandshake(contactId: String): String {
-        val recipientPubKey = KaspaAddress.decode(contactId).second
-        return sendHandshake(contactId, recipientPubKey, isResponse = true)
-    }
-
-    /**
-     * Sends an initial (non-response) handshake to a brand new contact — ONLY ever called from an
-     * explicit user tap ("Send Handshake" / "start a conversation"). A handshake is an on-chain tx
-     * and must never be auto-sent on login, launch, sync, or import. NOTE: [sendKasiaMessage] does
-     * NOT auto-send a handshake — messages self-stash with a deterministic alias and need none.
-     */
-    suspend fun sendHandshakeToNewContact(contactId: String): String {
-        val recipientPubKey = KaspaAddress.decode(contactId).second
-        return sendHandshake(contactId, recipientPubKey, isResponse = false)
-    }
-
-    private fun ByteArray.toHexString(): String = joinToString("") { "%02x".format(it) }
-
     data class DomainInscribeResult(
         val domain: String,
         val isReservedDomain: Boolean,
@@ -1059,15 +809,7 @@ class WalletService @Inject constructor(
         }
         onStep(KnsInscribeStep.SUBMITTING_REVEAL)
         val revealTxId = knsInscriptionEngine.buildAndSubmitReveal(commit, sourceAddress, changeAddress, sourcePrivateKey, priorityFeeSompi)
-        // The chat with the recipient shows "Sent <domain> domain" as soon as the payment sync
-        // sees the reveal (iOS KNSService transfer -> registerKNSTransferChatHint).
-        chatRepository.registerKnsTransferHint(
-            txId = revealTxId,
-            domainName = fullDomain,
-            domainId = trimmedAssetId,
-            counterpartyAddress = toAddress,
-            isOutgoing = true,
-        )
+        // No chat transfer hint: the wallet has no chats (iOS wallet 301ebfb).
 
         onStep(KnsInscribeStep.VERIFYING)
         val verified = verifyDomainOwnership(fullDomain, toAddress)
@@ -1193,8 +935,14 @@ class WalletService @Inject constructor(
         internal fun knsTransferRefusalRes(fromSpendingAddressIndex: Int?, toAddress: String): Int? = when {
             fromSpendingAddressIndex != null && WalletManager.isQuantumIndex(fromSpendingAddressIndex) ->
                 com.kachat.app.R.string.kns_transfer_quantum_source
-            ChatRepository.isScriptAddress(toAddress) -> com.kachat.app.R.string.kns_transfer_to_script_address
+            isScriptAddress(toAddress) -> com.kachat.app.R.string.kns_transfer_to_script_address
             else -> null
+        }
+
+        /** A script (P2SH) address - its version byte is 0x08 (was ChatRepository's, iOS wallet 301ebfb). */
+        internal fun isScriptAddress(address: String?): Boolean {
+            if (address.isNullOrBlank()) return false
+            return runCatching { com.kachat.app.util.KaspaAddress.decode(address.trim().lowercase()).first == 0x08.toByte() }.getOrDefault(false)
         }
 
         private const val MAINNET_REVENUE_ADDRESS = "kaspa:qyp4nvaq3pdq7609z09fvdgwtc9c7rg07fuw5zgeee7xpr085de59eseqfcmynn"

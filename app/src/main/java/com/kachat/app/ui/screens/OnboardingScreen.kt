@@ -255,14 +255,8 @@ fun OnboardingScreen(viewModel: WalletViewModel) {
         composable("app_settings_security") {
             AppSecurityScreen(
                 onBack = { navController.popBackStack() },
-                onNavigateToChildMode = { navController.navigate("app_settings_child_mode") },
                 walletViewModel = viewModel
             )
-        }
-        composable("app_settings_child_mode") {
-            // Fully functional with no account active - the password record and enabled flag
-            // are device-global (ChildModeService's EncryptedSharedPreferences + DataStore).
-            ChildModeSettingsScreen(onBack = { navController.popBackStack() })
         }
         // The same Connection page as in-account Settings (iOS ConnectionHubPage): Connection
         // Settings, the Testnet switch, Kaspa Explorer.

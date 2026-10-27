@@ -128,7 +128,6 @@ fun rememberAddressBookEntries(): List<AddressBookEntry> {
 @Composable
 fun AddressBookScreen(
     onBack: (() -> Unit)?,
-    onOpenChat: (String) -> Unit,
     walletViewModel: WalletViewModel,
 ) {
     val entries = rememberAddressBookEntries()
@@ -140,7 +139,6 @@ fun AddressBookScreen(
         AddressBookEntryDetail(
             address = open,
             onBack = { openAddress = null },
-            onOpenChat = onOpenChat,
             walletViewModel = walletViewModel,
         )
         return
@@ -583,7 +581,6 @@ private fun AddressBookActionRow(icon: ImageVector, label: String, tint: Color =
 fun AddressBookEntryDetail(
     address: String,
     onBack: () -> Unit,
-    onOpenChat: (String) -> Unit,
     walletViewModel: WalletViewModel,
 ) {
     BackHandler(onBack = onBack)
@@ -683,12 +680,7 @@ fun AddressBookEntryDetail(
                     ) {
                         showSend = true
                     }
-                    if (!isOwnAddress) {
-                        SettingsDivider()
-                        AddressBookActionRow(Icons.Outlined.ChatBubbleOutline, stringResource(R.string.message), enabled = otherNetwork == null) {
-                            if (KaspaAddress.isValidOnActiveNetwork(entry.address)) onOpenChat(entry.address)
-                        }
-                    }
+                    // No Message row: the wallet has no chats (iOS wallet 301ebfb).
                 }
                 if (otherNetwork != null) SettingsFooter(otherNetwork)
             }
@@ -894,10 +886,7 @@ fun AddressBookEntryEditor(
                                     pendingRemoved -> AddressBookManager.PhotoChange.Removed
                                     else -> AddressBookManager.PhotoChange.Unchanged
                                 }
-                                val saved = book.save(effectiveAddress, name, note, photo)
-                                // One name per person: a chat with them goes by the same one - so
-                                // clearing it here really clears it (iOS 2831fab).
-                                book.applyNameToChat(saved)
+                                book.save(effectiveAddress, name, note, photo)
                                 onDone(AddressBookEditResult.SAVED)
                                 close()
                             } catch (e: AddressBookManager.SaveException) {

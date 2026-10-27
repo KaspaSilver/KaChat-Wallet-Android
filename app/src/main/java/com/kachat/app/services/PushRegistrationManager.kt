@@ -5,13 +5,8 @@ import android.util.Log
 import androidx.core.app.NotificationManagerCompat
 import com.google.firebase.messaging.FirebaseMessaging
 import com.kachat.app.repository.AppSettingsRepository
-import com.kachat.app.repository.BroadcastRepository
-import com.kachat.app.repository.ChatRepository
-import com.kachat.app.repository.GroupRepository
-import com.kachat.app.util.GroupCipher
 import com.kachat.app.util.KaspaMessageSigner
 import com.kachat.app.util.Schnorr
-import com.kachat.app.util.Secp256k1
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,35 +26,30 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.tasks.await
 import retrofit2.HttpException
-import java.math.BigInteger
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
  * Registers this device's FCM token with the KaChat indexer's `/v1/push` API so the server can
- * deliver native push notifications (DMs, KaPosts pings, broadcast channels) while the app is
+ * deliver native push notifications - for KaPay, "Received KAS" on the wallet's own addresses
+ * (`watch_only_addresses`) and .kachat name events (`primary_address`) - while the app is
  * backgrounded or killed.
  *
  * The registration is authenticated exactly like the iOS client: a BIP-340 Schnorr signature over
- * a canonical, newline-joined preimage. With no groups we emit the **LegacyV1** auth shape; once
- * the device has group memberships we register their blinded group ids and switch to the
- * **TransitionalGroups** shape (extra `watched_group_ids_hash` line, forced `group_v1` capability),
- * both matched by the Rust server (`kasia-indexer`) in `build_auth_preimage`.
+ * a canonical, newline-joined preimage, in the **LegacyV1** auth shape (no group ids), matched by
+ * the Rust server (`kasia-indexer`) in `build_auth_preimage`. The chat fields (contacts, aliases,
+ * rooms, KaPosts) still go out, empty, so the shape never changes (iOS wallet 301ebfb).
  *
  * Idempotent and safe to call repeatedly — the server upserts by device token, and an unchanged
  * registration snapshot (see [lastRegisteredFingerprint]) short-circuits before any network I/O.
  *
  * Beyond the explicit [registerAsync]/[onTokenRefreshed] entry points, the init block observes
- * everything the registration payload is built from — active account, active-contact set,
- * bell-enabled broadcast channels, hidden broadcast senders, and the notifications setting — and
- * re-registers (debounced 2s, so an edit burst is one round-trip) whenever any of it changes,
- * mirroring iOS's updateWatchedAddresses triggers (PUSH_NOTIFICATIONS.md) and the "bell toggles
- * re-send registration immediately" contract (the iOS repo's PUSH_EXTENSIONS.md §1). The same observer
- * unregisters when notifications are switched off or the last account disappears.
+ * the active account, the notifications setting and Address Activity, and re-registers
+ * (debounced 2s) whenever any of it changes. The same observer unregisters when notifications are
+ * switched off or the last account disappears.
  *
  * [PushState.setActive] is flipped true only after a registration round-trip succeeds while
- * system notifications are deliverable, and false on failure/unregister — the pollers consult it
- * to suppress their duplicate local banners for push-covered types (the iOS repo's PUSH_EXTENSIONS.md §4).
+ * system notifications are deliverable, and false on failure/unregister.
  */
 @OptIn(FlowPreview::class)
 @Singleton
@@ -67,15 +57,8 @@ class PushRegistrationManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val walletManager: WalletManager,
     private val networkService: NetworkService,
-    private val chatRepository: ChatRepository,
-    private val broadcastRepository: BroadcastRepository,
-    private val groupRepository: GroupRepository,
-    private val groupSecretStore: GroupSecretStore,
     private val settings: AppSettingsRepository,
     private val pushState: PushState,
-    private val peerAliasStore: PeerAliasStore,
-    /** KaPosts' bell: whose new posts this account wants a push for (PUSH_EXTENSIONS.md 3a). */
-    private val kaPostsWatchStore: KaPostsWatchStore,
     /** KaChat Wallet's own addresses for "Received" pushes (watch_only_addresses). */
     private val addressActivityNotifierLazy: dagger.Lazy<AddressActivityNotifier>,
 ) {
@@ -101,80 +84,29 @@ class PushRegistrationManager @Inject constructor(
     /**
      * Everything the registration payload is derived from, observed as one combined flow.
      * [notificationsEnabled] rides along so flipping the setting re-triggers [onSnapshot]
-     * (where it decides register vs unregister) — it is NOT part of the fingerprint.
-     * [childModeEnabled] is the sixth observed input: toggling Child Mode changes what
-     * [register] sends (broadcast channels / KaPosts pubkey dropped), so it must re-trigger a
-     * registration automatically, exactly like iOS's .settingsDidChange → updateWatchedAddresses.
+     * (where it decides register vs unregister) - it is NOT part of the fingerprint. The chat
+     * inputs (contacts, rooms, groups, KaPosts) went with the chats (iOS wallet 301ebfb).
      */
     private data class Snapshot(
         val activeAddress: String?,
         val notificationsEnabled: Boolean,
-        val activeContacts: Set<String>,
-        val notifyChannels: Set<String>,
-        val hiddenSenderRows: Set<Pair<String, String>>, // (channelName, senderAddress)
-        val childModeEnabled: Boolean,
-        /** The five KaPosts switches. A flip re-registers at once: the server reads them from
-         *  the registration, and nothing on the device can stop a background KaPosts push. */
-        val kaPostsKinds: KaPostsNotifyKinds,
-        /** Groups silenced on this device. They are dropped from the watched ids, so silencing
-         *  one has to reach the service the moment the switch flips. */
-        val silentGroups: Set<String>,
-        /** The bell beside Follow on KaPosts (PUSH_EXTENSIONS.md 3a): a change re-registers,
-         *  like iOS's KaPostsWatchStore.toggle. */
-        val kaPostsWatchAuthors: Set<String>,
         /** KaChat Wallet: Address Activity and the spending addresses' switch decide which own
          *  addresses the service watches, so a flip re-registers at once. */
         val addressActivity: Pair<Boolean, Boolean>,
     )
 
-    /** The five per-kind KaPosts switches as one flow, so a flip of any of them is one input. */
-    private val kaPostsKindsFlow: Flow<KaPostsNotifyKinds> = combine(
-        settings.kaPostsNotifyLikes,
-        settings.kaPostsNotifyDislikes,
-        settings.kaPostsNotifyComments,
-        settings.kaPostsNotifyReposts,
-        settings.kaPostsNotifyFollows,
-    ) { likes, dislikes, comments, reposts, follows ->
-        KaPostsNotifyKinds(likes = likes, dislikes = dislikes, comments = comments, reposts = reposts, follows = follows)
-    }
-
     init {
         scope.launch {
-            // A combine of this many flows only exists as the vararg overload (the typed ones
-            // stop at five), hence the positional Array<Any?> casts.
             combine(
                 walletManager.activeAddressFlow,
                 settings.notificationsEnabled,
-                chatRepository.getContacts().map { contacts ->
-                    contacts.filter { it.conversationStatus == "active" }.map { it.id }.toSet()
-                },
-                broadcastRepository.getNotifyEnabledChannelNames(),
-                broadcastRepository.getHiddenSenders().map { rows ->
-                    rows.map { it.channelName to it.senderAddress }.toSet()
-                },
-                settings.childModeEnabled,
-                kaPostsKindsFlow,
-                settings.groupSilent,
-                kaPostsWatchStore.watching,
                 combine(settings.addressActivityNotificationsEnabled, settings.spendingReceiveNotifications) { a, b -> a to b },
-            ) { values ->
-                @Suppress("UNCHECKED_CAST")
-                Snapshot(
-                    activeAddress = values[0] as String?,
-                    notificationsEnabled = values[1] as Boolean,
-                    activeContacts = values[2] as Set<String>,
-                    notifyChannels = values[3] as Set<String>,
-                    hiddenSenderRows = values[4] as Set<Pair<String, String>>,
-                    childModeEnabled = values[5] as Boolean,
-                    kaPostsKinds = values[6] as KaPostsNotifyKinds,
-                    silentGroups = values[7] as Set<String>,
-                    kaPostsWatchAuthors = values[8] as Set<String>,
-                    addressActivity = values[9] as Pair<Boolean, Boolean>,
-                )
+            ) { activeAddress, notificationsEnabled, addressActivity ->
+                Snapshot(activeAddress, notificationsEnabled, addressActivity)
             }
                 .distinctUntilChanged()
-                // Coalesce bursts (accepting a handshake touches contacts repeatedly, hiding a
-                // few spammers in a row, etc.) into one challenge/register round-trip.
+                // Coalesce bursts (an account switch, a few switches in a row) into one
+                // challenge/register round-trip.
                 .debounce(2_000)
                 .collect { snapshot ->
                     runCatching { onSnapshot(snapshot) }
@@ -215,49 +147,6 @@ class PushRegistrationManager @Inject constructor(
             runCatching { register(token) }
                 .onFailure { Log.w(TAG, "push re-registration failed: ${it.message}") }
         }
-    }
-
-    /**
-     * Asks the push service to ring [toAddress]'s devices for a call this device is placing
-     * (the iOS repo's PUSH_EXTENSIONS.md §5). The request is signed like every other push call, which is how the
-     * service knows the sender it names in the push; [payloadHex] is the opening call message
-     * encrypted to the contact, exactly as it went on chain.
-     *
-     * Best effort by design: a phone with the app open rings off the chain message anyway, so a
-     * failure here costs nothing but the ring on a sleeping phone. Throws so the caller can log it.
-     */
-    suspend fun requestRing(toAddress: String, callId: String, video: Boolean, kind: String, payloadHex: String) {
-        val api = pushApiOrNull()
-            ?: throw IllegalStateException("push API unavailable")
-        val token = FirebaseMessaging.getInstance().token.await().trim()
-        if (token.isEmpty()) throw IllegalStateException("no FCM token")
-        val material = signingMaterial()
-        // The service checks a ring in its legacy shape (the iOS repo's PUSH_EXTENSIONS.md §5, push.rs ring_call
-        // -> LegacyV1): no watched_group_ids_hash line, and the caller's own wallet address as
-        // primary_address - the same preimage iOS signs since 7182b4a/82eb7f7 (audit XP-010).
-        val auth = buildAuth(
-            material,
-            method = "POST",
-            path = PushAuthPreimage.RING_PATH,
-            deviceToken = token,
-            watchedAddresses = emptyList(),
-            aliases = emptyList(),
-            watchedGroupIds = emptyList(),
-            primaryAddress = material.walletAddress,
-            includeWatchedGroupIds = false,
-        )
-        api.ring(
-            PushRingRequest(
-                deviceToken = token,
-                toAddress = toAddress,
-                callId = callId,
-                video = video,
-                kind = kind,
-                payload = payloadHex,
-                timestampMs = System.currentTimeMillis(),
-                auth = auth,
-            )
-        )
     }
 
     /**
@@ -424,45 +313,25 @@ class PushRegistrationManager @Inject constructor(
         // Kaspa addresses are canonical lowercase bech32, so this already matches the server's
         // RpcAddress round-trip (normalize_wallet_address / derive_wallet_address).
         val walletAddress = walletManager.getAddress().trim()
-        // Child Mode: no broadcast channels and no KaPosts identity registered with the push
-        // service at all (mirrors iOS's collectWatchedBroadcastChannels/collectKaPostsPubkey
-        // guards). Both feed the fingerprint below AND the init observer watches the flag, so
-        // toggling the mode re-registers automatically in either direction.
-        val childMode = settings.childModeEnabled.first()
         // KaChat Wallet has no chats, groups, public chats or KaPosts: it registers only its own
         // addresses (watch_only_addresses, "Received KAS") and its main address as
-        // primary_address (.kachat name events) - iOS wallet 1806a69, PUSH_SERVICE.md.
-        val chats = com.kachat.app.util.ChatFeatures.enabled
-        val kaPostsPubkey = if (childMode || !chats) null else compressedPubkeyHex(privateKey)
-        // The reader's per-kind KaPosts switches, so the server can skip a push at the source.
-        // Part of the fingerprint AND an init-observer input, so a flip re-registers at once.
-        val kaPostsKinds = kaPostsKindsFlow.first()
-        // The authors this account asked to hear about when they post (KaPosts' bell). Empty in
-        // Child Mode, like the KaPosts identity itself (iOS collectKaPostsWatchAuthors).
-        val kaPostsWatchAuthors = if (childMode || !chats) emptyList() else kaPostsWatchStore.watchedPubkeys()
-
-        // Own address included alongside active contacts, matching iOS's collectWatchedAddresses
-        // — the server routes by SENDER (find_devices_watching), so without it a handshake from a
-        // not-yet-known sender could never be pushed.
-        val activeContacts = if (!chats) emptyList() else chatRepository.getContacts().first()
-            .filter { it.conversationStatus == "active" }
-        val watchedAddresses = if (!chats) emptyList() else (activeContacts.map { it.id } + walletAddress).distinct()
-        // The aliases INCOMING messages from these contacts carry (same aliases the message sync
-        // fetches with). Registering them narrows the server's alias filter to OUR conversations,
-        // so a contact's messages to OTHER people don't match us (iOS: knownIncomingAliases).
-        val aliases = collectIncomingAliases(activeContacts, privateKey)
-        val broadcastChannels = if (childMode || !chats) emptyList() else broadcastRepository.getNotifyEnabledChannelNames().first().toList()
-        val hiddenSenders = collectHiddenBroadcastSenders(broadcastChannels)
-        // Blinded group ids to be pushed for (per group, per other non-muted member) — iOS parity.
-        // Non-empty flips the registration to the TransitionalGroups auth shape.
-        val watchedGroupIds = if (!chats) emptyList() else collectWatchedGroupIds(walletAddress)
-        val watchOnlyAddresses = if (chats) emptyList() else addressActivityNotifierLazy.get().pushWatchOnlyAddresses()
-        val apnsTopic = if (chats) null else context.packageName.removeSuffix(".debug")
-        // Nothing to watch: leave the service instead. KaChat Wallet's main address alone is
-        // enough - .kachat name events go to primary_address whether or not Address Activity (the
-        // watch-only list) is on, so switching that off must not unregister (iOS wallet 2c59051).
-        val walletOnlyPrimary = !chats && walletAddress.isNotEmpty()
-        if (watchedAddresses.isEmpty() && watchedGroupIds.isEmpty() && watchOnlyAddresses.isEmpty() && !walletOnlyPrimary) {
+        // primary_address (.kachat name events) - iOS wallet 1806a69, PUSH_SERVICE.md. The chat
+        // fields still go out, empty (KaPosts kinds at their defaults), so the registration and
+        // its signed preimage keep the shape the service expects (iOS wallet 301ebfb).
+        val kaPostsPubkey: String? = null
+        val kaPostsKinds = KaPostsNotifyKinds()
+        val kaPostsWatchAuthors = emptyList<String>()
+        val watchedAddresses = emptyList<String>()
+        val aliases = emptyList<String>()
+        val broadcastChannels = emptyList<String>()
+        val hiddenSenders = emptyMap<String, List<String>>()
+        val watchedGroupIds = emptyList<String>()
+        val watchOnlyAddresses = addressActivityNotifierLazy.get().pushWatchOnlyAddresses()
+        val apnsTopic = context.packageName.removeSuffix(".debug")
+        // Nothing to watch: leave the service instead. The main address alone is enough - .kachat
+        // name events go to primary_address whether or not Address Activity (the watch-only list)
+        // is on, so switching that off must not unregister (iOS wallet 2c59051).
+        if (walletAddress.isEmpty() && watchOnlyAddresses.isEmpty()) {
             if (!leftWithNothingToWatch) {
                 unregisterLocked(SigningMaterial(privateKey, walletAddress))
                 leftWithNothingToWatch = true
@@ -623,25 +492,6 @@ class PushRegistrationManager @Inject constructor(
         }
     }
 
-    /**
-     * iOS's collectHiddenBroadcastSenders, exactly: for each watched (bell-enabled) channel,
-     * legacy every-room rows (channelName "") union that room's own rows, sorted; rooms with
-     * nothing hidden are omitted.
-     */
-    private suspend fun collectHiddenBroadcastSenders(
-        watchedChannels: List<String>,
-    ): Map<String, List<String>> {
-        val rows = broadcastRepository.getHiddenSenders().first()
-        if (rows.isEmpty() || watchedChannels.isEmpty()) return emptyMap()
-        val global = rows.filter { it.channelName.isEmpty() }.map { it.senderAddress }
-        val perChannel = rows.filter { it.channelName.isNotEmpty() }
-            .groupBy({ it.channelName }, { it.senderAddress })
-        return watchedChannels.mapNotNull { channel ->
-            val combined = (global + perChannel[channel].orEmpty()).toSortedSet()
-            if (combined.isEmpty()) null else channel to combined.toList()
-        }.toMap()
-    }
-
     private fun registrationFingerprint(
         token: String,
         walletAddress: String,
@@ -669,62 +519,6 @@ class PushRegistrationManager @Inject constructor(
             watchOnlyAddresses.sorted().joinToString("+"),
         ).joinToString("\n")
     )
-
-    /**
-     * The aliases INCOMING messages from these contacts carry — the same set the message sync
-     * queries with (contact.theirAlias + the deterministic alias derivable from both addresses).
-     * Registering them makes the server's alias filter match only OUR conversations, not the
-     * contact's messages to third parties. Mirrors iOS's knownIncomingAliases. Case-preserved.
-     */
-    private fun collectIncomingAliases(activeContacts: List<com.kachat.app.models.ContactEntity>, privateKey: ByteArray): List<String> {
-        val aliases = mutableSetOf<String>()
-        for (contact in activeContacts) {
-            contact.theirAlias?.trim()?.takeIf { it.isNotEmpty() }?.let { aliases += it }
-            // Only from the key of the account this contact belongs to: a registration that
-            // spanned an account switch derives none from the other account's key (iOS dfaba68).
-            runCatching { walletManager.myDeterministicAlias(contact.id, privateKey, contact.walletAddress) }
-                .getOrNull()?.trim()?.takeIf { it.isNotEmpty() }?.let { aliases += it }
-            // Every alias they have been seen sending to us under (PeerAliasStore), so a push is
-            // sent for those messages too.
-            aliases += peerAliasStore.aliases(contact.walletAddress, contact.id)
-        }
-        return aliases.toList()
-    }
-
-    /**
-     * Blinded group ids to receive group-message push for — one per (group, other non-muted member),
-     * matching iOS's collectWatchedGroupIds. `deriveBlindedGroupId(blindingKey, memberXOnlyPubKey)`
-     * is a byte-for-byte port of the sender's on-chain derivation, so the resulting hex equals the
-     * `blinded_group_id` the indexer puts on the push event. Lowercase 64-hex, deduped.
-     */
-    private suspend fun collectWatchedGroupIds(walletAddress: String): List<String> {
-        val muted = runCatching { settings.groupMutedMembers.first() }.getOrDefault(emptySet())
-        val silent = runCatching { settings.groupSilent.first() }.getOrDefault(emptySet())
-        val groups = runCatching { groupRepository.getGroups().first() }.getOrDefault(emptyList())
-        val ids = mutableSetOf<String>()
-        for (group in groups) {
-            // A silenced group is not watched at all, so no push is ever sent for it. It used to
-            // stay on the list and rely on this app to swallow the push on arrival, which leaves
-            // a generic banner behind whenever the message cannot be read - no payload, keys not
-            // reachable, group secrets not yet resynced after an update (iOS 62664af).
-            if (group.groupId in silent) continue
-            val bag = groupSecretStore.loadBag(walletAddress, group.groupId) ?: continue
-            val blindingKey = runCatching { bag.blindingKey.hexToBytes() }.getOrNull() ?: continue
-            for (member in groupRepository.membersOf(group)) {
-                if (member.address == walletAddress) continue                     // exclude self
-                if ("${group.groupId}|${member.address}" in muted) continue       // exclude muted
-                val pub = runCatching { member.xOnlyPubKeyHex.hexToBytes() }.getOrNull() ?: continue
-                ids += GroupCipher.deriveBlindedGroupId(blindingKey, pub).toHex()
-            }
-        }
-        return ids.toList()
-    }
-
-    private fun String.hexToBytes(): ByteArray {
-        val clean = trim()
-        require(clean.length % 2 == 0) { "odd-length hex" }
-        return ByteArray(clean.length / 2) { clean.substring(it * 2, it * 2 + 2).toInt(16).toByte() }
-    }
 
     /**
      * Fetches a fresh single-use challenge and signs the canonical preimage for [method]/[path]
@@ -787,12 +581,6 @@ class PushRegistrationManager @Inject constructor(
     private fun canonicalizeAddresses(values: List<String>): List<String> = PushAuthPreimage.canonicalizeAddresses(values)
 
     private fun canonicalizeAliases(values: List<String>): List<String> = PushAuthPreimage.canonicalizeAliases(values)
-
-    /** 66-hex compressed secp256k1 pubkey — the KaPosts "K" identity (same as KaPostsService). */
-    private fun compressedPubkeyHex(privateKey: ByteArray): String {
-        val priv = BigInteger(1, privateKey)
-        return Secp256k1.G.multiply(priv).normalize().getEncoded(true).toHex()
-    }
 
     private fun ByteArray.toHex(): String = joinToString("") { "%02x".format(it) }
 

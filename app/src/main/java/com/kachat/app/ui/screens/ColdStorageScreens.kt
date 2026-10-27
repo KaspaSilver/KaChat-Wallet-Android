@@ -1499,7 +1499,7 @@ private fun ColdSendFlow(
                             }
                             SendInfoPill(modifier = Modifier.weight(1f, fill = false)) {
                                 Text(stringResource(R.string.available))
-                                Text("${com.kachat.app.repository.ChatRepository.formatKas(availableBalanceSompi)} ${KaspaUnit.symbol}", maxLines = 1)
+                                Text("${com.kachat.app.services.AddressActivityNotifier.formatKas(availableBalanceSompi)} ${KaspaUnit.symbol}", maxLines = 1)
                             }
                         }
 
@@ -1568,9 +1568,9 @@ private fun ColdSendFlow(
                             customFeeText = feeEditorInput,
                             onCustomFeeTextChange = { feeEditorInput = it },
                             isEstimatingFee = false,
-                            feeText = "~${com.kachat.app.repository.ChatRepository.formatKas(effectiveFeeSompi)} ${KaspaUnit.symbol}",
+                            feeText = "~${com.kachat.app.services.AddressActivityNotifier.formatKas(effectiveFeeSompi)} ${KaspaUnit.symbol}",
                             onStartEditing = {
-                                feeEditorInput = com.kachat.app.repository.ChatRepository.formatKas(effectiveFeeSompi)
+                                feeEditorInput = com.kachat.app.services.AddressActivityNotifier.formatKas(effectiveFeeSompi)
                                 isEditingFee = true
                             },
                             onCommit = {
@@ -1975,7 +1975,6 @@ fun ColdStorageTxHistoryScreen(
     viewModel: ColdStorageViewModel = hiltViewModel(),
     portfolioViewModel: com.kachat.app.viewmodels.PortfolioViewModel = hiltViewModel(),
     /** Message on a .kachat name's owner, from its detail. */
-    onOpenChat: (String) -> Unit = {},
     /** This address's row when it was resolved outside the account detail - the History sheet a
      *  tapped "Received" notification opens (iOS 13046ad) - so it still reads "Address #N" with
      *  its balance while the shared list holds another account, or nothing yet. */
@@ -2041,7 +2040,7 @@ fun ColdStorageTxHistoryScreen(
     // A .kachat name opened from this address's .kachat tab: its live detail, which knows which of
     // your addresses holds it (iOS 881ada6).
     openedKachat?.let { info ->
-        AboveDock { KachatLiveNameDetailScreen(info, onBack = { openedKachat = null }, onOpenChat = onOpenChat) }
+        AboveDock { KachatLiveNameDetailScreen(info, onBack = { openedKachat = null }) }
         return
     }
     // A name service opened from this address's Domains tab: its names (iOS fe52376).

@@ -89,9 +89,6 @@ private val NEWEST_FIRST: Comparator<NextcloudFile> =
 
 fun List<NextcloudFile>.sortedNewestFirst(): List<NextcloudFile> = sortedWith(NEWEST_FIRST)
 
-/** URL + Authorization header value for a server-generated thumbnail, ready to hand to Coil. */
-data class NextcloudThumbnailRequest(val url: String, val authorization: String)
-
 /**
  * What went wrong talking to Nextcloud, in words the person can act on (iOS `NextcloudError`).
  * Deliberately NOT an IOException: [com.kachat.app.util.UserFacingError] shows an app-authored
@@ -210,16 +207,6 @@ class NextcloudService @Inject constructor(
             return if (url.host.isEmpty()) null else raw
         }
 
-        /**
-         * KaChat's chat-archive verify step (NEXTCLOUD_SYNC.md §4.6, iOS d57019a): true when an
-         * upload must be reported as cut off. The wallet's backup never calls it (its two files
-         * are small and replaced whole); kept, pure, for NextcloudServiceTest.
-         */
-        internal fun isUploadCutOff(sentBytes: Long, storedBytes: Long?, putEtag: String?, currentEtag: String?): Boolean {
-            if (storedBytes == null || storedBytes == sentBytes) return false
-            return putEtag == null || currentEtag == putEtag
-        }
-
         /** WebDAV's getlastmodified is RFC 1123 ("Mon, 11 Aug 2026 20:14:07 GMT"). */
         private fun rfc1123Formatter() = SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US).apply {
             timeZone = TimeZone.getTimeZone("GMT")
@@ -257,13 +244,6 @@ class NextcloudService @Inject constructor(
     /** When the active wallet's backup last uploaded (epoch ms), null = never. */
     private val _lastBackupMs = MutableStateFlow<Long?>(null)
     val lastBackupMs: StateFlow<Long?> = _lastBackupMs.asStateFlow()
-
-    /** KaChat's Nextcloud Talk calls. The wallet has no calls (iOS wallet a11a6d7, Android's
-     *  CallService is gone), so the server is never asked; still read by the diagnostics export. */
-    private val _talkCallsAvailable = MutableStateFlow(false)
-    val talkCallsAvailable: StateFlow<Boolean> = _talkCallsAvailable.asStateFlow()
-    private val _talkAvailabilityReason = MutableStateFlow("not used: KaPay has no calls")
-    val talkAvailabilityReason: StateFlow<String> = _talkAvailabilityReason.asStateFlow()
 
     /** The active wallet's address — every credential/settings read and write is scoped to it.
      *  Null (signed out / no wallet yet / testnet) presents as disconnected and persists nothing. */
@@ -595,24 +575,6 @@ class NextcloudService @Inject constructor(
     }
 
     // -------------------------------------------------------------------------
-    // KaChat's chat archive: never part of the wallet (iOS wallet 301ebfb)
-    // -------------------------------------------------------------------------
-
-    /** KaChat's chat-history backup. The wallet never uploads chats or touches
-     *  `kachat-backup.json`; kept only so the dormant chat code compiles. Always refuses. */
-    @Suppress("UNUSED_PARAMETER")
-    suspend fun runBackup(buildJson: suspend (String?) -> String): String? =
-        throw NextcloudException("KaPay backs up only the Address Book and the Portfolio.")
-
-    /** KaChat's chat archive metadata: there is none for the wallet. */
-    suspend fun fetchBackupInfo(): NextcloudFile? = null
-
-    /** KaChat's chat archive download: the wallet has none to restore. */
-    @Suppress("UNUSED_PARAMETER")
-    suspend fun downloadBackup(onProgress: ((receivedBytes: Long, totalBytes: Long?) -> Unit)? = null): String =
-        throw NextcloudException("No backup was found in the KaChat folder.")
-
-    // -------------------------------------------------------------------------
     // WebDAV plumbing
     // -------------------------------------------------------------------------
 
@@ -808,129 +770,4 @@ class NextcloudService @Inject constructor(
         return results.sortedNewestFirst()
     }
 
-    // -------------------------------------------------------------------------
-    // KaChat's chat media (the dormant chat code only: share links, thumbnails)
-    // -------------------------------------------------------------------------
-
-    /**
-     * Server-generated square thumbnail via Nextcloud's authenticated `core/preview` endpoint
-     * (`a=1` keeps aspect by cropping), as a URL + Authorization header for Coil's own loader/cache
-     * to fetch.
-     */
-    fun thumbnailRequest(path: String, size: Int = 256): NextcloudThumbnailRequest? {
-        val account = _account.value ?: return null
-        val base = account.server.toHttpUrlOrNull() ?: return null
-        val url = base.newBuilder()
-            .addPathSegments("index.php/core/preview.png")
-            .addQueryParameter("file", "/$path")
-            .addQueryParameter("x", size.toString())
-            .addQueryParameter("y", size.toString())
-            .addQueryParameter("a", "1")
-            .build()
-        return NextcloudThumbnailRequest(url = url.toString(), authorization = basicAuth(account))
-    }
-
-    /**
-     * Creates a public link share (shareType 3) for [relativePath] and returns its `/s/TOKEN`
-     * URL. If the file already has a public link (creating again can fail on some configs), the
-     * existing link is reused.
-     */
-    suspend fun createPublicShareLink(relativePath: String): String = withContext(Dispatchers.IO) {
-        val account = requireAccount()
-        val request = Request.Builder()
-            .url("${account.server}/ocs/v2.php/apps/files_sharing/api/v1/shares?format=json")
-            .post(
-                FormBody.Builder()
-                    .add("path", "/$relativePath")
-                    .add("shareType", "3")
-                    .build()
-            )
-            .header("Authorization", basicAuth(account))
-            .header("OCS-APIRequest", "true")
-            .build()
-
-        client.newCall(request).execute().use { response ->
-            if (response.code == 401) throw NextcloudException(BAD_CREDENTIALS)
-            if (response.isSuccessful) {
-                val body = response.body?.string()
-                val url = body?.let { shareUrlFromOcsObject(it) }
-                if (url != null) return@withContext url
-            }
-        }
-        existingPublicShareLink(account, relativePath) ?: throw NextcloudException(MALFORMED)
-    }
-
-    private fun existingPublicShareLink(account: NextcloudAccount, relativePath: String): String? {
-        val base = account.server.toHttpUrlOrNull() ?: return null
-        val url = base.newBuilder()
-            .addPathSegments("ocs/v2.php/apps/files_sharing/api/v1/shares")
-            .addQueryParameter("format", "json")
-            .addQueryParameter("path", "/$relativePath")
-            .build()
-        val request = Request.Builder()
-            .url(url)
-            .header("Authorization", basicAuth(account))
-            .header("OCS-APIRequest", "true")
-            .build()
-        return try {
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) return null
-                val body = response.body?.string() ?: return null
-                val list = JSONObject(body).getJSONObject("ocs").optJSONArray("data") ?: return null
-                for (i in 0 until list.length()) {
-                    val share = list.optJSONObject(i) ?: continue
-                    if (share.optInt("share_type", -1) == 3) {
-                        val shareUrl = share.optString("url").takeIf { it.isNotEmpty() }
-                        if (shareUrl != null) return shareUrl
-                    }
-                }
-                null
-            }
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    private fun shareUrlFromOcsObject(body: String): String? = runCatching {
-        JSONObject(body).getJSONObject("ocs").getJSONObject("data").optString("url").takeIf { it.isNotEmpty() }
-    }.getOrNull()
-
-    /** Uploads one media file to `KaChat/Media/` and returns a public share link for it - KaChat's
-     *  "send via Nextcloud" (the dormant chat code only). Throws on any failure. */
-    suspend fun uploadMediaAndShare(bytes: ByteArray, filename: String, contentType: String): String {
-        val mediaType = contentType.toMediaTypeOrNull() ?: "application/octet-stream".toMediaType()
-        return uploadMediaAndShare(bytes.toRequestBody(mediaType), filename)
-    }
-
-    /** The same upload-and-share, streaming [body] from wherever it lives. */
-    suspend fun uploadMediaAndShare(body: okhttp3.RequestBody, filename: String): String {
-        val relativePath = withContext(Dispatchers.IO) {
-            val account = requireAccount()
-            for (folder in listOf(BACKUP_FOLDER_NAME, MEDIA_FOLDER_PATH)) {
-                val mkcol = Request.Builder()
-                    .url(davUrl(account, folder))
-                    .method("MKCOL", null)
-                    .header("Authorization", basicAuth(account))
-                    .build()
-                client.newCall(mkcol).execute().use { response ->
-                    if (response.code == 401) throw NextcloudException(BAD_CREDENTIALS)
-                    if (!response.isSuccessful && response.code != 405) throw NextcloudHttpException(response.code)
-                }
-            }
-            val sanitized = filename.replace(Regex("[^A-Za-z0-9._-]"), "_").takeIf { it.isNotBlank() } ?: "file"
-            val uniqueName = "${java.util.UUID.randomUUID().toString().replace("-", "").take(8)}_$sanitized"
-            val path = "$MEDIA_FOLDER_PATH/$uniqueName"
-            val put = Request.Builder()
-                .url(davUrl(account, path))
-                .put(body)
-                .header("Authorization", basicAuth(account))
-                .build()
-            client.newCall(put).execute().use { response ->
-                if (response.code == 401) throw NextcloudException(BAD_CREDENTIALS)
-                if (!response.isSuccessful) throw NextcloudHttpException(response.code)
-            }
-            path
-        }
-        return createPublicShareLink(relativePath)
-    }
 }

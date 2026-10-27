@@ -1,19 +1,10 @@
 package com.kachat.app
 
-import android.Manifest
-import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
-import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.PowerManager
-import android.provider.Settings
 import androidx.activity.compose.setContent
-import androidx.compose.material.icons.filled.NotificationsActive
-import androidx.compose.material.icons.filled.Close
-import androidx.core.content.ContextCompat
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,25 +19,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.core.content.IntentCompat
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.lifecycleScope
 import com.kachat.app.services.CrashRecorder
 import com.kachat.app.services.NotificationHelper
-import com.kachat.app.services.PendingShare
-import com.kachat.app.services.ShareIntake
 import com.kachat.app.ui.theme.KaChatTheme
 import com.kachat.app.ui.KaChatApp
-import com.kachat.app.ui.screens.BroadcastDeepLink
 import com.kachat.app.ui.screens.KaChatLink
-import com.kachat.app.ui.screens.KaPostsDeepLink
 import com.kachat.app.viewmodels.WalletViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.io.File
-import javax.inject.Inject
 
 /**
  * Single Activity — all navigation is handled in Compose via NavHost.
@@ -58,17 +39,6 @@ import javax.inject.Inject
  */
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
-    @Inject lateinit var onboardingGate: com.kachat.app.services.OnboardingGate
-
-    // The KaChat sheet that explains the battery exemption before Android's own dialog. Re-derived
-    // on every resume (see refreshBatteryRationale), so it follows the notification answer.
-    private var batteryRationaleDue by mutableStateOf(false)
-
-    private var pendingContactId by mutableStateOf<String?>(null)
-    private var pendingChannelName by mutableStateOf<String?>(null)
-    private var pendingGroupId by mutableStateOf<String?>(null)
-    // "Open the Group Chats list" — a group notification with no resolvable local group id.
-    private var pendingOpenGroups by mutableStateOf(false)
     // "cold" / "spending" — which wallet screen an address-activity receipt tap opens.
     private var pendingWalletActivityKind by mutableStateOf<String?>(null)
     // The one own address a "Received" receipt named: its History opens in a sheet (iOS 13046ad).
@@ -79,63 +49,6 @@ class MainActivity : AppCompatActivity() {
     // Android 13+'s notification permission is asked from the tabs, once, not at launch: see
     // MainShell's NotificationPermissionOnce (iOS wallet 1806a69).
 
-    /**
-     * The battery-optimization exemption - Android's "Let KaChat always run in background?"
-     * dialog (ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS). Encrypted DM/group push is delivered
-     * data-only so the app can decrypt it on the phone; an app frozen by aggressive OEM battery
-     * management never wakes to receive it, and the notification never appears.
-     *
-     * It used to fire the system dialog straight from onCreate with no word of explanation - on
-     * Android 13+ a launch AFTER notifications were granted, seemingly at random; below 13, the
-     * first launch, over whatever was on screen. Now [BatteryExemptionRationale] says why first,
-     * and Android's dialog only opens from its Allow. Asked once either way, as before.
-     */
-    private fun batteryExemptionDue(): Boolean {
-        // KaChat Wallet has no encrypted messages to wake for: its pushes are Received KAS and
-        // .kachat events, so it never asks (and declares no REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).
-        if (!com.kachat.app.util.ChatFeatures.enabled) return false
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return false
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) !=
-            PackageManager.PERMISSION_GRANTED
-        ) {
-            return false
-        }
-        val prefs = getSharedPreferences("kachat_prefs", Context.MODE_PRIVATE)
-        if (prefs.getBoolean("battery_exemption_asked", false)) return false
-        val powerManager = getSystemService(Context.POWER_SERVICE) as? PowerManager ?: return false
-        return !powerManager.isIgnoringBatteryOptimizations(packageName)
-    }
-
-    private fun refreshBatteryRationale() {
-        batteryRationaleDue = batteryExemptionDue()
-    }
-
-    private fun markBatteryExemptionAsked() {
-        getSharedPreferences("kachat_prefs", Context.MODE_PRIVATE)
-            .edit().putBoolean("battery_exemption_asked", true).apply()
-        batteryRationaleDue = false
-    }
-
-    private fun acceptBatteryExemption() {
-        markBatteryExemptionAsked()
-        try {
-            startActivity(
-                Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
-                    .setData(Uri.parse("package:$packageName"))
-            )
-        } catch (e: Exception) {
-            // A few OEMs don't implement the direct dialog — fall back to the battery-optimization list.
-            runCatching { startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) }
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        // Covers returning from the notification-permission dialog, and from system Settings.
-        guarded("battery rationale") { refreshBatteryRationale() }
-    }
-
     /** A side step of opening the app: a failure is logged, never the end of it. */
     private fun guarded(what: String, block: () -> Unit) =
         com.kachat.app.util.StartupSafety.step("MainActivity", what, block)
@@ -144,10 +57,9 @@ class MainActivity : AppCompatActivity() {
     private fun handleLaunchIntent(intent: Intent?) {
         if (intent == null) return
         guarded("notification target") { consumeNotificationTarget(intent) }
-        guarded("broadcast link") { handleBroadcastDeepLink(intent) }
-        guarded("profile link") { handleProfileDeepLink(intent) }
+        // The only link the wallet opens; profile, public-chat and KaPosts links and the share
+        // target went with the chats (iOS wallet 301ebfb).
         guarded("payment request link") { handlePaymentRequestDeepLink(intent) }
-        guarded("share") { handleShareIntent(intent) }
         guarded("clear intent payload") { clearConsumedIntentPayload(intent) }
     }
 
@@ -173,34 +85,23 @@ class MainActivity : AppCompatActivity() {
         // Everything up to setContent is a side step - a permission prompt, a notification or
         // link to route. Each is guarded on its own: one that throws is
         // logged, and the app still opens (KaChatApplication's startup rule).
-        guarded("battery rationale") { refreshBatteryRationale() }
         handleLaunchIntent(intent)
         setContent {
             val walletViewModel: WalletViewModel = hiltViewModel()
             // Settings > Customization > Appearance: System follows the device, as on iOS.
             val appearance by walletViewModel.appearance.collectAsState()
-            val isLoggedIn by walletViewModel.isLoggedIn.collectAsState()
             KaChatTheme(darkTheme = appearance.isDark(androidx.compose.foundation.isSystemInDarkTheme())) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
                     KaChatApp(
-                        pendingContactId = pendingContactId,
-                        onPendingContactHandled = { pendingContactId = null },
-                        pendingChannelName = pendingChannelName,
-                        onPendingChannelHandled = { pendingChannelName = null },
-                        pendingGroupId = pendingGroupId,
-                        onPendingGroupHandled = { pendingGroupId = null },
-                        pendingOpenGroups = pendingOpenGroups,
-                        onPendingOpenGroupsHandled = { pendingOpenGroups = false },
                         pendingWalletActivityKind = pendingWalletActivityKind,
                         onPendingWalletActivityHandled = { pendingWalletActivityKind = null },
                         pendingOwnAddress = pendingOwnAddress,
                         onPendingOwnAddressHandled = { pendingOwnAddress = null }
                     )
                     CrashNotice()
-                    BatteryExemptionRationale(isLoggedIn = isLoggedIn)
                 }
             }
         }
@@ -212,36 +113,6 @@ class MainActivity : AppCompatActivity() {
      * Share sends the newest report to a share sheet (mail, Telegram, anything); Not now keeps
      * it for the diagnostics archive under Settings > Diagnostics.
      */
-    /**
-     * Says why before Android asks. Only inside the app proper - logged in, no onboarding wizard
-     * running - and never on the same launch as the crash notice, so two sheets never stack.
-     * Dismissing it counts as "Not now": asked once, as the system dialog always was.
-     */
-    @androidx.compose.runtime.Composable
-    private fun BatteryExemptionRationale(isLoggedIn: Boolean) {
-        val onboardingHeld by onboardingGate.held.collectAsState()
-        val crashNoticePending = remember { CrashRecorder.unseenCrash(this) != null }
-        if (!batteryRationaleDue || !isLoggedIn || onboardingHeld || crashNoticePending) return
-        com.kachat.app.ui.screens.ActionSheetContainer(
-            title = androidx.compose.ui.res.stringResource(R.string.battery_rationale_title),
-            subtitle = androidx.compose.ui.res.stringResource(R.string.battery_rationale_body),
-            onDismiss = { markBatteryExemptionAsked() },
-        ) {
-            com.kachat.app.ui.screens.ActionSheetRow(
-                icon = androidx.compose.material.icons.Icons.Default.NotificationsActive,
-                title = androidx.compose.ui.res.stringResource(R.string.battery_rationale_allow),
-                subtitle = androidx.compose.ui.res.stringResource(R.string.battery_rationale_allow_detail),
-                onClick = { acceptBatteryExemption() },
-            )
-            com.kachat.app.ui.screens.ActionSheetRow(
-                icon = androidx.compose.material.icons.Icons.Default.Close,
-                title = androidx.compose.ui.res.stringResource(R.string.not_now),
-                subtitle = androidx.compose.ui.res.stringResource(R.string.battery_rationale_not_now_detail),
-                onClick = { markBatteryExemptionAsked() },
-            )
-        }
-    }
-
     @androidx.compose.runtime.Composable
     private fun CrashNotice() {
         val crashFile = remember { CrashRecorder.unseenCrash(this) }
@@ -288,10 +159,10 @@ class MainActivity : AppCompatActivity() {
      *
      * The Activity keeps its launching Intent, so a configuration change re-runs `onCreate`
      * against it. Settings > Language does exactly that (`AppCompatDelegate.setApplicationLocales`
-     * recreates the Activity), and without this a language change re-opened the last post that
-     * had been opened from a link, or re-staged the last thing that had been shared into the app.
+     * recreates the Activity), and without this a language change re-opened the last payment
+     * request that had been opened from a link.
      * The notification extras are stripped in [consumeNotificationTarget] for the same reason;
-     * these two carry their payload in the action/data/stream instead of in our own extras.
+     * a link carries its payload in the action/data instead of in our own extras.
      *
      * Safe to run immediately: every handler reads what it needs synchronously before any
      * suspending work.
@@ -333,56 +204,36 @@ class MainActivity : AppCompatActivity() {
      * jumped the user back into whatever conversation the last tapped notification was for.
      */
     private fun consumeNotificationTarget(intent: Intent) {
-        pendingContactId = intent.getStringExtra(NotificationHelper.EXTRA_CONTACT_ID)
-        pendingChannelName = intent.getStringExtra(NotificationHelper.EXTRA_CHANNEL_NAME)
-        pendingGroupId = intent.getStringExtra(NotificationHelper.EXTRA_GROUP_ID)
-        pendingOpenGroups = intent.getBooleanExtra(NotificationHelper.EXTRA_OPEN_GROUPS, false)
         pendingWalletActivityKind = intent.getStringExtra(NotificationHelper.EXTRA_WALLET_ACTIVITY_KIND)
         // One address got the Kaspa: open that address's History rather than the wallet tab -
         // the kind is then only the fallback (iOS 13046ad).
         pendingOwnAddress = intent.getStringExtra(NotificationHelper.EXTRA_WALLET_ACTIVITY_ADDRESS)?.takeIf { it.isNotEmpty() }
         if (pendingOwnAddress != null) pendingWalletActivityKind = null
         // A .kachat name notification: open that name (iOS beeedd4).
-        intent.getStringExtra(NotificationHelper.EXTRA_KACHAT_NAME)?.takeIf { it.isNotBlank() }?.let {
+        val kachatName = intent.getStringExtra(NotificationHelper.EXTRA_KACHAT_NAME)?.takeIf { it.isNotBlank() }
+        kachatName?.let {
             com.kachat.app.ui.screens.KachatDeepLink.pendingName.value =
                 com.kachat.app.services.kachatnames.KachatNames.Codec.normalize(it.removeSuffix(".kachat"))
         }
-        val ownKaPostTarget = handleKaPostDeepLink(intent)
-        if (!ownKaPostTarget && pendingContactId == null && pendingChannelName == null &&
-            pendingGroupId == null && !pendingOpenGroups && pendingWalletActivityKind == null &&
-            pendingOwnAddress == null
-        ) {
+        if (pendingWalletActivityKind == null && pendingOwnAddress == null && kachatName == null) {
             applyFcmNotificationTarget(intent)
         }
         listOf(
-            NotificationHelper.EXTRA_CONTACT_ID,
-            NotificationHelper.EXTRA_CHANNEL_NAME,
-            NotificationHelper.EXTRA_GROUP_ID,
-            NotificationHelper.EXTRA_OPEN_GROUPS,
             NotificationHelper.EXTRA_WALLET_ACTIVITY_KIND,
             NotificationHelper.EXTRA_WALLET_ACTIVITY_ADDRESS,
             NotificationHelper.EXTRA_KACHAT_NAME,
-            NotificationHelper.EXTRA_OPEN_KAPOSTS,
-            NotificationHelper.EXTRA_KAPOST_TXID,
-            NotificationHelper.EXTRA_KAPOST_FOCUS_TXID,
             FCM_KEY_TYPE,
         ).forEach(intent::removeExtra)
     }
 
     /**
      * Routes a tap on a notification FCM drew from its own `notification` block, using the data
-     * payload the OS handed us as Intent extras (schema documented on
-     * `KaChatFirebaseMessagingService`). Every push type is mapped, not just the public ones, so
-     * a server-side change to which of them carry a `notification` block cannot silently break
-     * their taps.
+     * payload the OS handed us as Intent extras. The wallet's two push types are mapped; a chat
+     * type (a push sent before the service learned this device is a wallet) opens nothing
+     * (iOS wallet 301ebfb).
      */
     private fun applyFcmNotificationTarget(intent: Intent) {
-        // The push's own `type` names it; a KaPosts push also carries thread_id "kaposts" (the
-        // same thread the iOS payload uses), which is taken when `type` is missing - otherwise
-        // such a tap reopened whatever screen was last up instead of the post.
-        val type = intent.getStringExtra(FCM_KEY_TYPE)
-            ?: intent.getStringExtra("thread_id")?.takeIf { it == "kaposts" }
-        when (type) {
+        when (intent.getStringExtra(FCM_KEY_TYPE)) {
             "name_event" -> intent.getStringExtra("name")?.takeIf { it.isNotBlank() }?.let {
                 com.kachat.app.ui.screens.KachatDeepLink.pendingName.value =
                     com.kachat.app.services.kachatnames.KachatNames.Codec.normalize(it.lowercase().removeSuffix(".kachat"))
@@ -390,72 +241,15 @@ class MainActivity : AppCompatActivity() {
             // KaChat Wallet's "Received" push on one of its own addresses: that address's History,
             // as the app's own Address Activity notification opens (PUSH_SERVICE.md).
             "address_activity" -> pendingOwnAddress = intent.getStringExtra("address")?.takeIf { it.isNotBlank() }
-            "broadcast" -> pendingChannelName = intent.getStringExtra("channel")?.takeIf { it.isNotBlank() }
-            "kaposts" -> {
-                // The server's own key for "the content that was acted on" has been spelled
-                // three ways across the iOS/Android/indexer contracts (see the audit note in
-                // KaChatFirebaseMessagingService) — accept all of them rather than silently
-                // deep-linking to nothing.
-                val postId = FCM_KEYS_POST_ID.firstNotNullOfOrNull {
-                    intent.getStringExtra(it)?.takeIf { value -> value.isNotBlank() }
-                }
-                // A reply targets the reply ITSELF - the push's tx_id is the reply's own - and the
-                // landing rule opens its parent's thread with it spliced in and scrolled to, the
-                // same as a tap on the foreground banner. Anything else opens the acted-on post.
-                val actionTxId = intent.getStringExtra("tx_id")?.takeIf { it.isNotBlank() }
-                val replyTxId = actionTxId?.takeIf {
-                    postId != null && KaPostsDeepLink.isReplyPush(
-                        intent.getStringExtra("kaposts_kind"),
-                        intent.getStringExtra("body"),
-                    )
-                }
-                KaPostsDeepLink.pendingFocusReplyTxId.value = null
-                // No post id (a follow, or a payload that omitted it): the Notifications list,
-                // never the action's own txid — that is a vote/follow transaction, not a post,
-                // and opening it as one only produced a "post not found" toast.
-                KaPostsDeepLink.pendingOpenNotifications.value = postId == null
-                KaPostsDeepLink.pendingPostTxId.value = replyTxId ?: postId ?: ""
-            }
-            "contextual", "payment", "handshake" ->
-                pendingContactId = intent.getStringExtra("sender")?.takeIf { it.isNotBlank() }
-            // Only the blinded per-sender group id travels in a group push, and resolving it to a
-            // local group needs the group secrets — not something this Activity can do. The Group
-            // Chats list is the honest destination.
-            "group_message", "group_control" -> pendingOpenGroups = true
         }
-        FCM_KEYS_POST_ID.forEach(intent::removeExtra)
         // Stripped once read, so a configuration change cannot route the same tap twice.
-        listOf("channel", "sender", "thread_id", "tx_id", "kaposts_kind", "body").forEach(intent::removeExtra)
+        listOf("name", "address", "thread_id", "tx_id").forEach(intent::removeExtra)
     }
 
-    /**
-     * Broadcast room share links: kachat://broadcast/<channel> (the share-text form) and
-     * https://kachat.app/broadcast/<channel> (universal-link form). The name is untrusted,
-     * so [BroadcastDeepLink.request] runs it through normalizeChannelName/isValidChannelName (plus
-     * the route-safety rules) and drops it outright if it doesn't pass — nothing is joined and no
-     * navigation happens. MainShell picks up a request that does pass, enforces Child Mode, and
-     * opens the room (joining it first when it isn't one of the curated ones).
-     */
     /** The hosts a KaChat link can arrive on: the one the app writes, and the one it used to. */
     private fun isKaChatWebHost(host: String?): Boolean {
         val clean = host?.lowercase()?.removePrefix("www.") ?: return false
         return clean == KaChatLink.WEB_HOST || clean in KaChatLink.LEGACY_WEB_HOSTS
-    }
-
-    /** kachat://profile/<address> or https://kachat.app/u/<address> - someone's shared profile
-     *  (iOS 863b0e9). The address is validated, checksum and all, before anything routes. */
-    private fun handleProfileDeepLink(intent: Intent) {
-        if (intent.action != Intent.ACTION_VIEW) return
-        val uri = intent.data ?: return
-        val raw = when {
-            uri.scheme.equals("kachat", ignoreCase = true) &&
-                uri.host.equals("profile", ignoreCase = true) -> uri.lastPathSegment
-            uri.scheme.equals("https", ignoreCase = true) &&
-                isKaChatWebHost(uri.host) &&
-                uri.pathSegments.firstOrNull() == "u" -> uri.pathSegments.getOrNull(1)
-            else -> null
-        } ?: return
-        com.kachat.app.ui.screens.ProfileDeepLink.request(raw)
     }
 
     /** kachat://pay/<address>?... or https://kachat.app/pay/<address>?... - someone's payment
@@ -477,151 +271,9 @@ class MainActivity : AppCompatActivity() {
         com.kachat.app.ui.screens.PaymentRequestRouter.open(ref.request)
     }
 
-    private fun handleBroadcastDeepLink(intent: Intent) {
-        if (intent.action != Intent.ACTION_VIEW) return
-        val uri = intent.data ?: return
-        val rawChannel = when {
-            uri.scheme.equals("kachat", ignoreCase = true) &&
-                uri.host.equals("broadcast", ignoreCase = true) -> uri.lastPathSegment
-            uri.scheme.equals("https", ignoreCase = true) &&
-                isKaChatWebHost(uri.host) &&
-                uri.pathSegments.firstOrNull() == "broadcast" -> uri.pathSegments.getOrNull(1)
-            else -> null
-        } ?: return
-        BroadcastDeepLink.request(rawChannel)
-    }
-
-    /**
-     * System share sheet intake (ACTION_SEND / ACTION_SEND_MULTIPLE — text/plain and image MIME types).
-     *
-     * If the user picked a specific conversation on the share sheet (a direct-share shortcut
-     * published by ShareShortcutsManager), the shortcut id — the contact's address — arrives in
-     * [Intent.EXTRA_SHORTCUT_ID] and the share is targeted straight at that chat. Otherwise the
-     * share is untargeted: the Chats list shows a "choose a chat" banner and whichever thread is
-     * opened next consumes it (see ShareIntake).
-     *
-     * Image streams are copied into app cache immediately: the sender's content-URI read grant
-     * is tied to this delivery and can't be relied on later when the user actually hits send.
-     */
-    private fun handleShareIntent(intent: Intent) {
-        val action = intent.action
-        if (action != Intent.ACTION_SEND && action != Intent.ACTION_SEND_MULTIPLE) return
-        val type = intent.type ?: return
-        val targetContactId = intent.getStringExtra(Intent.EXTRA_SHORTCUT_ID)
-        val text = intent.getStringExtra(Intent.EXTRA_TEXT)
-        val imageStreams: List<android.net.Uri> = when {
-            action == Intent.ACTION_SEND && type.startsWith("image/") ->
-                listOfNotNull(IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, android.net.Uri::class.java))
-            action == Intent.ACTION_SEND_MULTIPLE ->
-                IntentCompat.getParcelableArrayListExtra(intent, Intent.EXTRA_STREAM, android.net.Uri::class.java)
-                    ?.filterNotNull() ?: emptyList()
-            else -> emptyList()
-        }
-        if (text.isNullOrBlank() && imageStreams.isEmpty()) return
-        lifecycleScope.launch {
-            val cachedImages = withContext(Dispatchers.IO) { imageStreams.mapNotNull(::copySharedImageToCache) }
-            if (text.isNullOrBlank() && cachedImages.isEmpty()) return@launch
-            ShareIntake.pending.value = PendingShare(
-                text = text?.takeIf { it.isNotBlank() },
-                imageUris = cachedImages,
-                targetContactId = targetContactId
-            )
-        }
-    }
-
-    /** Copies a shared image stream into app cache, returning a file:// URI readable at any later point (or null on failure). */
-    private fun copySharedImageToCache(uri: android.net.Uri): android.net.Uri? {
-        // Shares arrive as content:// grants. A file:// "share" from another app could name one
-        // of KaChat's own private files, which this process can read and the sender cannot.
-        if (uri.scheme != android.content.ContentResolver.SCHEME_CONTENT) return null
-        return try {
-            val dir = File(cacheDir, "shared_images").apply { mkdirs() }
-            // Stale copies from earlier shares are tiny compared to photo caches, but don't let
-            // them accumulate forever either.
-            dir.listFiles()?.filter { System.currentTimeMillis() - it.lastModified() > 24 * 60 * 60_000L }
-                ?.forEach { it.delete() }
-            val extension = when (contentResolver.getType(uri)) {
-                "image/png" -> "png"
-                "image/webp" -> "webp"
-                "image/gif" -> "gif"
-                else -> "jpg"
-            }
-            val file = File(dir, "share_${System.currentTimeMillis()}_${java.util.UUID.randomUUID().toString().take(8)}.$extension")
-            val copied = contentResolver.openInputStream(uri)?.use { input ->
-                file.outputStream().use { output ->
-                    // Capped: a photo is shrunk to well under 1 MB before sending anyway, and an
-                    // unbounded stream could fill the cache.
-                    val buffer = ByteArray(64 * 1024)
-                    var total = 0L
-                    while (true) {
-                        val read = input.read(buffer)
-                        if (read < 0) break
-                        total += read
-                        if (total > MAX_SHARED_IMAGE_BYTES) return@use false
-                        output.write(buffer, 0, read)
-                    }
-                    true
-                }
-            } ?: return null
-            if (!copied) {
-                file.delete()
-                return null
-            }
-            android.net.Uri.fromFile(file)
-        } catch (e: Exception) {
-            android.util.Log.w("MainActivity", "Failed to copy shared image", e)
-            null
-        }
-    }
-
-    /**
-     * KaPosts share links land here: kachat://kapost/<txid> (the share-text form) and
-     * https://kachat.app/post/<txid> (universal-link form). The txid is handed to
-     * [KaPostsDeepLink]; KaChatApp navigates to the KaPosts tab and the screen opens the
-     * post's thread.
-     */
-    private fun handleKaPostDeepLink(intent: Intent): Boolean {
-        // A KaPosts notification tap: deep-open the exact post/comment the notification was
-        // about (EXTRA_KAPOST_TXID); with no post named (a follow) open the Notifications list
-        // instead of dropping the user on the feed with nothing explaining the ping.
-        if (intent.getBooleanExtra(NotificationHelper.EXTRA_OPEN_KAPOSTS, false)) {
-            // Set the focus (the reply's own txid, for scroll-to-comment) and the notifications
-            // flag BEFORE the post id - the post id is what KaPostsScreen's LaunchedEffect keys on.
-            KaPostsDeepLink.pendingFocusReplyTxId.value =
-                intent.getStringExtra(NotificationHelper.EXTRA_KAPOST_FOCUS_TXID)
-            val postTxId = intent.getStringExtra(NotificationHelper.EXTRA_KAPOST_TXID)
-                ?.takeIf { it.isNotBlank() }
-            KaPostsDeepLink.pendingOpenNotifications.value = postTxId == null
-            KaPostsDeepLink.pendingPostTxId.value = postTxId ?: ""
-            return true
-        }
-        if (intent.action != Intent.ACTION_VIEW) return false
-        val uri = intent.data ?: return false
-        // Same forms iOS's KaChatInternalLink.parse accepts: the kachat:// scheme, and the
-        // https/http universal link with or without www.
-        val host = uri.host?.lowercase()?.removePrefix("www.")
-        val txId = when {
-            uri.scheme.equals("kachat", ignoreCase = true) &&
-                uri.host.equals("kapost", ignoreCase = true) -> uri.lastPathSegment
-            (uri.scheme.equals("https", ignoreCase = true) || uri.scheme.equals("http", ignoreCase = true)) &&
-                isKaChatWebHost(host) &&
-                uri.pathSegments.firstOrNull() == "post" -> uri.pathSegments.getOrNull(1)
-            else -> null
-        }
-        // A post is a transaction id: 64 hex characters. Anything else in the link goes nowhere.
-        if (txId != null && TX_ID_PATTERN.matches(txId)) {
-            KaPostsDeepLink.pendingOpenNotifications.value = false
-            KaPostsDeepLink.pendingPostTxId.value = txId.lowercase()
-        }
-        return false
-    }
-
     companion object {
-        /** FCM data-payload keys that reach us as Intent extras when the OS drew the
-         *  notification itself — see [applyFcmNotificationTarget]. */
+        /** FCM data-payload key that reaches us as an Intent extra when the OS drew the
+         *  notification itself - see [applyFcmNotificationTarget]. */
         private const val FCM_KEY_TYPE = "type"
-        private val FCM_KEYS_POST_ID = listOf("post_id", "postId", "content_id")
-        private val TX_ID_PATTERN = Regex("^[0-9a-fA-F]{64}$")
-        private const val MAX_SHARED_IMAGE_BYTES = 50L * 1024 * 1024
     }
 }

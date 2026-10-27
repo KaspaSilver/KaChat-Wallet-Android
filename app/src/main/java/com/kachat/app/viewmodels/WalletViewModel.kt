@@ -53,7 +53,8 @@ class WalletViewModel @Inject constructor(
     private val coldStorageAddressDiscovery: ColdStorageAddressDiscovery,
     private val pushRegistrationManager: com.kachat.app.services.PushRegistrationManager,
     private val onboardingGate: com.kachat.app.services.OnboardingGate,
-    private val chatRepository: com.kachat.app.repository.ChatRepository,
+    /** Own-address balance changes, for the spending-address send flow's Available line. */
+    private val addressActivityNotifier: com.kachat.app.services.AddressActivityNotifier,
     private val nextcloudService: com.kachat.app.services.NextcloudService,
     /** The .k and .kaspa name services (Your Domains tabs, name resolution) - iOS NameServicesClient. */
     val nameServices: com.kachat.app.services.NameServicesClient,
@@ -135,6 +136,17 @@ class WalletViewModel @Inject constructor(
     fun consumePendingWelcomeGuide() {
         _pendingWelcomeGuide.value = false
     }
+
+    /** Lifts a hold with no wizard behind it, so the account can never be stranded unsynced
+     *  (was ChatViewModel's, iOS wallet 301ebfb). */
+    fun releaseOnboardingHoldIfIdle() {
+        if (onboardingGate.isHeld) onboardingGate.release()
+    }
+
+    /** Own-address balance-change events (see AddressActivityNotifier.utxoActivityEvents) - the
+     *  spending-address send flow's Available line refreshes off these when its address is
+     *  involved (was ChatViewModel's, iOS wallet 301ebfb). */
+    val ownAddressUtxoActivityEvents get() = addressActivityNotifier.utxoActivityEvents
 
     private val _address = MutableStateFlow<String?>(null)
     val address: StateFlow<String?> = _address
@@ -1321,11 +1333,8 @@ class WalletViewModel @Inject constructor(
         if (address == walletManager.getActiveAccount()?.address) {
             pushRegistrationManager.unregisterAsync()
         }
-        // Everything this account held locally goes with it. wipeAllLocalDataForAddress has been
-        // here the whole time and nothing called it on deletion, so a deleted account's messages,
-        // contacts, reactions, edits, groups and sync cursors all stayed on the device - and came
-        // back the moment the account was re-imported (iOS 78152d3). Runs before the record is
-        // removed so the address is still resolvable, and on IO because it is a pile of DELETEs.
+        // What this account held outside its keys goes with it (iOS 78152d3); the chat store it
+        // once wiped here is gone (iOS wallet 301ebfb).
         viewModelScope.launch(Dispatchers.IO) {
             // The archive first, while the Nextcloud credentials are still around to authenticate
             // it. A failure is reported rather than swallowed - the person asked for the backup to
@@ -1340,11 +1349,8 @@ class WalletViewModel @Inject constructor(
                         )
                     }
             }
-            // On both networks: the same key is the same account as kaspa: and kaspatest:, and
-            // each kept its own chats (iOS 741c005).
+            // On both networks: the same key is the same account as kaspa: and kaspatest: (iOS 741c005).
             for (variant in com.kachat.app.util.KaspaNetwork.accountAddressVariants(address)) {
-                runCatching { chatRepository.wipeAllLocalDataForAddress(variant) }
-                    .onFailure { android.util.Log.w("WalletViewModel", "Local data wipe failed for a deleted account", it) }
                 // its .kachat reminders would keep firing for names this phone no longer holds
                 runCatching { kachatNameReminders.removeAll(variant) }
                     .onFailure { android.util.Log.w("WalletViewModel", ".kachat reminder removal failed for a deleted account", it) }
@@ -1619,14 +1625,6 @@ class WalletViewModel @Inject constructor(
         sends.start(sendId)
         viewModelScope.launch {
             val result = walletEngine.sendKaspa(address, amountSompi, feeRateOverride = feeRateOverride, manualUtxos = manualUtxos, extraFeeSompi = extraFeeSompi)
-            // Paying B from the chatting address watches B from now on and files the send in the
-            // chat with B, as iOS's payment sync does for any outgoing transfer (iOS 1eb4708,
-            // NO_HANDSHAKE_MESSAGING.md section 4). Before the send is reported done, so the
-            // chat is there when the sheet closes.
-            result.getOrNull()?.let { txId ->
-                runCatching { chatRepository.recordPlainSendFromChattingAddress(address, txId, amountSompi) }
-                    .onFailure { android.util.Log.w("WalletViewModel", "Could not record the send in a chat", it) }
-            }
             sends.finish(sendId, result)
 
             if (result.isSuccess) {

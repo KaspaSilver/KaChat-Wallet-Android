@@ -152,7 +152,6 @@ fun AddressResolutionCard(
 @HiltViewModel
 class AddressResolutionViewModel @Inject constructor(
     private val knsService: KnsService,
-    private val chatRepository: com.kachat.app.repository.ChatRepository,
     private val nameServices: com.kachat.app.services.NameServicesClient,
     private val walletManager: com.kachat.app.services.WalletManager,
 ) : ViewModel() {
@@ -168,11 +167,6 @@ class AddressResolutionViewModel @Inject constructor(
      *  that has no model of its own (the Address Book editor). */
     suspend fun resolveEverywhere(input: String): List<com.kachat.app.services.NameResolution> =
         runCatching { nameServices.resolveEverywhere(input) }.getOrDefault(emptyList())
-
-    /** The contact saved for [address] on this account, if there is one. */
-    suspend fun contactFor(address: String): com.kachat.app.models.ContactEntity? = runCatching {
-        chatRepository.getContacts().first().firstOrNull { it.id.equals(address, ignoreCase = true) }
-    }.getOrNull()
 
     /** The address's primary domain and avatar, as far as KNS knows them. */
     suspend fun profileFor(address: String): Pair<String?, String?>? = runCatching {

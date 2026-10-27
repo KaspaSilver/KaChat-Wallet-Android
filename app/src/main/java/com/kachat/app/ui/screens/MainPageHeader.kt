@@ -1,6 +1,10 @@
 package com.kachat.app.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -421,3 +425,26 @@ fun IosSheetPage(
         }
     }
 }
+
+/**
+ * The header's clickable connection dot (moved from the deleted KaPostsScreens.kt, iOS wallet 301ebfb),
+ * collecting the live node-health color INSIDE its own restart scope: color ticks
+ * repaint this 32dp circle only, instead of recomposing the whole header.
+ */
+@Composable
+internal fun ConnectionDotButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val colors = LocalAppColors.current
+    val dotColorHex by hiltViewModel<com.kachat.app.viewmodels.ConnectionViewModel>().dotColorHex.collectAsState()
+    // iOS ConnectionStatusIndicator as a toolbar item: a 44pt glass disc, a 12pt status dot.
+    Box(
+        modifier = modifier
+            .size(44.dp)
+            .toolbarGlass()
+            .clip(CircleShape)
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(modifier = Modifier.size(12.dp).background(Color(dotColorHex), CircleShape))
+    }
+}
+

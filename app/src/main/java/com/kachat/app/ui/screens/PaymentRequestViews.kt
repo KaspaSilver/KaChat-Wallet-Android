@@ -72,7 +72,6 @@ import com.kachat.app.ui.theme.IosRoundedFontFamily
 import com.kachat.app.ui.theme.KaspaTeal
 import com.kachat.app.ui.theme.LocalAppColors
 import com.kachat.app.util.KaspaUnit
-import com.kachat.app.viewmodels.ChatViewModel
 import com.kachat.app.viewmodels.WalletViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -154,7 +153,7 @@ object PaymentRequestPaste {
  * filled in - every send check as always, and nothing goes out until slide to send.
  */
 @Composable
-fun PaymentRequestSheetHost(walletViewModel: WalletViewModel, chatViewModel: ChatViewModel) {
+fun PaymentRequestSheetHost(walletViewModel: WalletViewModel) {
     val pending by PaymentRequestRouter.pending.collectAsState()
     val current = pending ?: return
     key(current.id) {
@@ -181,7 +180,6 @@ fun PaymentRequestSheetHost(walletViewModel: WalletViewModel, chatViewModel: Cha
                             onDone = close,
                             presentedAsSheet = true,
                             paymentRequest = current.request,
-                            chatViewModel = chatViewModel,
                         )
                     }
                 }
@@ -297,16 +295,14 @@ val RequestPaymentIcon: androidx.compose.ui.graphics.vector.ImageVector by lazy 
  * Address picks one of yours: a request to the chatting address is a chat payment with the memo;
  * any other is a plain send.
  *
- * From Chats > + it gives the link: Copy Payment Request or Share. Made from a 1:1 chat's + sheet
- * ([recipientContactId]) it is for that person: Send Payment Request sends it into the chat.
+ * It gives the link: Copy Payment Request or Share. Sending it into a chat went with the chats
+ * (iOS wallet 301ebfb).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreatePaymentRequestSheet(
     walletViewModel: WalletViewModel,
     onDismissed: () -> Unit,
-    recipientContactId: String? = null,
-    chatViewModel: ChatViewModel? = null,
     portfolioViewModel: com.kachat.app.viewmodels.PortfolioViewModel = hiltViewModel(),
 ) {
     IosFullSheet(onDismissed = onDismissed, swipeToDismiss = true) { close ->
@@ -480,36 +476,7 @@ fun CreatePaymentRequestSheet(
                     Text(it, color = colors.danger, fontSize = 13.sp, textAlign = TextAlign.Center)
                 }
 
-                if (recipientContactId != null && chatViewModel != null) {
-                    SendActionButton(
-                        title = stringResource(R.string.pr_send_request),
-                        isBusy = isWorking,
-                        isEnabled = canMake && !isWorking,
-                        requiresSlide = false,
-                        onSend = {
-                            isWorking = true
-                            sendError = null
-                            scope.launch {
-                                val unsigned = makeRequest()
-                                if (unsigned == null) {
-                                    isWorking = false
-                                    return@launch
-                                }
-                                // Sent into the chat as a message: it shows there as a Payment
-                                // Request card, which they tap to pay.
-                                chatViewModel.sendPaymentRequest(recipientContactId, unsigned) { ok, error ->
-                                    if (ok) {
-                                        haptic(com.kachat.app.util.IosHaptic.SUCCESS)
-                                        close()
-                                    } else {
-                                        isWorking = false
-                                        sendError = error
-                                    }
-                                }
-                            }
-                        },
-                    )
-                } else {
+                run {
                     SendActionButton(
                         title = stringResource(if (copied) R.string.ab_copied else R.string.pr_copy),
                         isBusy = isWorking,

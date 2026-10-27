@@ -44,13 +44,12 @@ import com.kachat.app.viewmodels.WalletViewModel
  * "App Settings" reached from the accounts screen's top-right gear (no active account) — Android
  * port of iOS's `AppSettingsView` (OnboardingView's gearshape sheet). Contains ONLY the app-wide
  * settings tier: Customization (appearance/language/currency — NOT Customize Dock), Security
- * (biometric toggles + Child Mode, all device-global), Connection settings, and Diagnostics.
+ * (biometric toggles, device-global), Connection settings, and Diagnostics.
  * Everything account-specific (dock, chats, contacts, storage, chat history, notifications,
  * danger zone) is deliberately absent.
  *
  * Every leaf page is the SAME composable the in-account Settings navigates to
- * ([LanguageSettingsScreen], [CurrencySettingsScreen], [ConnectionSettingsScreen],
- * [ChildModeSettingsScreen]) or a shared item-row composable extracted from the in-account
+ * ([LanguageSettingsScreen], [CurrencySettingsScreen], [ConnectionSettingsScreen]) or a shared item-row composable extracted from the in-account
  * screen ([SecuritySettingsItems], [DiagnosticsSettingsSections]) — one source of truth. The
  * category pages here only add the hub chrome around them.
  */
@@ -106,7 +105,6 @@ fun AppCustomizationScreen(
 @Composable
 fun AppSecurityScreen(
     onBack: () -> Unit,
-    onNavigateToChildMode: () -> Unit,
     walletViewModel: WalletViewModel = hiltViewModel(),
 ) {
     AppSettingsPageScaffold(title = stringResource(R.string.security), onBack = onBack) {
@@ -122,9 +120,9 @@ fun AppConnectionScreen(
     onBack: () -> Unit,
     onOpenConnectionSettings: () -> Unit,
     onOpenExplorer: () -> Unit,
-    chatViewModel: com.kachat.app.viewmodels.ChatViewModel = hiltViewModel(),
+    settingsViewModel: com.kachat.app.viewmodels.SettingsViewModel = hiltViewModel(),
 ) {
-    val explorer by chatViewModel.kaspaExplorer.collectAsState()
+    val explorer by settingsViewModel.kaspaExplorer.collectAsState()
     AppSettingsPageScaffold(title = stringResource(R.string.connection), onBack = onBack) {
         ConnectionHubSections(
             explorerName = explorer.displayName,

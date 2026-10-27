@@ -29,7 +29,6 @@ kotlinBip39 = "1.0.9"
 zxing = "3.5.4"
 camerax = "1.5.3"
 coil = "2.7.0"
-mlkitLanguageId = "17.0.6"
 biometric = "1.1.0"
 appcompat = "1.7.0"
 firebaseBom = "33.7.0"
@@ -122,7 +121,6 @@ coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coi
 # Language IDENTIFICATION for KaPosts, on device: it decides whether to OFFER a Translate link,
 # which is asked for every post that scrolls past, so it cannot be a server round trip. The
 # translation itself is a server call now - see the iOS repo's TRANSLATION_SERVICE.md.
-mlkit-language-id = { group = "com.google.mlkit", name = "language-id", version.ref = "mlkitLanguageId" }
 
 # Biometric / device-credential prompt — gates the seed phrase and unlocking a saved account.
 androidx-biometric = { group = "androidx.biometric", name = "biometric", version.ref = "biometric" }

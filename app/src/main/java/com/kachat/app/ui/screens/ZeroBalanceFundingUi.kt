@@ -52,74 +52,8 @@ import com.kachat.app.R
 import com.kachat.app.ui.theme.KaspaTeal
 import com.kachat.app.ui.theme.LocalAppColors
 import com.kachat.app.util.showAddressCopiedToast
-import com.kachat.app.viewmodels.ChatViewModel
 import com.kachat.app.viewmodels.WalletViewModel
 import kotlinx.coroutines.delay
-
-// ---------------------------------------------------------------------------------------------
-// Zero-balance funding gate — shared by the 1:1 chat thread, group chat thread, broadcast rooms
-// (dimmed composer + floating card) and KaPosts (dialog instead of the post/reply composer).
-// ---------------------------------------------------------------------------------------------
-
-/** One screen's view of the zero-balance chat funding gate: [active] is true only while the
- *  chatting (identity) address balance is a *confirmed* 0 KAS — never while it's still
- *  unknown/loading — and [chattingAddress] is the address the funding card offers to fund. */
-data class ZeroBalanceFundingGate(val active: Boolean, val chattingAddress: String?)
-
-/** Observes [ChatViewModel.chattingBalanceGateActive] for the calling screen and keeps it
- *  honest: fetches a fresh chatting-address balance once on entry, then re-polls every 10s for
- *  as long as the gate is showing, so receiving funds from anywhere dismisses the gate on its own — nothing else pushes a balance update into WalletService
- *  while the user just sits on a gated screen. */
-@Composable
-fun rememberZeroBalanceFundingGate(): ZeroBalanceFundingGate {
-    val chatViewModel: ChatViewModel = hiltViewModel()
-    val walletViewModel: WalletViewModel = hiltViewModel()
-    val active by chatViewModel.chattingBalanceGateActive.collectAsState()
-    val address by walletViewModel.address.collectAsState()
-    LaunchedEffect(Unit) { chatViewModel.refreshChattingBalance() }
-    LaunchedEffect(active) {
-        while (active) {
-            delay(10_000)
-            chatViewModel.refreshChattingBalance()
-        }
-    }
-    return ZeroBalanceFundingGate(active, address)
-}
-
-/** Dims a composer the way iOS does - `.grayscale(1)` then `.opacity(0.45)` - and makes it inert
- *  while [active]. Consuming every pointer event in the Initial pass keeps all descendants
- *  (including a text field's own focus/keyboard handling) from ever seeing the touch, without
- *  restructuring the composer variants underneath. The grey is drawn through one offscreen layer
- *  with a zero-saturation colour filter, which every Android version can draw. Chain it after
- *  background() so only the controls dim, not the bar's background strip. */
-fun Modifier.zeroBalanceComposerGate(active: Boolean): Modifier =
-    if (active) {
-        this
-            .drawWithCache {
-                val paint = androidx.compose.ui.graphics.Paint().apply {
-                    colorFilter = androidx.compose.ui.graphics.ColorFilter.colorMatrix(
-                        androidx.compose.ui.graphics.ColorMatrix().apply { setToSaturation(0f) }
-                    )
-                    alpha = 0.45f
-                }
-                onDrawWithContent {
-                    drawIntoCanvas { canvas ->
-                        canvas.saveLayer(androidx.compose.ui.geometry.Rect(androidx.compose.ui.geometry.Offset.Zero, size), paint)
-                        drawContent()
-                        canvas.restore()
-                    }
-                }
-            }
-            .pointerInput(Unit) {
-                awaitPointerEventScope {
-                    while (true) {
-                        awaitPointerEvent(PointerEventPass.Initial).changes.forEach { it.consume() }
-                    }
-                }
-            }
-    } else {
-        this
-    }
 
 /** The funding-gate card itself (iOS ZeroBalanceFundingCardView): the headline in subheadline
  *  semibold, a 140 QR of the chatting address on a white plate (padded 8, corners 12 - the white

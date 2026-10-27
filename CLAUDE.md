@@ -2,19 +2,20 @@
 
 Guidance for Claude Code in this repository.
 
-## What KaChat Wallet is
+## What KaPay is
 
-KaChat Wallet is a standalone Android Kaspa wallet, split out of KaChat so KaChat can stay focused
-on 1:1 and group chats - the Android counterpart of the iPhone's KaChat Wallet
-(`KaspaSilver/KaChat-Wallet-iPhone`), which it matches screen for screen. It keeps KaChat's wallet
-features: Portfolio, Cold Storage, the .kachat names marketplace, Addresses (the Address Book) and
-the whole account Profile (receive, addresses, domains, settings, help, log out, about).
+KaPay (named KaChat Wallet until 2026-10-27) is a standalone Android Kaspa wallet, split out of
+KaChat so KaChat can stay focused on 1:1 and group chats - the Android counterpart of the iPhone's
+KaPay (`KaspaSilver/KaChat-Wallet-iPhone`), which it matches screen for screen. It keeps KaChat's
+wallet features: Portfolio, Cold Storage, the .kachat names marketplace, the Address Book and the
+account's Wallet tab (receive, send, request payment, addresses, domains, help, about).
 
 The source started as a copy of KaChat-Android (`KaspaSilver/KaChat-Android`) at commit `9289fad8`
-(5.2.2, 2026-10-22). Most of `app/` is still that code, including features the wallet never shows
-(1:1 and group chats, KaPosts, Public Chats, Chess, Swap, Nextcloud, bots). Calls are gone entirely
-(CallService, WebRTC, the call screen). The Kotlin namespace is still `com.kachat.app`, so fixes
-port across from KaChat-Android file for file; change only what the wallet uses.
+(5.2.2, 2026-10-22); everything chat has since been deleted (see "No chat code" below). The Kotlin
+namespace is still `com.kachat.app`, so wallet fixes port across from KaChat-Android file for
+file. Only what people read says KaPay; identifiers, folder and class names keep KaChat, and texts
+about the KaChat ecosystem (KaChat profiles, .kachat names, the Nextcloud `KaChat` folder) still say
+KaChat.
 
 When the iPhone wallet changes, the same change lands here: its commits name the iOS files, and
 the Android ones usually have the same names (Swift `FooView` -> Kotlin `FooScreen`).
@@ -22,33 +23,42 @@ the Android ones usually have the same names (Swift `FooView` -> Kotlin `FooScre
 ## Dock
 
 Five fixed tabs, `WALLET_DOCK` in `app/src/main/java/com/kachat/app/ui/KaChatApp.kt` (rendered by
-`MainShell`), opening on Portfolio (`HOME_ROUTE`):
+`MainShell`), opening on Wallet (`HOME_ROUTE`):
 
 | Tab | Screen |
 |---|---|
-| Portfolio | `PortfolioScreen` - the home tab |
+| Portfolio | `PortfolioScreen` - one floating + sheet for every add, import and export |
 | Storage | `ColdStorageListScreen` |
-| Wallet | `ProfileScreen` (`ui/screens/Screens.kt`) - KaChat's Profile, titled "Wallet" with a wallet icon (`Screen.Profile`, route `profile`); Settings opens from here |
-| .kachat | `KachatNamesLiveScreens.kt` - the full .kachat names marketplace; dock icon is the name tag with an @ (`dockIconPainter` in `ui/ChessTabIcon.kt`); hidden in Simple Mode |
-| Addresses | `AddressBookScreen` (`ui/screens/AddressBookScreens.kt`) - one floating + for Add, Import and Export |
+| Wallet | `ProfileScreen` (`ui/screens/Screens.kt`, route `profile`) - the home tab: receive, Chatting Address, Manage Addresses, Your Domains, Address Book (`AddressBookScreen`, pushed), Help, About; a floating up/down button opens Send and Receive (`WalletActions.kt`: Send Kaspa, Receive Kaspa, Request Payment) |
+| .kachat | `KaChatHubSections.kt` `KachatMarketScreen` + `KachatNamesLiveScreens.kt` - the full .kachat names marketplace, swiping between its tabs; dock icon is the name tag with an @ (`dockIconPainter` in `ui/ChessTabIcon.kt`) |
+| Settings | `SettingsScreen(isDockTab = true)` - no Done button; Log Out is its last row |
 
-`resolveDock` ignores any saved arrangement and there is no Kaspa Hub or Customize Dock.
+`resolveDock` ignores any saved arrangement; there is no Kaspa Hub, Customize Dock or Simple Mode.
 
-Account setup is KaChat's: `KaChatApp` -> `OnboardingScreen` (create / import a seed) ->
-`MainShell`. The sign-in screen says "KaChat Wallet" with the wallet logo and no tagline; KaChat's
-welcome guide is never shown. Settings has no Chats or Chat History page, no Customize Dock and no
-Show Fee Estimate; Connection Settings has Push / Node / Domains / Explorer tabs; Help has only the
-.kachat names guide.
+Account setup: `KaChatApp` -> `OnboardingScreen` (create / import a seed) -> `MainShell`. The
+sign-in screen says "KaPay" with the wallet logo and no tagline. Settings: Customization,
+Security, Connection (Push / Node / Domains - the .kachat indexer is editable there - / Explorer),
+Notifications (one page), Storage (Nextcloud backup), Diagnostics, View Seed Phrase, Log Out.
+Every send (Send Kaspa, Compound UTXOs, .kachat Claim and Buy) is the swipe-up screen
+(`SwipeUpSendScreen.kt`); in debug builds `adb shell setprop debug.kachat.fail_send 1` makes
+sends fail, for testing.
 
-## Chats are off
+## No chat code
 
-`ChatFeatures.enabled` (`util/ChatFeatures.kt`) is `false`, and every chat path checks it and does
-nothing: the message poll loop and `syncMessages`, inbox and pushed-message ingest, "chat with
-yourself", group sync, catch-up and live polling, the group and public-room block scanners
-(their scopes are cancelled at construction), featured room joins, KaPosts polling, the .kachat
-sweep that names chat contacts, payment notices, direct-share shortcuts, chat banners in
-`NotificationHelper`, the battery-exemption prompt, and every FCM type but `name_event` and
-`address_activity`. The chat code itself still compiles; change nothing in it unless removing it.
+There is no chat code left: don't bring any back. Like the iPhone wallet's 301ebfb, KaPay deleted
+1:1, group and public chats, KaPosts, Chess, Swap, bots, voice, the message store, chat push and
+chat sync (`ChatRepository`, `GroupRepository`, `BroadcastRepository`, `ChatViewModel` and every
+screen, service and util they used, with their tests). `WalletService` keeps the node connection,
+sending and the REST reads; `SettingsViewModel` has the Kaspa Explorer choice and the diagnostics
+export; `WalletViewModel` the onboarding hold and the own-address activity events. Nextcloud backs
+up only the Address Book and the Portfolio. Push keeps its registration shape: the chat fields go
+out empty (`PushRegistrationManager.register`).
+
+Room (`services/database/KaChatDatabase.kt`, version 43) holds only the Portfolio:
+`portfolio_transactions` and `portfolios`. `MIGRATION_42_43` drops KaChat's chat tables and keeps
+those two; anything older is rebuilt empty. The Address Book lives in SharedPreferences
+(`AddressBookManager`), settings in DataStore (`AppSettingsRepository`, which still has KaChat's
+unused chat keys).
 
 What runs is the wallet: the node pool, `AddressActivityNotifier` (a 30 s foreground poll of the
 wallet's own addresses - Android has no UTXO subscription - where the main address now counts as a
@@ -59,7 +69,8 @@ instead of syncing groups. Notification channels carry no launcher badge.
 ## Push
 
 See `PUSH_SERVICE.md`. The wallet registers with KaChat's push service only for "Received KAS"
-on its own addresses (`watch_only_addresses`) and .kachat events (`primary_address`), with
+on its own addresses (`watch_only_addresses`) and .kachat events (`primary_address`, which keeps it
+registered with Address Activity off), with
 `apns_topic` `com.kachat.wallet`. FCM needs `app/google-services.json` from KaChat's Firebase
 project with `com.kachat.wallet` added - the owner's step.
 

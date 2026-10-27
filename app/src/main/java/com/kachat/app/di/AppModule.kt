@@ -19,10 +19,8 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import com.kachat.app.services.ChangeNowApi
 import com.kachat.app.services.CoinGeckoApi
 import com.kachat.app.services.KaspaRestApi
-import com.kachat.app.services.KasiaIndexerApi
 import com.kachat.app.services.KnsApi
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
@@ -54,8 +52,9 @@ object AppModule {
     }
 
     /**
-     * Room database — local message and contact storage.
-     * Equivalent to Core Data in the iOS app.
+     * Room database - the Portfolio's two tables only. The message, contact, group, broadcast
+     * and swap tables went with the chats (iOS wallet 301ebfb): v43 drops them and keeps the
+     * Portfolio ([KaChatDatabase.MIGRATION_42_43]); anything older is rebuilt empty.
      */
     @Provides
     @Singleton
@@ -65,10 +64,7 @@ object AppModule {
             KaChatDatabase::class.java,
             "kachat.db"
         )
-            .addMigrations(KaChatDatabase.MIGRATION_15_16, KaChatDatabase.MIGRATION_16_17, KaChatDatabase.MIGRATION_17_18, KaChatDatabase.MIGRATION_18_19, KaChatDatabase.MIGRATION_19_20, KaChatDatabase.MIGRATION_20_21, KaChatDatabase.MIGRATION_21_22, KaChatDatabase.MIGRATION_22_23, KaChatDatabase.MIGRATION_23_24, KaChatDatabase.MIGRATION_24_25, KaChatDatabase.MIGRATION_25_26, KaChatDatabase.MIGRATION_26_27, KaChatDatabase.MIGRATION_27_28, KaChatDatabase.MIGRATION_28_29, KaChatDatabase.MIGRATION_29_30, KaChatDatabase.MIGRATION_30_31, KaChatDatabase.MIGRATION_31_32, KaChatDatabase.MIGRATION_32_33, KaChatDatabase.MIGRATION_33_34, KaChatDatabase.MIGRATION_34_35, KaChatDatabase.MIGRATION_35_36, KaChatDatabase.MIGRATION_36_37, KaChatDatabase.MIGRATION_37_38, KaChatDatabase.MIGRATION_38_39, KaChatDatabase.MIGRATION_39_40, KaChatDatabase.MIGRATION_40_41, KaChatDatabase.MIGRATION_41_42)
-            // Safety net only, for version jumps that don't have an explicit Migration above —
-            // every future schema change should get a real Migration instead of relying on this,
-            // since it silently wipes every user's local contacts/messages.
+            .addMigrations(KaChatDatabase.MIGRATION_42_43)
             .fallbackToDestructiveMigration()
             .build()
     }
@@ -168,17 +164,6 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideKasiaIndexerApi(okHttpClient: OkHttpClient): KasiaIndexerApi {
-        return Retrofit.Builder()
-            .baseUrl("https://api.kasia.io/")
-            .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-            .create(KasiaIndexerApi::class.java)
-    }
-
-    @Provides
-    @Singleton
     fun provideKnsApi(okHttpClient: OkHttpClient): KnsApi {
         return Retrofit.Builder()
             .baseUrl("https://api.kns.kaspa.org/")
@@ -197,27 +182,5 @@ object AppModule {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(CoinGeckoApi::class.java)
-    }
-
-    @Provides
-    @Singleton
-    fun provideChangeNowApi(okHttpClient: OkHttpClient): ChangeNowApi {
-        // The API key is per-request-header auth, not a query param, so it's added here at the
-        // client level (a derived client, so ChangeNOW calls still share the base timeouts/logging
-        // configured on the shared client) rather than threaded through every ChangeNowApi method.
-        val authedClient = okHttpClient.newBuilder()
-            .addInterceptor { chain ->
-                val request = chain.request().newBuilder()
-                    .addHeader("x-changenow-api-key", BuildConfig.CHANGENOW_API_KEY)
-                    .build()
-                chain.proceed(request)
-            }
-            .build()
-        return Retrofit.Builder()
-            .baseUrl("https://api.changenow.io/")
-            .client(authedClient)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-            .create(ChangeNowApi::class.java)
     }
 }

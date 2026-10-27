@@ -228,10 +228,9 @@ class AddressActivityNotifier @Inject constructor(
             }
             if (balance != previous) {
                 changed = true
-                // The UI refresh signal stays about spending and cold-storage addresses, as before:
-                // the chatting address's balance moves with every message sent. KaChat Wallet has
-                // no messages: its main address is a wallet address like the rest.
-                if (address != walletAddress || !com.kachat.app.util.ChatFeatures.enabled) changedAddresses.add(address)
+                // KaChat Wallet has no messages: its main address is a wallet address like the
+                // rest, so its changes refresh the UI too (iOS wallet 301ebfb).
+                changedAddresses.add(address)
             }
             if (balance > previous && !isFirstRun && address in notifiable) {
                 attributeAndMaybeNotifyIncrease(
@@ -253,11 +252,9 @@ class AddressActivityNotifier @Inject constructor(
                 _utxoActivityEvents.tryEmit(changedAddresses)
                 // KaChat Wallet: no message poll refreshes the balance, so a receive does (iOS
                 // wallet 7f789f4, the fallback poll that refreshes the balance instead).
-                if (!com.kachat.app.util.ChatFeatures.enabled) {
-                    runCatching {
-                        walletServiceLazy.get().refreshBalance()
-                        walletServiceLazy.get().refreshSpendingBalance()
-                    }
+                runCatching {
+                    walletServiceLazy.get().refreshBalance()
+                    walletServiceLazy.get().refreshSpendingBalance()
                 }
             }
         }

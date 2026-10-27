@@ -7,7 +7,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.kachat.app.services.database.KaChatDatabase
 import com.kachat.app.util.KaspaAddress
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -77,7 +76,6 @@ data class AddressBookTombstone(val address: String, val deletedAt: Long)
 class AddressBookManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val walletManager: WalletManager,
-    private val database: KaChatDatabase,
     // Lazy: NextcloudSyncService exports and imports the Address Book through this class.
     private val nextcloudSyncService: dagger.Lazy<NextcloudSyncService>,
 ) {
@@ -152,42 +150,9 @@ class AddressBookManager @Inject constructor(
         return wallet
     }
 
-    private suspend fun setActiveWalletAddress(walletAddress: String?) {
-        val wallet = loadBook(walletAddress) ?: return
-        migrateLinkedNames(wallet, walletAddress!!)
-    }
-
-    /**
-     * Once per wallet: every chat contact that was linked to a phone contact becomes an Address
-     * Book entry with that phone contact's name and the Kaspa address only (no phone number, no
-     * link). The old link is read from the contact row's legacy columns, never written back.
-     */
-    private suspend fun migrateLinkedNames(wallet: String, rawWallet: String) {
-        val flag = MIGRATED_KEY_PREFIX + wallet
-        if (prefs.getBoolean(flag, false)) return
-        val contacts = runCatching { database.contactDao().getContacts(rawWallet).first() }.getOrElse {
-            Log.w(TAG, "Address Book migration could not read contacts", it)
-            return
-        }
-        synchronized(this) {
-            val current = book
-            if (current.wallet != wallet) return
-            val added = ArrayList<AddressBookEntry>()
-            val seen = HashSet(current.byAddress.keys)
-            for (contact in contacts) {
-                val name = contact.systemContactName?.trim()
-                if (contact.systemContactId == null || name.isNullOrEmpty()) continue
-                val address = normalize(contact.id)
-                if (!seen.add(address)) continue
-                added.add(AddressBookEntry(address = address, name = name))
-            }
-            prefs.edit().putBoolean(flag, true).apply()
-            if (added.isNotEmpty()) {
-                publish(Book(wallet, sorted(current.entries + added), current.deleted))
-                persist()
-                Log.i(TAG, "moved linked phone-contact names into the Address Book")
-            }
-        }
+    // No chat contacts to move names from any more (iOS wallet 301ebfb).
+    private fun setActiveWalletAddress(walletAddress: String?) {
+        loadBook(walletAddress)
     }
 
     // MARK: - Reading
@@ -252,23 +217,6 @@ class AddressBookManager @Inject constructor(
         persist()
         didChange()
         return saved
-    }
-
-    /**
-     * One name per person (iOS 2831fab): a chat with [saved]'s address goes by the same name as
-     * its Address Book entry - so clearing it here really clears it, and they go by their .kachat
-     * name or their address.
-     */
-    fun applyNameToChat(saved: AddressBookEntry) {
-        val rawWallet = runCatching { walletManager.getAddress() }.getOrNull() ?: return
-        scope.launch {
-            val dao = database.contactDao()
-            val contact = runCatching { dao.getContact(saved.address, rawWallet) }.getOrNull() ?: return@launch
-            val assigned = contact.alias?.trim()?.takeIf { it.isNotEmpty() }
-            if (assigned == saved.customName) return@launch
-            runCatching { dao.insert(contact.copy(alias = saved.customName)) }
-                .onFailure { Log.w(TAG, "Could not give the chat its Address Book name", it) }
-        }
     }
 
     @Synchronized

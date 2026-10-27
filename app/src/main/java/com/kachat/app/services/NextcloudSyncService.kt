@@ -55,8 +55,7 @@ import javax.inject.Singleton
  *     each falls back to its pre-rename "KaChat Wallet …" name.
  *
  * KaChat's chat history (`kachat-backup.json`, the change watcher, the chat restore) is no part of
- * it (iOS 301ebfb). The old entry points other code still calls - [noteMessageActivity],
- * [noteOwnUpload], [lastAutoSyncMs], [setAutoSyncEnabled] - are kept as thin shims so it compiles.
+ * it (iOS 301ebfb), and neither are the shims KaChat's chat code called.
  *
  * Every upload or restore snapshots the active wallet and re-checks it before each write, so a
  * wallet switch mid-way never writes one account's data into another's files.
@@ -111,9 +110,6 @@ class NextcloudSyncService @Inject constructor(
     /** When the active wallet's backup last uploaded (epoch ms), null = never. */
     val lastBackupMs: StateFlow<Long?> get() = nextcloudService.lastBackupMs
 
-    /** The old name of [lastBackupMs], for KaChat's chat settings code. */
-    val lastAutoSyncMs: StateFlow<Long?> get() = nextcloudService.lastBackupMs
-
     init {
         // The periodic fallback job is enqueued exactly while it can do anything: an account
         // connected for the active wallet with Automatic Backup on.
@@ -163,15 +159,6 @@ class NextcloudSyncService @Inject constructor(
         scheduleBackup(BACKUP_DEBOUNCE_MS)
     }
 
-    /** KaChat's message-activity hook (ChatRepository): chats are not backed up, so a message
-     *  owes nothing. */
-    fun noteMessageActivity() = Unit
-
-    /** KaChat's own-write guard for its chat archive's change watcher, which the wallet doesn't
-     *  have. */
-    @Suppress("UNUSED_PARAMETER")
-    fun noteOwnUpload(etag: String?) = Unit
-
     /**
      * Settings' Automatic Backup toggle (iOS `setAutoBackupEnabled`): turning it on uploads right
      * away, turning it off drops a pending upload.
@@ -186,9 +173,6 @@ class NextcloudSyncService @Inject constructor(
             debounceJob = null
         }
     }
-
-    /** The old name of [setAutoBackupEnabled], for KaChat's chat settings code. */
-    fun setAutoSyncEnabled(enabled: Boolean) = setAutoBackupEnabled(enabled)
 
     private fun scheduleBackup(delayMs: Long) {
         if (!nextcloudService.autoBackupEnabled.value || !nextcloudService.isConnected) return

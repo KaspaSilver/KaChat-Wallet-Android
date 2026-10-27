@@ -1,6 +1,5 @@
 package com.kachat.app.models
 
-import com.kachat.app.util.GroupCipher
 import com.kachat.app.util.KaspaAddress
 import com.kachat.app.util.KaspaUnit
 import java.security.MessageDigest
@@ -81,7 +80,7 @@ class PaymentRequest private constructor(
 
     /** This request signed by [creator] (the wallet's chatting address) with its key, or null. */
     fun signed(creator: String, privateKey: ByteArray): PaymentRequest? {
-        val signature = runCatching { GroupCipher.sign(signingDigest(creator), privateKey) }.getOrNull() ?: return null
+        val signature = runCatching { com.kachat.app.util.Schnorr.sign(signingDigest(creator), privateKey) }.getOrNull() ?: return null
         if (signature.size != 64) return null
         return PaymentRequest(address, amountSompi, memo, toChattingAddress, creator.lowercase(), signature)
     }
@@ -147,7 +146,7 @@ class PaymentRequest private constructor(
                 val (version, payload) = KaspaAddress.decode(creator)
                 payload.takeIf { version.toInt() == 0 && it.size == 32 }
             }.getOrNull() ?: return false
-            return runCatching { GroupCipher.verify(signature, request.signingDigest(creator), key) }.getOrDefault(false)
+            return runCatching { com.kachat.app.util.Schnorr.verify(request.signingDigest(creator), signature, key) }.getOrDefault(false)
         }
 
         /**
