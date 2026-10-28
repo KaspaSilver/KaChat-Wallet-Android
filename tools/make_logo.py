@@ -12,7 +12,8 @@ VARIANT (default "logo"):
               middle 72 of 108 dp the launcher shows (the background layer is plain white)
   monochrome  the adaptive icon's themed (Android 13+) layer: the wallet in white with the K cut
               out, on transparent, sized like foreground; the launcher tints it
-  dark        (iOS only) full near-black square, teal wallet, dark K
+  dark        full near-black square, teal wallet, dark K - the dark-mode app icon on iOS, and
+              the privacy cover's logo while the app is dark (kachat_wallet_logo_dark)
   tinted      (iOS only) grayscale on black, for iOS to tint
 """
 import sys

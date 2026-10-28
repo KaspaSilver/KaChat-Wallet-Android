@@ -81,6 +81,7 @@ iPhone wallet's script with Android's adaptive-icon layers added:
 
 ```bash
 python3 tools/make_logo.py app/src/main/res/drawable-nodpi/kachat_wallet_logo.png 512 logo
+python3 tools/make_logo.py app/src/main/res/drawable-nodpi/kachat_wallet_logo_dark.png 512 dark   # the privacy cover in dark mode
 for d in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do n=${d#*:}; d=${d%:*}; f=$((n*9/4))
   python3 tools/make_logo.py app/src/main/res/mipmap-$d/ic_launcher_foreground.png $f foreground
   python3 tools/make_logo.py app/src/main/res/mipmap-$d/ic_launcher_monochrome.png $f monochrome

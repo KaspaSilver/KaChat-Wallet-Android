@@ -7,7 +7,11 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.dp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -45,6 +49,10 @@ class MainActivity : AppCompatActivity() {
     // Held here until the shell is up and takes it, which is what covers a cold start (iOS's
     // OwnAddressRoute.pending).
     private var pendingOwnAddress by mutableStateOf<String?>(null)
+
+    /** The privacy cover is up: the app isn't the thing in front (the app switcher, the
+     *  notification shade, a system prompt) - see [PrivacyCover]. */
+    private var privacyCovered by mutableStateOf(false)
 
     // Android 13+'s notification permission is asked from the tabs, once, not at launch: see
     // MainShell's NotificationPermissionOnce (iOS wallet 1806a69).
@@ -102,7 +110,58 @@ class MainActivity : AppCompatActivity() {
                         onPendingOwnAddressHandled = { pendingOwnAddress = null }
                     )
                     CrashNotice()
+                    PrivacyCover(covered = privacyCovered)
                 }
+            }
+        }
+    }
+
+    // Covered the moment the app stops being the thing in front, uncovered when it is again
+    // (iOS handleScenePhaseChange: `showPrivacyCover = newPhase != .active`).
+    override fun onResume() {
+        super.onResume()
+        privacyCovered = false
+    }
+
+    override fun onPause() {
+        privacyCovered = true
+        super.onPause()
+    }
+
+    /**
+     * What the app switcher and a system prompt see instead of the app's contents (iOS
+     * `PrivacyCoverView`): the screen hidden behind the background colour, and the wallet's own
+     * logo rounded like its icon - the dark-mode one (near-black tile, `tools/make_logo.py ...
+     * dark`) when the app is dark, the white one otherwise (iOS wallet 768daeb). Fades in and out
+     * in 0.15 s like iOS's. On Android 13+ the switcher's snapshot is switched off outright
+     * (`setRecentsScreenshotEnabled(false)` above); this covers the shade, prompts and older
+     * versions' snapshots.
+     */
+    @androidx.compose.runtime.Composable
+    private fun PrivacyCover(covered: Boolean) {
+        val colors = com.kachat.app.ui.theme.LocalAppColors.current
+        androidx.compose.animation.AnimatedVisibility(
+            visible = covered,
+            enter = androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(150)),
+            exit = androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(150)),
+        ) {
+            androidx.compose.foundation.layout.Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    // iOS's .ultraThinMaterial: here a near-opaque wash of the background, so
+                    // nothing behind it is readable on any Android version.
+                    .background(colors.background.copy(alpha = 0.97f)),
+                contentAlignment = androidx.compose.ui.Alignment.Center,
+            ) {
+                androidx.compose.foundation.Image(
+                    painter = androidx.compose.ui.res.painterResource(
+                        if (colors.isDark) R.drawable.kachat_wallet_logo_dark else R.drawable.kachat_wallet_logo
+                    ),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(72.dp)
+                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp)),
+                )
             }
         }
     }
