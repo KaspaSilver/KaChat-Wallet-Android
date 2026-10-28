@@ -66,6 +66,18 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.IntOffset
+import com.kachat.app.util.formatFiatAmount
 import com.kachat.app.R
 import com.kachat.app.models.PaymentRequest
 import com.kachat.app.ui.theme.IosRoundedFontFamily
@@ -283,22 +295,24 @@ val RequestPaymentIcon: androidx.compose.ui.graphics.vector.ImageVector by lazy 
 
 /**
  * Makes a payment request link (iOS `CreatePaymentRequestView`, c6851d6 / 7c71a98 / 6594936,
- * 86dfd2d / 6dee531 / 338d9f5 / 3f5f79c): paid to a Fresh Address or one you choose, an exact
- * amount (KAS or your currency) and what it's for - an optional memo up to
+ * 86dfd2d / 6dee531 / 338d9f5 / 3f5f79c / 05db583): paid to a Fresh Address or one you choose, an
+ * exact amount (KAS or your currency) and what it's for - an optional memo up to
  * [PaymentRequest.MEMO_LIMIT] characters. Signed by your chatting address when it goes out, so
  * whoever pays sees it is from you.
  *
+ * Like a send, in steps (iOS 05db583), the send's step screens the other way round: "Where do you
+ * want to be paid?" (Fresh Address, or Choose an Address with your addresses listed right on the
+ * screen, [OwnAddressList]), "How much?" on the app's keypad ([KaspaKeypadAmountEntry], no Max),
+ * then the review with the memo, Copy Payment Request (the bottom button) and Share.
+ *
  * Fresh Address (the default) is a brand-new spending address, never revealed, used or handed out:
  * the screen shows the next unrevealed slot (derived, not reserved) and reserves it only when the
- * request is copied, shared or sent - opening the screen and cancelling uses none up. Once per
- * screen: Copy, Share and Send all reuse it, so no two requests share an address. Choose an
- * Address picks one of yours: a request to the chatting address is a chat payment with the memo;
- * any other is a plain send.
+ * request is copied or shared - opening the screen and cancelling uses none up. Once per screen:
+ * Copy and Share both reuse it, so no two requests share an address.
  *
  * It gives the link: Copy Payment Request or Share. Sending it into a chat went with the chats
  * (iOS wallet 301ebfb).
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreatePaymentRequestSheet(
     walletViewModel: WalletViewModel,
@@ -306,23 +320,23 @@ fun CreatePaymentRequestSheet(
     portfolioViewModel: com.kachat.app.viewmodels.PortfolioViewModel = hiltViewModel(),
 ) {
     IosFullSheet(onDismissed = onDismissed, swipeToDismiss = true) { close ->
-        BackHandler(onBack = close)
         val colors = LocalAppColors.current
         val context = LocalContext.current
         val clipboard = LocalClipboardManager.current
+        val focusManager = LocalFocusManager.current
         val scope = androidx.compose.runtime.rememberCoroutineScope()
         val haptic = com.kachat.app.util.rememberHaptics()
         val fiatPriceInCurrency by portfolioViewModel.currentPriceUsd.collectAsState()
         val fiatCurrencyCode by portfolioViewModel.currency.collectAsState()
         val chattingAddress by walletViewModel.address.collectAsState()
 
+        var step by remember { mutableStateOf(PaymentRequestStep.DESTINATION) }
         var destination by remember { mutableStateOf(PaymentRequestDestination.FRESH) }
-        /** The brand-new address reserved for this request - only once it's copied, shared or sent. */
+        /** The brand-new address reserved for this request - only once it's copied or shared. */
         var freshAddress by remember { mutableStateOf<String?>(null) }
         /** The next brand-new address, shown before it's reserved (the slot after the last revealed one). */
         var nextFreshAddress by remember { mutableStateOf<String?>(null) }
         var chosenAddress by remember { mutableStateOf<String?>(null) }
-        var showAddressPicker by remember { mutableStateOf(false) }
         var amountInput by remember { mutableStateOf("") }
         val fiatAmountState = com.kachat.app.util.rememberKaspaFiatAmountState(onKasTextChange = { amountInput = it })
         var memo by remember { mutableStateOf("") }
@@ -336,7 +350,18 @@ fun CreatePaymentRequestSheet(
         val amountSompi = KaspaUnit.sompiFromUserText(amountInput)?.takeIf { it > 0 }
         /** Ready to hand out: an amount, and an address (or a fresh one to be made). */
         val canMake = amountSompi != null && (destination == PaymentRequestDestination.FRESH || chosenAddress != null)
+        /** The address the request pays: the fresh one (reserved, else the one it will be), or the pick. */
+        val payeeAddress = when (destination) {
+            PaymentRequestDestination.FRESH -> freshAddress ?: nextFreshAddress
+            PaymentRequestDestination.CHOSEN -> chosenAddress
+        }
         LaunchedEffect(amountInput, memo, destination, chosenAddress) { copied = false }
+
+        /** To another step; the slide's direction follows the steps' order (iOS `go(to:)`). */
+        fun go(next: PaymentRequestStep) {
+            focusManager.clearFocus()
+            step = next
+        }
 
         /**
          * The request to hand out, unsigned (signed by the chatting address as it goes out - the
@@ -364,173 +389,316 @@ fun CreatePaymentRequestSheet(
             (com.kachat.app.services.PaymentRequestWallet.shared?.sign(unsigned) ?: unsigned).shareUrlString
         }
 
-        Scaffold(
-            containerColor = colors.background,
-            contentWindowInsets = WindowInsets(0, 0, 0, 0),
-            topBar = {
-                // iOS 26's sheet bar: the title in headline, Cancel on a glass capsule.
-                SheetNavBar(
-                    title = stringResource(R.string.pr_request_payment),
-                    leading = { SheetBarButton(stringResource(R.string.cancel), onClick = close) },
-                )
-            },
-        ) { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp)
-                    .padding(top = 12.dp, bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(18.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        SelectablePill(
-                            title = stringResource(R.string.pr_fresh_address),
-                            selected = destination == PaymentRequestDestination.FRESH,
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            destination = PaymentRequestDestination.FRESH
-                        }
-                        SelectablePill(
-                            title = stringResource(R.string.pr_choose_an_address),
-                            selected = destination == PaymentRequestDestination.CHOSEN,
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            destination = PaymentRequestDestination.CHOSEN
-                            showAddressPicker = true
-                        }
-                    }
-                    when (destination) {
-                        PaymentRequestDestination.FRESH -> {
-                            val shown = freshAddress ?: nextFreshAddress
-                            if (shown != null) {
-                                AddressResolutionCard(address = shown)
-                            } else {
-                                Box(Modifier.fillMaxWidth().padding(vertical = 18.dp), contentAlignment = Alignment.Center) {
-                                    com.kachat.app.ui.theme.IosActivityIndicator(color = colors.textSecondary)
-                                }
-                            }
-                        }
-                        PaymentRequestDestination.CHOSEN -> {
-                            val chosen = chosenAddress
-                            if (chosen != null) {
-                                AddressResolutionCard(address = chosen)
-                                Text(
-                                    // iOS: the same line whichever address was chosen (no chat to land in).
-                                    stringResource(R.string.pr_memo_shows_note),
-                                    color = colors.textSecondary,
-                                    fontSize = 13.sp,
-                                )
-                            } else {
-                                Text(stringResource(R.string.pr_pick_address), color = colors.textSecondary, fontSize = 13.sp)
-                            }
-                        }
-                    }
+        fun copy() {
+            isWorking = true
+            sendError = null
+            scope.launch {
+                try {
+                    val unsigned = makeRequest() ?: return@launch
+                    clipboard.setText(AnnotatedString(signedLink(unsigned)))
+                    haptic(com.kachat.app.util.IosHaptic.SUCCESS)
+                    copied = true
+                } finally {
+                    isWorking = false
                 }
-
-                KaspaAmountEntry(
-                    fiatAmountState = fiatAmountState,
-                    priceInCurrency = fiatPriceInCurrency,
-                    currencyCode = fiatCurrencyCode,
-                    onMax = {},
-                    showsMax = false,
-                    focusOnAppear = true,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
-
-                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    val placeholder = stringResource(R.string.pr_memo_placeholder)
-                    BasicTextField(
-                        value = memo,
-                        onValueChange = { value ->
-                            memo = if (PaymentRequest.characterCount(value) > PaymentRequest.MEMO_LIMIT) {
-                                PaymentRequest.takeCharacters(value, PaymentRequest.MEMO_LIMIT)
-                            } else value
-                        },
-                        maxLines = 4,
-                        textStyle = TextStyle(color = colors.textPrimary, fontSize = 17.sp),
-                        cursorBrush = SolidColor(KaspaTeal),
-                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .sendKaspaGlass(14.dp)
-                            .padding(14.dp)
-                            .semantics { contentDescription = placeholder },
-                        decorationBox = { inner ->
-                            Box {
-                                if (memo.isEmpty()) Text(placeholder, color = colors.textTertiary, fontSize = 17.sp)
-                                inner()
-                            }
-                        },
-                    )
-                    Text(
-                        "${PaymentRequest.characterCount(memo)}/${PaymentRequest.MEMO_LIMIT}",
-                        color = colors.textSecondary,
-                        fontSize = 11.sp,
-                    )
-                }
-
-                sendError?.let {
-                    Text(it, color = colors.danger, fontSize = 13.sp, textAlign = TextAlign.Center)
-                }
-
-                run {
-                    SendActionButton(
-                        title = stringResource(if (copied) R.string.ab_copied else R.string.pr_copy),
-                        isBusy = isWorking,
-                        isEnabled = canMake && !isWorking,
-                        requiresSlide = false,
-                        onSend = {
-                            isWorking = true
-                            sendError = null
-                            scope.launch {
-                                try {
-                                    val unsigned = makeRequest() ?: return@launch
-                                    clipboard.setText(AnnotatedString(signedLink(unsigned)))
-                                    haptic(com.kachat.app.util.IosHaptic.SUCCESS)
-                                    copied = true
-                                } finally {
-                                    isWorking = false
-                                }
-                            }
-                        },
-                    )
-                    // Share waits for the fresh address before the share sheet opens.
-                    PaymentRequestShareButton(enabled = canMake && !isWorking) {
-                        isWorking = true
-                        sendError = null
-                        scope.launch {
-                            try {
-                                val unsigned = makeRequest() ?: return@launch
-                                sharePaymentRequestLink(context, signedLink(unsigned))
-                            } finally {
-                                isWorking = false
-                            }
-                        }
-                    }
-                }
-
-                Text(
-                    stringResource(R.string.pr_anyone_note),
-                    color = colors.textSecondary,
-                    fontSize = 13.sp,
-                    textAlign = TextAlign.Center,
-                )
             }
         }
 
-        if (showAddressPicker) {
-            OwnAddressPicker(
-                title = stringResource(R.string.pr_choose_an_address),
-                selected = chosenAddress,
-                walletViewModel = walletViewModel,
-                onPick = { picked -> chosenAddress = picked.address(chattingAddress) },
-                onDismiss = { showAddressPicker = false },
-            )
+        // Share waits for the fresh address before the share sheet opens.
+        fun share() {
+            isWorking = true
+            sendError = null
+            scope.launch {
+                try {
+                    val unsigned = makeRequest() ?: return@launch
+                    sharePaymentRequestLink(context, signedLink(unsigned))
+                } finally {
+                    isWorking = false
+                }
+            }
         }
+
+        // The sheet already keeps clear of the system bars.
+        val noInsets = WindowInsets(0, 0, 0, 0)
+        val title = stringResource(R.string.pr_request_payment)
+
+        AnimatedContent(
+            targetState = step,
+            transitionSpec = {
+                // iOS: the next step moves in from the trailing edge, Back brings one in from the leading
+                val forward = targetState.ordinal > initialState.ordinal
+                (slideInHorizontally(PaymentRequestStepSpring) { if (forward) it else -it } togetherWith
+                    slideOutHorizontally(PaymentRequestStepSpring) { if (forward) -it else it })
+            },
+            label = "requestPaymentStep",
+            modifier = Modifier.fillMaxSize(),
+        ) { shown ->
+            when (shown) {
+                // MARK: Where
+                PaymentRequestStep.DESTINATION -> SendStepScreen(
+                    title = title,
+                    onCancel = close,
+                    canContinue = payeeAddress != null,
+                    onContinue = { go(PaymentRequestStep.AMOUNT) },
+                    insets = noInsets,
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = 20.dp)
+                            .padding(top = 12.dp, bottom = 24.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp),
+                    ) {
+                        SendStepQuestion("Where do you want to be paid?")
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            SelectablePill(
+                                title = stringResource(R.string.pr_fresh_address),
+                                selected = destination == PaymentRequestDestination.FRESH,
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                destination = PaymentRequestDestination.FRESH
+                            }
+                            SelectablePill(
+                                title = stringResource(R.string.pr_choose_an_address),
+                                selected = destination == PaymentRequestDestination.CHOSEN,
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                destination = PaymentRequestDestination.CHOSEN
+                            }
+                        }
+                        when (destination) {
+                            PaymentRequestDestination.FRESH -> {
+                                val fresh = freshAddress ?: nextFreshAddress
+                                if (fresh != null) {
+                                    AddressResolutionCard(address = fresh)
+                                    Text(
+                                        "A brand-new address of yours that has never been used or handed out.",
+                                        color = colors.textSecondary,
+                                        fontSize = 13.sp,
+                                    )
+                                } else {
+                                    Box(Modifier.fillMaxWidth().padding(vertical = 18.dp), contentAlignment = Alignment.Center) {
+                                        com.kachat.app.ui.theme.IosActivityIndicator(color = colors.textSecondary)
+                                    }
+                                }
+                            }
+                            PaymentRequestDestination.CHOSEN -> {
+                                // the list right here, no sheet: tap the address that gets paid
+                                Text(stringResource(R.string.pr_pick_address), color = colors.textSecondary, fontSize = 13.sp)
+                                OwnAddressList(
+                                    selected = chosenAddress,
+                                    walletViewModel = walletViewModel,
+                                    onPick = { picked -> chosenAddress = picked.address(chattingAddress) },
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // MARK: How much
+                PaymentRequestStep.AMOUNT -> SendStepScreen(
+                    title = title,
+                    onCancel = close,
+                    canContinue = amountSompi != null,
+                    onContinue = { go(PaymentRequestStep.REVIEW) },
+                    onBack = { go(PaymentRequestStep.DESTINATION) },
+                    continueTitle = "Review",
+                    insets = noInsets,
+                ) {
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp)
+                            .padding(top = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        SendStepQuestion("How much?")
+                        payeeAddress?.let { address ->
+                            SendInfoPill {
+                                Text("Paid to")
+                                Text("${address.take(14)}...${address.takeLast(6)}", fontFamily = FontFamily.Monospace)
+                            }
+                        }
+                    }
+                    KaspaKeypadAmountEntry(
+                        fiatAmountState = fiatAmountState,
+                        priceInCurrency = fiatPriceInCurrency,
+                        currencyCode = fiatCurrencyCode,
+                        onMax = {},
+                        showsMax = false,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+
+                // MARK: Review
+                PaymentRequestStep.REVIEW -> SendStepScreen(
+                    title = "Review",
+                    onCancel = close,
+                    canContinue = canMake && !isWorking,
+                    onContinue = { copy() },
+                    onBack = { go(PaymentRequestStep.AMOUNT) },
+                    continueTitle = stringResource(if (copied) R.string.ab_copied else R.string.pr_copy),
+                    insets = noInsets,
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = 20.dp)
+                            .padding(top = 12.dp, bottom = 24.dp),
+                        verticalArrangement = Arrangement.spacedBy(18.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Column(
+                            Modifier.fillMaxWidth().padding(top = 8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            Text("You're requesting", color = colors.textSecondary, fontSize = 15.sp)
+                            amountSompi?.let { sompi ->
+                                PaymentRequestFitText(
+                                    "${KaspaUnit.plain(sompi)} ${KaspaUnit.symbol}",
+                                    style = TextStyle(
+                                        color = colors.textPrimary,
+                                        fontSize = 40.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = IosRoundedFontFamily,
+                                        fontFeatureSettings = "tnum",
+                                    ),
+                                    minScale = 0.5f,
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                                fiatPriceInCurrency?.takeIf { it > 0.0 }?.let { price ->
+                                    Text(
+                                        formatFiatAmount(sompi / 100_000_000.0 * price, fiatCurrencyCode),
+                                        color = colors.textSecondary,
+                                        fontSize = 15.sp,
+                                    )
+                                }
+                            }
+                        }
+
+                        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                "Paid to".uppercase(),
+                                color = colors.textSecondary,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            AddressResolutionCard(address = payeeAddress)
+                        }
+
+                        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            val placeholder = stringResource(R.string.pr_memo_placeholder)
+                            BasicTextField(
+                                value = memo,
+                                onValueChange = { value ->
+                                    memo = if (PaymentRequest.characterCount(value) > PaymentRequest.MEMO_LIMIT) {
+                                        PaymentRequest.takeCharacters(value, PaymentRequest.MEMO_LIMIT)
+                                    } else value
+                                },
+                                maxLines = 4,
+                                textStyle = TextStyle(color = colors.textPrimary, fontSize = 17.sp),
+                                cursorBrush = SolidColor(KaspaTeal),
+                                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .sendKaspaGlass(14.dp)
+                                    .padding(14.dp)
+                                    .semantics { contentDescription = placeholder },
+                                decorationBox = { inner ->
+                                    Box {
+                                        if (memo.isEmpty()) Text(placeholder, color = colors.textTertiary, fontSize = 17.sp)
+                                        inner()
+                                    }
+                                },
+                            )
+                            Text(
+                                "${PaymentRequest.characterCount(memo)}/${PaymentRequest.MEMO_LIMIT}",
+                                color = colors.textSecondary,
+                                fontSize = 11.sp,
+                            )
+                        }
+                        Text(
+                            stringResource(R.string.pr_memo_shows_note),
+                            color = colors.textSecondary,
+                            fontSize = 13.sp,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+
+                        sendError?.let {
+                            Text(it, color = colors.danger, fontSize = 13.sp, textAlign = TextAlign.Center)
+                        }
+
+                        PaymentRequestSharePill(enabled = canMake && !isWorking) { share() }
+
+                        Text(
+                            stringResource(R.string.pr_anyone_note),
+                            color = colors.textSecondary,
+                            fontSize = 13.sp,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Request Payment's steps, in order (iOS 05db583 `CreatePaymentRequestView.Step`). */
+private enum class PaymentRequestStep { DESTINATION, AMOUNT, REVIEW }
+
+/** iOS `.spring(response: 0.4, dampingFraction: 0.9)`: stiffness (2*pi/0.4)^2. */
+private val PaymentRequestStepSpring = spring(dampingRatio = 0.9f, stiffness = 247f, visibilityThreshold = IntOffset.VisibilityThreshold)
+
+/** The review's Share (iOS 05db583): `Label("Share", systemImage: "square.and.arrow.up")` in the
+ *  accent colour on an accent capsule at 15%. */
+@Composable
+private fun PaymentRequestSharePill(enabled: Boolean, onClick: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = Modifier
+            .alpha(if (enabled) 1f else 0.4f)
+            .clip(RoundedCornerShape(50))
+            .background(KaspaTeal.copy(alpha = 0.15f))
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .padding(horizontal = 18.dp, vertical = 10.dp),
+    ) {
+        Icon(Icons.Outlined.IosShare, contentDescription = null, tint = KaspaTeal, modifier = Modifier.size(18.dp))
+        Text(stringResource(R.string.share), color = KaspaTeal, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+/** One line that shrinks to fit its width rather than being cut, down to [minScale] of [style]'s
+ *  size (iOS `.lineLimit(1).minimumScaleFactor`) - the review's amount. SendKaspaComponents'
+ *  `SendFitText` is the same but private there. */
+@Composable
+private fun PaymentRequestFitText(
+    text: String,
+    style: TextStyle,
+    minScale: Float,
+    modifier: Modifier = Modifier,
+) {
+    val measurer = rememberTextMeasurer()
+    BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
+        val maxWidth = constraints.maxWidth
+        val scale = remember(text, style, maxWidth) {
+            if (maxWidth == Constraints.Infinity) {
+                1f
+            } else {
+                val width = measurer.measure(text, style, maxLines = 1, softWrap = false).size.width
+                if (width <= maxWidth) 1f else (maxWidth.toFloat() / width).coerceIn(minScale, 1f)
+            }
+        }
+        Text(
+            text,
+            style = style.copy(fontSize = style.fontSize * scale),
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
