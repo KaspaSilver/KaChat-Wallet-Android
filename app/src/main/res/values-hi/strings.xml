@@ -283,7 +283,6 @@
     <string name="explorer">एक्सप्लोरर</string>
     <string name="export_csv">CSV निर्यात करें</string>
     <string name="exports_a_plaintext_json_file_of">इस खाते के लिए आपके डिक्रिप्ट किए गए चैट इतिहास की एक प्लेनटेक्स्ट JSON फ़ाइल निर्यात करता है। यह एन्क्रिप्टेड नहीं है, इसलिए इसे केवल वहीं साझा करें जहां आप भरोसा करते हैं। आयात करने पर यह बिना कुछ ओवरराइट किए आपके मौजूदा इतिहास के साथ विलय हो जाता है।</string>
-    <string name="exports_app_device_info_connection_settings">ऐप/डिवाइस जानकारी, कनेक्शन सेटिंग्स, स्थानीय संदेश गणना और हाल के ऐप लॉग को zip के रूप में निर्यात करता है - सपोर्ट के साथ समस्या निवारण के लिए। कोई निजी कुंजियां, सीड फ़्रेज़ या डिक्रिप्ट किया गया संदेश सामग्री शामिल नहीं है।</string>
     <string name="generate_more_addresses">अधिक पते जनरेट करें</string>
     <string name="generate_new_spending_address">नया खर्च पता जनरेट करें</string>
     <string name="github">GitHub</string>
@@ -1100,7 +1099,6 @@
     <string name="ab_photos_title">एड्रेस बुक फ़ोटो</string>
     <string name="ab_photos_remove">एड्रेस बुक फ़ोटो हटाएँ</string>
     <string name="ab_photos_remove_question">एड्रेस बुक फ़ोटो हटाएँ?</string>
-    <string name="ab_photos_footer">सहेजे गए पतों को आपकी दी हुई फ़ोटो, इस डिवाइस के सभी वॉलेट के लिए। आप हटाएँ तब तक रहती हैं, और आपके चैट बैकअप में शामिल होती हैं।</string>
     <string name="ab_photos_frees">%1$s खाली होगा। सहेजे गए पतों के नाम बने रहेंगे; बदले में उनके मालिक का लगाया अवतार दिखेगा।</string>
     <!-- Chats: long-press Address Book tile (iOS 98f3728) -->
     <string name="ab_row_add_subtitle">इस पते को पहचाने जाने वाले नाम से सहेजें।</string>

@@ -283,7 +283,6 @@
     <string name="explorer">Trình khám phá</string>
     <string name="export_csv">Xuất CSV</string>
     <string name="exports_a_plaintext_json_file_of">Xuất một tệp JSON dạng văn bản thuần của lịch sử trò chuyện đã giải mã của bạn cho tài khoản này. Nó không được mã hóa, vì vậy chỉ chia sẻ nó ở nơi bạn tin tưởng. Việc nhập sẽ hợp nhất với lịch sử hiện có của bạn mà không ghi đè bất cứ điều gì.</string>
-    <string name="exports_app_device_info_connection_settings">Xuất thông tin ứng dụng/thiết bị, cài đặt kết nối, số lượng tin nhắn cục bộ và nhật ký ứng dụng gần đây dưới dạng zip để khắc phục sự cố với bộ phận hỗ trợ. Không bao gồm khóa riêng tư, cụm từ khôi phục hoặc nội dung tin nhắn đã giải mã.</string>
     <string name="generate_more_addresses">Tạo thêm địa chỉ</string>
     <string name="generate_new_spending_address">Tạo địa chỉ chi tiêu mới</string>
     <string name="github">GitHub</string>
@@ -1100,7 +1099,6 @@
     <string name="ab_photos_title">Ảnh sổ địa chỉ</string>
     <string name="ab_photos_remove">Gỡ ảnh sổ địa chỉ</string>
     <string name="ab_photos_remove_question">Gỡ ảnh sổ địa chỉ?</string>
-    <string name="ab_photos_footer">Ảnh bạn gán cho các địa chỉ đã lưu, cho mọi ví trên thiết bị này. Ảnh được giữ cho đến khi bạn gỡ và có trong bản sao lưu trò chuyện.</string>
     <string name="ab_photos_frees">Giải phóng %1$s. Các địa chỉ đã lưu vẫn giữ tên và sẽ hiển thị ảnh đại diện do chủ sở hữu đặt.</string>
     <!-- Chats: long-press Address Book tile (iOS 98f3728) -->
     <string name="ab_row_add_subtitle">Lưu địa chỉ này với một cái tên dễ nhận ra.</string>

@@ -283,7 +283,6 @@
     <string name="explorer">Explorer</string>
     <string name="export_csv">Esporta CSV</string>
     <string name="exports_a_plaintext_json_file_of">Esporta un file JSON in testo semplice della tua cronologia chat decifrata per questo account. Non e crittografato, quindi condividilo solo in un luogo di cui ti fidi. L\'importazione si unisce alla cronologia esistente senza sovrascrivere nulla.</string>
-    <string name="exports_app_device_info_connection_settings">Esporta info app/dispositivo, impostazioni di connessione, conteggi messaggi locali e log recenti dell\'app come zip per l\'assistenza tecnica. Non sono incluse chiavi private, seed phrase o contenuti dei messaggi decifrati.</string>
     <string name="generate_more_addresses">Genera altri indirizzi</string>
     <string name="generate_new_spending_address">Genera nuovo indirizzo di spesa</string>
     <string name="github">GitHub</string>
@@ -1100,7 +1099,6 @@
     <string name="ab_photos_title">Foto della rubrica</string>
     <string name="ab_photos_remove">Rimuovi le foto della rubrica</string>
     <string name="ab_photos_remove_question">Rimuovere le foto della rubrica?</string>
-    <string name="ab_photos_footer">Le foto che hai assegnato agli indirizzi salvati, per tutti i wallet su questo dispositivo. Restano finché non le rimuovi e sono incluse nel backup delle chat.</string>
     <string name="ab_photos_frees">Libera %1$s. Gli indirizzi salvati mantengono il nome e mostrano invece l\'avatar scelto dal proprietario.</string>
     <!-- Chats: long-press Address Book tile (iOS 98f3728) -->
     <string name="ab_row_add_subtitle">Salva questo indirizzo con un nome che riconosci.</string>

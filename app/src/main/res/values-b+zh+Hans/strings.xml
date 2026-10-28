@@ -283,7 +283,6 @@
     <string name="explorer">浏览器</string>
     <string name="export_csv">导出 CSV</string>
     <string name="exports_a_plaintext_json_file_of">为此账户导出您已解密的聊天记录的纯文本 JSON 文件。它未加密,因此请仅在您信任的地方分享。导入会与您现有的记录合并,不会覆盖任何内容。</string>
-    <string name="exports_app_device_info_connection_settings">将应用/设备信息、连接设置、本地消息数量和近期应用日志导出为 zip 文件,用于与支持团队排查问题。不包含任何私钥、助记词或已解密的消息内容。</string>
     <string name="generate_more_addresses">生成更多地址</string>
     <string name="generate_new_spending_address">生成新的消费地址</string>
     <string name="github">GitHub</string>
@@ -1100,7 +1099,6 @@
     <string name="ab_photos_title">地址簿照片</string>
     <string name="ab_photos_remove">移除地址簿照片</string>
     <string name="ab_photos_remove_question">要移除地址簿照片吗？</string>
-    <string name="ab_photos_footer">你为已保存地址指定的照片，涵盖这台设备上的所有钱包。在你移除前会一直保留，并包含在聊天备份中。</string>
     <string name="ab_photos_frees">将释放 %1$s。已保存的地址保留名称，改为显示其所有者设置的头像。</string>
     <!-- Chats: long-press Address Book tile (iOS 98f3728) -->
     <string name="ab_row_add_subtitle">用你认得出的名字保存这个地址。</string>

@@ -283,7 +283,6 @@
     <string name="explorer">Explorer</string>
     <string name="export_csv">CSV exportieren</string>
     <string name="exports_a_plaintext_json_file_of">Exportiert eine JSON-Datei im Klartext deines entschlüsselten Chatverlaufs für dieses Konto. Sie ist nicht verschlüsselt, teile sie also nur an.</string>
-    <string name="exports_app_device_info_connection_settings">Exportiert App-/Gerätedaten, Verbindungseinstellungen, lokale Nachrichtenzahlen und aktuelle App-Protokolle als Zip zur Fehlerbehebung.</string>
     <string name="generate_more_addresses">Weitere Adressen generieren</string>
     <string name="generate_new_spending_address">Neue Ausgabeadresse generieren</string>
     <string name="github">GitHub</string>
@@ -1097,7 +1096,6 @@
     <string name="ab_photos_title">Adressbuch-Fotos</string>
     <string name="ab_photos_remove">Adressbuch-Fotos entfernen</string>
     <string name="ab_photos_remove_question">Adressbuch-Fotos entfernen?</string>
-    <string name="ab_photos_footer">Fotos, die du gespeicherten Adressen zugewiesen hast, für alle Wallets auf diesem Gerät. Sie bleiben, bis du sie entfernst, und sind in deinem Chat-Backup enthalten.</string>
     <string name="ab_photos_frees">Gibt %1$s frei. Gespeicherte Adressen behalten ihre Namen und zeigen stattdessen den Avatar, den ihr Inhaber festgelegt hat.</string>
     <!-- Chats: long-press Address Book tile (iOS 98f3728) -->
     <string name="ab_row_add_subtitle">Speichere diese Adresse unter einem Namen, den du wiedererkennst.</string>

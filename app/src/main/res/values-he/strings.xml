@@ -283,7 +283,6 @@
     <string name="explorer">סייר</string>
     <string name="export_csv">ייצא CSV</string>
     <string name="exports_a_plaintext_json_file_of">מייצא קובץ JSON בטקסט רגיל של היסטוריית הצ\'אט המפוענחת שלך עבור חשבון זה. הוא אינו מוצפן, אז שתף אותו רק במקום שאתה סומך עליו. הייבוא מתמזג עם ההיסטוריה הקיימת שלך מבלי לדרוס דבר.</string>
-    <string name="exports_app_device_info_connection_settings">מייצא מידע על האפליקציה/מכשיר, הגדרות חיבור, ספירת הודעות מקומיות ויומני אפליקציה אחרונים כקובץ zip לפתרון בעיות עם התמיכה. אין כלול מפתחות פרטיים, ביטויי שחזור או תוכן הודעות מפוענח.</string>
     <string name="generate_more_addresses">צור כתובות נוספות</string>
     <string name="generate_new_spending_address">צור כתובת הוצאה חדשה</string>
     <string name="github">GitHub</string>
@@ -1100,7 +1099,6 @@
     <string name="ab_photos_title">תמונות פנקס הכתובות</string>
     <string name="ab_photos_remove">הסרת תמונות פנקס הכתובות</string>
     <string name="ab_photos_remove_question">להסיר את תמונות פנקס הכתובות?</string>
-    <string name="ab_photos_footer">תמונות שהקצית לכתובות שמורות, לכל הארנקים במכשיר הזה. הן נשמרות עד שתסירו אותן, ונכללות בגיבוי הצ\'אטים.</string>
     <string name="ab_photos_frees">משחרר %1$s. הכתובות השמורות שומרות על השמות שלהן ומציגות במקום זאת את האווטאר שהבעלים הגדירו.</string>
     <!-- Chats: long-press Address Book tile (iOS 98f3728) -->
     <string name="ab_row_add_subtitle">שמרו את הכתובת הזו בשם שתזהו.</string>

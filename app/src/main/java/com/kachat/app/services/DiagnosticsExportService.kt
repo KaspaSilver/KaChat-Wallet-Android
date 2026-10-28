@@ -143,9 +143,8 @@ class DiagnosticsExportService @Inject constructor(
             "indexerUrl" to settingsRepository.indexerUrl.first(),
             "knsApiUrl" to settingsRepository.knsApiUrl.first(),
             "kaspaRestUrl" to settingsRepository.kaspaRestUrl.first(),
-            // Same no-active-account tolerance as above - "none" rather than a thrown export.
-            "activeAddress" to (settingsRepository.activeAddress.first()
-                ?: runCatching { walletManager.getAddress() }.getOrDefault("none")),
+            // No address of the wallet's (iOS wallet DiagnosticsArchive): whether there is an
+            // account is in `wallet.hasActiveAccount`.
             "notificationsEnabled" to settingsRepository.notificationsEnabled.first().toString(),
             "addressActivityNotificationsEnabled" to settingsRepository.addressActivityNotificationsEnabled.first().toString(),
             "nextcloudServer" to (nextcloudService.account.value?.server ?: "none"),

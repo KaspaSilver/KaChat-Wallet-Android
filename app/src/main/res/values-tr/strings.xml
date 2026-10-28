@@ -283,7 +283,6 @@
     <string name="explorer">Kesif Motoru</string>
     <string name="export_csv">CSV Disa Aktar</string>
     <string name="exports_a_plaintext_json_file_of">Bu hesap icin sifresi cozulmus sohbet gecmisinizin duz metin bir JSON dosyasini disa aktarir. Sifrelenmemistir, bu yuzden yalnizca guvendiginiz bir yerde paylasin. Ice aktarma, hicbir seyin uzerine yazmadan mevcut gecmisinizle birlesir.</string>
-    <string name="exports_app_device_info_connection_settings">Uygulama/cihaz bilgilerini, baglanti ayarlarini, yerel mesaj sayilarini ve son uygulama gunluklerini destek icin sorun giderme amaciyla zip olarak disa aktarir. Ozel anahtarlar, kurtarma ifadeleri veya cozulmus mesaj icerikleri dahil edilmez.</string>
     <string name="generate_more_addresses">Daha Fazla Adres Olustur</string>
     <string name="generate_new_spending_address">Yeni Harcama Adresi Olustur</string>
     <string name="github">GitHub</string>
@@ -1100,7 +1099,6 @@
     <string name="ab_photos_title">Adres Defteri Fotoğrafları</string>
     <string name="ab_photos_remove">Adres Defteri Fotoğraflarını Kaldır</string>
     <string name="ab_photos_remove_question">Adres defteri fotoğrafları kaldırılsın mı?</string>
-    <string name="ab_photos_footer">Kayıtlı adreslere atadığın fotoğraflar, bu cihazdaki tüm cüzdanlar için. Sen kaldırana kadar kalırlar ve sohbet yedeğine dahildirler.</string>
     <string name="ab_photos_frees">%1$s boşaltır. Kayıtlı adresler adlarını korur ve onun yerine sahibinin ayarladığı avatarı gösterir.</string>
     <!-- Chats: long-press Address Book tile (iOS 98f3728) -->
     <string name="ab_row_add_subtitle">Bu adresi tanıyacağın bir adla kaydet.</string>

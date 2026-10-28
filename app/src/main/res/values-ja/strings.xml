@@ -283,7 +283,6 @@
     <string name="explorer">エクスプローラー</string>
     <string name="export_csv">CSVをエクスポート</string>
     <string name="exports_a_plaintext_json_file_of">このアカウントの復号化されたチャット履歴のプレーンテキストJSONファイルをエクスポートします。暗号化されていないため、信頼できる場所でのみ共有してください。インポートは何も上書きせずに既存の履歴とマージされます。</string>
-    <string name="exports_app_device_info_connection_settings">アプリ/デバイス情報、接続設定、ローカルメッセージ数、最近のアプリログをzipとしてエクスポートします - サポートとのトラブルシューティング用です。秘密鍵、シードフレーズ、復号されたメッセージ内容は含まれません。</string>
     <string name="generate_more_addresses">アドレスをさらに生成</string>
     <string name="generate_new_spending_address">新しい使用アドレスを生成</string>
     <string name="github">GitHub</string>
@@ -1100,7 +1099,6 @@
     <string name="ab_photos_title">アドレス帳の写真</string>
     <string name="ab_photos_remove">アドレス帳の写真を削除</string>
     <string name="ab_photos_remove_question">アドレス帳の写真を削除しますか？</string>
-    <string name="ab_photos_footer">保存したアドレスに設定した写真です（このデバイスのすべてのウォレット分）。削除するまで残り、チャットのバックアップにも含まれます。</string>
     <string name="ab_photos_frees">%1$s が空きます。保存したアドレスの名前はそのままで、代わりに持ち主が設定したアバターが表示されます。</string>
     <!-- Chats: long-press Address Book tile (iOS 98f3728) -->
     <string name="ab_row_add_subtitle">このアドレスを分かりやすい名前で保存します。</string>

@@ -283,7 +283,6 @@
     <string name="explorer">এক্সপ্লোরার</string>
     <string name="export_csv">CSV এক্সপোর্ট করুন</string>
     <string name="exports_a_plaintext_json_file_of">এই অ্যাকাউন্টের জন্য আপনার ডিক্রিপ্ট করা চ্যাট ইতিহাসের একটি প্লেইনটেক্সট JSON ফাইল এক্সপোর্ট করে। এটি এনক্রিপ্ট করা নয়, তাই শুধু বিশ্বস্ত স্থানে শেয়ার করুন। আমদানি করলে এটি কোনো কিছু ওভাররাইট না করে আপনার বিদ্যমান ইতিহাসের সাথে মিশে যায়।</string>
-    <string name="exports_app_device_info_connection_settings">অ্যাপ/ডিভাইসের তথ্য, সংযোগ সেটিংস, স্থানীয় বার্তার সংখ্যা এবং সাম্প্রতিক অ্যাপ লগ একটি জিপ হিসেবে এক্সপোর্ট করে - সাপোর্টের সাথে সমস্যা সমাধানের জন্য। কোনো প্রাইভেট কী, সিড ফ্রেজ বা ডিক্রিপ্ট করা বার্তার বিষয়বস্তু অন্তর্ভুক্ত করা হয় না।</string>
     <string name="generate_more_addresses">আরও ঠিকানা তৈরি করুন</string>
     <string name="generate_new_spending_address">নতুন খরচের ঠিকানা তৈরি করুন</string>
     <string name="github">GitHub</string>
@@ -1100,7 +1099,6 @@
     <string name="ab_photos_title">ঠিকানা বইয়ের ছবি</string>
     <string name="ab_photos_remove">ঠিকানা বইয়ের ছবি সরান</string>
     <string name="ab_photos_remove_question">ঠিকানা বইয়ের ছবি সরাবেন?</string>
-    <string name="ab_photos_footer">সংরক্ষিত ঠিকানাগুলোর জন্য আপনার দেওয়া ছবি, এই ডিভাইসের সব ওয়ালেটের জন্য। আপনি না সরানো পর্যন্ত থাকে, এবং আপনার চ্যাট ব্যাকআপে অন্তর্ভুক্ত থাকে।</string>
     <string name="ab_photos_frees">%1$s খালি হবে। সংরক্ষিত ঠিকানাগুলোর নাম থাকবে; বদলে মালিকের সেট করা অবতার দেখাবে।</string>
     <!-- Chats: long-press Address Book tile (iOS 98f3728) -->
     <string name="ab_row_add_subtitle">এই ঠিকানাটি চেনা নামে সংরক্ষণ করুন।</string>

@@ -283,7 +283,6 @@
     <string name="explorer">탐색기</string>
     <string name="export_csv">CSV 내보내기</string>
     <string name="exports_a_plaintext_json_file_of">이 계정의 복호화된 채팅 기록을 일반 텍스트 JSON 파일로 내보냅니다. 암호화되어 있지 않으므로 신뢰할 수 있는 곳에서만 공유하세요. 가져오기는 아무것도 덮어쓰지 않고 기존 기록과 병합됩니다.</string>
-    <string name="exports_app_device_info_connection_settings">앱/기기 정보, 연결 설정, 로컬 메시지 수, 최근 앱 로그를 zip 파일로 내보냅니다 - 지원팀과의 문제 해결용입니다. 개인 키, 시드 문구 또는 복호화된 메시지 내용은 포함되지 않습니다.</string>
     <string name="generate_more_addresses">주소 더 생성</string>
     <string name="generate_new_spending_address">새 지출 주소 생성</string>
     <string name="github">GitHub</string>
@@ -1100,7 +1099,6 @@
     <string name="ab_photos_title">주소록 사진</string>
     <string name="ab_photos_remove">주소록 사진 제거</string>
     <string name="ab_photos_remove_question">주소록 사진을 제거할까요?</string>
-    <string name="ab_photos_footer">저장한 주소에 지정한 사진으로, 이 기기의 모든 지갑에 해당합니다. 직접 제거할 때까지 유지되며 채팅 백업에 포함됩니다.</string>
     <string name="ab_photos_frees">%1$s 확보됩니다. 저장한 주소의 이름은 유지되고, 대신 주인이 설정한 아바타가 표시됩니다.</string>
     <!-- Chats: long-press Address Book tile (iOS 98f3728) -->
     <string name="ab_row_add_subtitle">이 주소를 알아보기 쉬운 이름으로 저장합니다.</string>

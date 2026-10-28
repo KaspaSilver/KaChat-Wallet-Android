@@ -283,7 +283,6 @@
     <string name="explorer">Обозреватель</string>
     <string name="export_csv">Экспорт в CSV</string>
     <string name="exports_a_plaintext_json_file_of">Экспортирует незашифрованный JSON-файл вашей расшифрованной истории чата для этого аккаунта. Он не зашифрован, поэтому делитесь им только там, где доверяете. Импорт объединяется с вашей существующей историей, ничего не перезаписывая.</string>
-    <string name="exports_app_device_info_connection_settings">Экспортирует информацию о приложении/устройстве, настройки подключения, количество локальных сообщений и последние журналы приложения в виде zip-файла для устранения неполадок с поддержкой. Личные ключи, сид-фразы и расшифрованное содержимое сообщений не включаются.</string>
     <string name="generate_more_addresses">Создать больше адресов</string>
     <string name="generate_new_spending_address">Создать новый адрес для трат</string>
     <string name="github">GitHub</string>
@@ -1100,7 +1099,6 @@
     <string name="ab_photos_title">Фото адресной книги</string>
     <string name="ab_photos_remove">Убрать фото адресной книги</string>
     <string name="ab_photos_remove_question">Убрать фото адресной книги?</string>
-    <string name="ab_photos_footer">Фото, которые вы назначили сохранённым адресам, для всех кошельков на этом устройстве. Они хранятся, пока вы их не уберёте, и входят в резервную копию чатов.</string>
     <string name="ab_photos_frees">Освободит %1$s. Сохранённые адреса сохранят имена и будут показывать аватар, указанный владельцем.</string>
     <!-- Chats: long-press Address Book tile (iOS 98f3728) -->
     <string name="ab_row_add_subtitle">Сохраните этот адрес под понятным именем.</string>

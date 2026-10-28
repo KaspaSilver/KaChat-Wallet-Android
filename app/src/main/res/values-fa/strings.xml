@@ -317,7 +317,6 @@
     <string name="explorer">کاوشگر</string>
     <string name="export_csv">صدور CSV</string>
     <string name="exports_a_plaintext_json_file_of">یک فایل JSON با متن ساده از تاریخچه گفتگوی رمزگشایی‌شده شما برای این حساب صادر می‌کند. رمزگذاری نشده است، بنابراین آن را فقط در جایی که به آن اعتماد دارید به اشتراک بگذارید. وارد کردن با تاریخچه موجود شما ادغام می‌شود بدون اینکه چیزی را بازنویسی کند.</string>
-    <string name="exports_app_device_info_connection_settings">اطلاعات برنامه/دستگاه، تنظیمات اتصال، تعداد پیام‌های محلی و گزارش‌های اخیر برنامه را به‌صورت فایل فشرده صادر می‌کند - برای عیب‌یابی با پشتیبانی. هیچ کلید خصوصی، عبارت بازیابی یا محتوای پیام رمزگشایی‌شده‌ای گنجانده نمی‌شود.</string>
     <string name="generate_more_addresses">ایجاد آدرس‌های بیشتر</string>
     <string name="generate_new_spending_address">ایجاد آدرس خرج کردن جدید</string>
     <string name="github">GitHub</string>
@@ -1131,7 +1130,6 @@
     <string name="ab_photos_title">عکس‌های دفترچه نشانی</string>
     <string name="ab_photos_remove">حذف عکس‌های دفترچه نشانی</string>
     <string name="ab_photos_remove_question">عکس‌های دفترچه نشانی حذف شوند؟</string>
-    <string name="ab_photos_footer">عکس‌هایی که به نشانی‌های ذخیره‌شده داده‌اید، برای همه کیف پول‌های این دستگاه. تا وقتی حذفشان نکنید می‌مانند و در پشتیبان گفتگوهای شما هستند.</string>
     <string name="ab_photos_frees">%1$s آزاد می‌شود. نشانی‌های ذخیره‌شده نامشان را نگه می‌دارند و به جای آن آواتاری را نشان می‌دهند که صاحبشان گذاشته است.</string>
     <!-- Chats: long-press Address Book tile (iOS 98f3728) -->
     <string name="ab_row_add_subtitle">این نشانی را با نامی که می‌شناسید ذخیره کنید.</string>

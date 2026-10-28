@@ -283,7 +283,6 @@
     <string name="explorer">Explorador</string>
     <string name="export_csv">Exportar CSV</string>
     <string name="exports_a_plaintext_json_file_of">Exporta um arquivo JSON em texto simples do seu historico de chat descriptografado para esta conta. Nao e criptografado, entao compartilhe apenas em um local confiavel. A importacao mescla com seu historico existente sem sobrescrever nada.</string>
-    <string name="exports_app_device_info_connection_settings">Exporta informacoes do app/dispositivo, configuracoes de conexao, contagens de mensagens locais e logs recentes do app como um zip para solucao de problemas com o suporte. Nenhuma chave privada, seed phrase ou conteudo de mensagem descriptografado e incluido.</string>
     <string name="generate_more_addresses">Gerar mais enderecos</string>
     <string name="generate_new_spending_address">Gerar novo endereco de gasto</string>
     <string name="github">GitHub</string>
@@ -1100,7 +1099,6 @@
     <string name="ab_photos_title">Fotos do livro de endereços</string>
     <string name="ab_photos_remove">Remover fotos do livro de endereços</string>
     <string name="ab_photos_remove_question">Remover as fotos do livro de endereços?</string>
-    <string name="ab_photos_footer">Fotos que você atribuiu a endereços salvos, para todas as carteiras deste dispositivo. Ficam até você removê-las e estão incluídas no backup das conversas.</string>
     <string name="ab_photos_frees">Libera %1$s. Os endereços salvos mantêm os nomes e passam a mostrar o avatar definido pelo dono.</string>
     <!-- Chats: long-press Address Book tile (iOS 98f3728) -->
     <string name="ab_row_add_subtitle">Salve este endereço com um nome que você reconheça.</string>

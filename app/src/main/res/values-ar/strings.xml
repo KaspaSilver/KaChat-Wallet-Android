@@ -283,7 +283,6 @@
     <string name="explorer">المستكشف</string>
     <string name="export_csv">تصدير CSV</string>
     <string name="exports_a_plaintext_json_file_of">يصدّر ملف JSON بنص عادي لسجل الدردشة الذي تم فك تشفيره لهذا الحساب. إنه غير مشفر، لذا شاركه فقط في مكان تثق به. الاستيراد يدمج مع سجلك الحالي دون الكتابة فوق أي شيء.</string>
-    <string name="exports_app_device_info_connection_settings">يُصدّر معلومات التطبيق/الجهاز وإعدادات الاتصال وعدد الرسائل المحلية وسجلات التطبيق الأخيرة كملف مضغوط لاستكشاف الأخطاء وإصلاحها مع الدعم. لا يتم تضمين أي مفاتيح خاصة أو عبارات استرداد أو محتوى رسائل مفكوك التشفير.</string>
     <string name="generate_more_addresses">إنشاء المزيد من العناوين</string>
     <string name="generate_new_spending_address">إنشاء عنوان إنفاق جديد</string>
     <string name="github">GitHub</string>
@@ -1100,7 +1099,6 @@
     <string name="ab_photos_title">صور دفتر العناوين</string>
     <string name="ab_photos_remove">إزالة صور دفتر العناوين</string>
     <string name="ab_photos_remove_question">إزالة صور دفتر العناوين؟</string>
-    <string name="ab_photos_footer">الصور التي خصصتها للعناوين المحفوظة، لكل المحافظ على هذا الجهاز. تبقى حتى تزيلها، وهي مضمّنة في النسخة الاحتياطية للمحادثات.</string>
     <string name="ab_photos_frees">يحرّر %1$s. تحتفظ العناوين المحفوظة بأسمائها، وتعرض بدلًا من ذلك الصورة التي وضعها أصحابها.</string>
     <!-- Chats: long-press Address Book tile (iOS 98f3728) -->
     <string name="ab_row_add_subtitle">احفظ هذا العنوان باسم تتعرف عليه.</string>

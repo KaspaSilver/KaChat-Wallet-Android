@@ -5859,7 +5859,7 @@ fun SettingsScreen(
                             addressBook?.photosBytesOnDevice() ?: 0L
                         }
                     }
-                    SettingsFormSection(title = null, footer = stringResource(R.string.ab_photos_footer)) {
+                    SettingsFormSection(title = stringResource(R.string.on_this_device), footer = stringResource(R.string.ab_photos_footer)) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()

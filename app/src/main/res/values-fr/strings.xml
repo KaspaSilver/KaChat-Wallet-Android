@@ -283,7 +283,6 @@
     <string name="explorer">Explorateur</string>
     <string name="export_csv">Exporter en CSV</string>
     <string name="exports_a_plaintext_json_file_of">Exporte un fichier JSON en texte brut de votre historique de discussion dechiffre pour ce compte. Il n\'est pas chiffre, alors ne le partagez que dans un endroit de confiance. L\'importation fusionne avec votre historique existant sans rien ecraser.</string>
-    <string name="exports_app_device_info_connection_settings">Exporte les infos de l\'app/appareil, les parametres de connexion, le nombre de messages locaux et les journaux recents de l\'app dans un zip pour le depannage avec le support. Aucune cle privee, phrase de recuperation ou contenu de message dechiffre n\'est inclus.</string>
     <string name="generate_more_addresses">Generer plus d\'adresses</string>
     <string name="generate_new_spending_address">Generer une nouvelle adresse de depense</string>
     <string name="github">GitHub</string>
@@ -1100,7 +1099,6 @@
     <string name="ab_photos_title">Photos du carnet d\'adresses</string>
     <string name="ab_photos_remove">Retirer les photos du carnet d\'adresses</string>
     <string name="ab_photos_remove_question">Retirer les photos du carnet d\'adresses ?</string>
-    <string name="ab_photos_footer">Les photos que vous avez attribuées aux adresses enregistrées, pour tous les portefeuilles de cet appareil. Elles restent jusqu\'à ce que vous les retiriez et sont incluses dans votre sauvegarde des discussions.</string>
     <string name="ab_photos_frees">Libère %1$s. Les adresses enregistrées gardent leur nom et affichent à la place l\'avatar choisi par leur propriétaire.</string>
     <!-- Chats: long-press Address Book tile (iOS 98f3728) -->
     <string name="ab_row_add_subtitle">Enregistrez cette adresse sous un nom que vous reconnaîtrez.</string>
