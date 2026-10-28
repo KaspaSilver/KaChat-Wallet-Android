@@ -76,7 +76,11 @@ data class PendingRegistration(
     /** The fee speed chosen when claiming (`ColdFeeTier.label`, iOS `WithdrawFeeTier` raw value),
      *  applied to the commit and, at the current network rate, to the register. Null (claims from
      *  before): Priority (iOS e426432). */
-    val feeTier: String? = null
+    val feeTier: String? = null,
+    /** A fee of the person's own (the claim review's Edit), as a rate in sompi per gram: used for
+     *  the commit and the register in place of [feeTier]. Null (claims from before, or a speed):
+     *  [feeTier] (iOS 05db583). */
+    val customFeerate: Double? = null
 ) {
     enum class Stage {
         /** the commit transaction was built and is being submitted */
@@ -1178,6 +1182,9 @@ class KachatNamesActions @Inject constructor(
         /** the commit's value, returned into the registration */
         val commit: Long,
         val networkFee: Long,
+        /** The fee rate [networkFee] was worked out at (sompi per gram): a fee typed on the review
+         *  becomes a rate in proportion to it (iOS 05db583). */
+        val feerate: Double = 0.0,
         /** what leaves the wallet in the end: price + bond + gap deposit + network fees */
         val total: Long,
         val spendable: Long,
@@ -1190,11 +1197,18 @@ class KachatNamesActions @Inject constructor(
 
     /** The cost of registering [name] for [years], estimated by building both transactions
      *  (nothing is signed or sent); the price from the manifest's fixed tables (registry v4, iOS c8f1086). */
-    suspend fun quote(name: String, years: Long, gap: GapInfo, feeTier: ColdFeeTier = ColdFeeTier.NORMAL): Quote = withContext(Dispatchers.IO) {
+    suspend fun quote(
+        name: String,
+        years: Long,
+        gap: GapInfo,
+        feeTier: ColdFeeTier = ColdFeeTier.NORMAL,
+        customFeerate: Double? = null
+    ): Quote = withContext(Dispatchers.IO) {
         val s = buyerSigner()
         val m = registry.prepare()
         requireRegistrationOpen(m)
-        val c = context(s, feerate(feeTier))
+        val rate = claimFeerate(feeTier, customFeerate)
+        val c = context(s, rate)
         val b = c.builder
         val env = c.env
         val wallet = c.wallet
@@ -1235,7 +1249,8 @@ class KachatNamesActions @Inject constructor(
         val fee = commitFee + registerFee
         Quote(
             name = name, years = years, price = price, bond = m.params.bond, gapDeposit = m.params.gapValue,
-            commit = KachatNames.COMMIT_VALUE, networkFee = fee, total = price + m.params.bond + m.params.gapValue + fee,
+            commit = KachatNames.COMMIT_VALUE, networkFee = fee, feerate = rate,
+            total = price + m.params.bond + m.params.gapValue + fee,
             spendable = spendable, combinesCoins = combinesCoins
         )
     }
@@ -1250,7 +1265,9 @@ class KachatNamesActions @Inject constructor(
         raw: String,
         years: Long,
         maxPrice: Long,
-        feeTier: ColdFeeTier = ColdFeeTier.NORMAL
+        feeTier: ColdFeeTier = ColdFeeTier.NORMAL,
+        /** A fee typed on the claim's review, as a rate: the commit and the register pay it (iOS 05db583). */
+        customFeerate: Double? = null
     ): String = withContext(Dispatchers.IO) {
         // paid by, and belonging to, the marketplace's address (iOS eb9b027)
         val s = buyerSigner()
@@ -1270,7 +1287,7 @@ class KachatNamesActions @Inject constructor(
             throw ActionError.NotRegisterable("$name.kachat is already registered.")
         }
         val lapsed = (lookup as? Lookup.Registered)?.info
-        val c = context(s, feerate(feeTier))
+        val c = context(s, claimFeerate(feeTier, customFeerate))
         val salt = KachatNamesService.newSalt()
         val plan = c.builder.commit(c.env, c.wallet, name, salt)
         val script = plan.newCommit?.utxo?.entry?.script ?: throw KachatNames.Failure("commit: no record")
@@ -1280,7 +1297,7 @@ class KachatNamesActions @Inject constructor(
         var record = PendingRegistration(
             id = id, name = name, years = years, owner = hex(s.me), commitTxId = plan.unsignedTx.idHex,
             commitScript = hex(script), stage = PendingRegistration.Stage.COMMITTING, createdAt = now, updatedAt = now,
-            maxPrice = maxPrice, feeTier = feeTier.label
+            maxPrice = maxPrice, feeTier = feeTier.label, customFeerate = customFeerate
         )
         loadPending(walletAddress)
         upsert(record)
@@ -1432,11 +1449,19 @@ class KachatNamesActions @Inject constructor(
     private fun feeTierOf(p: PendingRegistration): ColdFeeTier? =
         p.feeTier?.let { raw -> ColdFeeTier.entries.firstOrNull { it.label == raw } }
 
+    /** A claim's rate: a typed one (never under the relay floor), else the speed's (iOS 05db583
+     *  `claimFeerate`). */
+    private suspend fun claimFeerate(tier: ColdFeeTier, custom: Double?): Double =
+        if (custom != null) KachatNames.safeFeerate(maxOf(KachatNames.MIN_FEERATE, custom)) else feerate(tier)
+
     /** The rate the registration's chosen speed pays now (its claim-time choice), else Priority.
-     *  The register goes out by itself a minute after the claim: the chosen speed, but never above
-     *  the background cap - its fee is not shown again (iOS 7e2b6cd, IOS-061). */
-    private suspend fun registrationFeerate(p: PendingRegistration): Double =
-        feeTierOf(p)?.let { minOf(feerate(it), BACKGROUND_MAX_FEERATE) } ?: feerate()
+     *  A fee the person typed on the review was shown for both transactions: it is kept (iOS
+     *  05db583). Otherwise the register goes out by itself a minute after the claim: the chosen
+     *  speed, but never above the background cap - its fee is not shown again (iOS 7e2b6cd, IOS-061). */
+    private suspend fun registrationFeerate(p: PendingRegistration): Double {
+        p.customFeerate?.let { return KachatNames.safeFeerate(maxOf(KachatNames.MIN_FEERATE, it)) }
+        return feeTierOf(p)?.let { minOf(feerate(it), BACKGROUND_MAX_FEERATE) } ?: feerate()
+    }
 
     /** Applies [change] to the newest copy of [p] and saves it. */
     private fun set(p: PendingRegistration, change: (PendingRegistration) -> PendingRegistration) {

@@ -5,6 +5,11 @@ import android.content.Context
 import android.text.format.DateUtils
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,7 +20,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBackIos
@@ -25,7 +29,6 @@ import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Badge
-import androidx.compose.material.icons.outlined.Book
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Explore
@@ -65,13 +68,13 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kachat.app.R
-import com.kachat.app.services.AddressBookManager
 import com.kachat.app.services.WalletManager
 import com.kachat.app.services.WalletService
 import com.kachat.app.services.kachatnames.Event
@@ -605,9 +608,6 @@ class KachatLiveViewModel @Inject constructor(
         }
     }
 
-    /** What registering [name] costs for its first period (iOS c8f1086 `KachatLive.price`). */
-    fun pricePerYear(name: String): Long? = KachatLive.price(registry, name)
-
     /** The profile hero's `.kachat` part: your label, your profile's avatar, banner and bio
      *  sources (a social link each, iOS c124cb3) and its Linktree link. */
     data class Hero(val label: String?, val avatar: String?, val banner: String?, val bio: String?, val linktree: String?)
@@ -996,70 +996,6 @@ private fun KachatLiveForm(
     }
 }
 
-/**
- * A later step of a flow inside a sheet (iOS a view pushed on the sheet's NavigationStack): the
- * inline bar - Back with the previous step's title (left) until it's done, then Done (right) - and
- * the step's scrolling form.
- */
-@Composable
-private fun KachatSheetStep(
-    title: String,
-    backTitle: String,
-    onBack: () -> Unit,
-    onDone: () -> Unit,
-    finished: Boolean,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    val colors = LocalAppColors.current
-    if (!finished) BackHandler(onBack = onBack)
-    Column(Modifier.fillMaxSize()) {
-        // iOS 26's pushed step: the back chevron on a glass disc (iOS 26 shows no back title),
-        // Done on a glass capsule once it's finished.
-        SheetNavBar(
-            title = title,
-            leading = {
-                if (!finished) SheetBarIconButton(Icons.Filled.ArrowBackIosNew, backTitle, onClick = onBack, tint = LocalAppColors.current.textPrimary)
-            },
-            trailing = {
-                if (finished) SheetBarButton(stringResource(R.string.done), onClick = onDone)
-            },
-        )
-        Column(
-            Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState()).padding(16.dp).padding(bottom = 40.dp),
-            content = content,
-        )
-    }
-}
-
-/** An amount field with the unit after it (offer, list price), for a [KachatInputCard]. */
-@Composable
-private fun AmountField(value: String, onValueChange: (String) -> Unit) {
-    val colors = LocalAppColors.current
-    // In a Send-style card (iOS e426432): the title2 field, no row insets.
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        androidx.compose.foundation.text.BasicTextField(
-            value = value,
-            // cleaned as it's typed, like the Send screens (iOS cee1966, IOS-062); shown with
-            // thousands commas, stored plain (iOS 40c5258)
-            onValueChange = { onValueChange(KaspaUnit.sanitizeAmountInput(KaspaAmountGrouping.ungrouped(it, previous = value))) },
-            visualTransformation = KaspaAmountGrouping.visualTransformation,
-            singleLine = true,
-            textStyle = TextStyle(color = colors.textPrimary, fontSize = 22.sp, fontWeight = FontWeight.SemiBold),
-            cursorBrush = androidx.compose.ui.graphics.SolidColor(KaspaTeal),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            modifier = Modifier.weight(1f),
-            decorationBox = { inner ->
-                Box {
-                    if (value.isEmpty()) Text("0", color = colors.textTertiary, fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
-                    inner()
-                }
-            },
-        )
-        Spacer(Modifier.width(8.dp))
-        Text(KaspaUnit.symbol, color = colors.textSecondary)
-    }
-}
-
 // MARK: - Name tiles
 
 /**
@@ -1151,8 +1087,8 @@ internal fun KachatFitText(
 /** A free name to claim, and the gap it is in. */
 class KachatClaimTarget(val name: String, val gap: GapInfo)
 
-/** The live search result under the hub's search field: availability, the price a year and
- *  Claim; a registered name opens its detail. */
+/** The live search result under the hub's search field: Available (no price: iOS 05db583) and
+ *  Claim, or Taken; a registered name opens its detail. */
 @Composable
 fun KachatLiveSearchResult(
     vm: KachatLiveViewModel,
@@ -1204,15 +1140,9 @@ fun KachatLiveSearchResult(
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text("${s.name}.kachat", color = colors.textPrimary, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        val params = vm.service.manifest.collectAsState().value?.params
-                        vm.pricePerYear(s.name)?.let { price ->
-                            val text = if (KachatLive.yearlyPeriods(params)) {
-                                stringResource(R.string.kn_available_per_year, KaspaUnit.amount(price))
-                            } else {
-                                stringResource(R.string.kn_available_per_period, KaspaUnit.amount(price), yearsText(1, params))
-                            }
-                            Text(text, color = colors.success, fontSize = 12.sp)
-                        }
+                        // no price here: a name's first year and later years cost differently (the
+                        // claim's "For how long?" shows each; iOS 05db583)
+                        Text(stringResource(R.string.kn_available), color = colors.success, fontSize = 12.sp)
                     }
                     Spacer(Modifier.width(12.dp))
                     val gap = s.gap
@@ -2112,9 +2042,9 @@ fun KachatOfferTile(state: KachatOfferState, showsName: Boolean = false, onTap: 
 /**
  * An offer's half sheet (iOS 7f50e84 `KachatOfferDetailSheet`): the amount, who made it and when it
  * expires, and what this wallet can do - Accept or Decline (the name's owner), Withdraw or Refund
- * (the buyer), Refund (anyone, once expired). Each opens its transaction inside this sheet, Back
- * leading to the offer; once it's sent and its receipt closes, the sheet closes. Opens at half
- * height and can be pulled to full (iOS's medium / large detents).
+ * (the buyer), Refund (anyone, once expired). Each opens its transaction's review inside this
+ * sheet (iOS 05db583: swipe up to confirm), Back leading to the offer; once it's sent, Done closes
+ * the sheet. Opens at half height and can be pulled to full (iOS's medium / large detents).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -2137,6 +2067,12 @@ fun KachatOfferDetailSheet(state: KachatOfferState, onClose: () -> Unit, vm: Kac
         if (!copied) return@LaunchedEffect
         delay(1_500)
         copied = false
+    }
+
+    // An action's review pins its swipe-up bar to the bottom: up at full height, so it is on
+    // screen (iOS's half-height detent lays the review out in half the height instead).
+    LaunchedEffect(action) {
+        if (action != null) sheetState.expand()
     }
 
     com.kachat.app.ui.theme.IosSheetColors(grouped = true) {
@@ -2176,10 +2112,9 @@ fun KachatOfferDetailSheet(state: KachatOfferState, onClose: () -> Unit, vm: Kac
                 if (kind != null) {
                     KachatOfferActionForm(
                         KachatOfferAction(kind, state.offer, state.name),
-                        // sent and its receipt closed: the offer is settled, so the sheet closes
+                        // sent and Done: the offer is settled, so the sheet closes
                         onClose = { dismiss() },
                         onBack = { action = null },
-                        backTitle = stringResource(R.string.kl_offer),
                         vm = vm,
                     )
                 } else {
@@ -2312,31 +2247,33 @@ private fun KachatOfferActionLink(title: String, icon: ImageVector, prominent: B
 }
 
 /**
- * An offer action's transaction screen (iOS 7f50e84 `KachatOfferAction.form(embedded:)`). With
- * [onBack] it is a step inside the offer's half sheet ([KachatOfferDetailSheet]), Back (to
- * [backTitle]) instead of Cancel; [onClose] runs once it's sent and its receipt closes.
+ * An offer action's transaction screen (iOS 7f50e84, 05db583 `KachatOfferAction.form(embedded:)`):
+ * the review with swipe up to confirm. With [onBack] it is a step inside the offer's half sheet
+ * ([KachatOfferDetailSheet]), Back to the offer instead of Cancel; [onClose] runs on Cancel and
+ * once it's sent and Done.
  */
 @Composable
 fun KachatOfferActionForm(
     action: KachatOfferAction,
     onClose: () -> Unit,
     onBack: (() -> Unit)? = null,
-    backTitle: String = "",
     vm: KachatLiveViewModel = hiltViewModel(),
 ) {
     val offer = action.offer
+    // pushed inside the offer's sheet: Back is the way out (iOS `embedded`)
+    val embedded = onBack != null
     when (action.kind) {
         KachatOfferAction.Kind.WITHDRAW -> KachatTxSheet(
             title = stringResource(R.string.kn_withdraw_offer), confirmTitle = stringResource(R.string.kn_withdraw),
             rows = listOf(KachatTxRow(stringResource(R.string.kl_offer), KaspaUnit.amount(offer.amount))),
             operation = KachatNamesActions.Operation.Withdraw(offer), operationKey = offer.id, onClose = onClose, vm = vm,
-            doneTitle = R.string.kn_ev_offer_withdrawn, onBack = onBack, backTitle = backTitle
+            doneTitle = R.string.kn_ev_offer_withdrawn, embedded = embedded, onBack = onBack, showsCancel = !embedded
         )
         KachatOfferAction.Kind.REFUND -> KachatTxSheet(
             title = stringResource(R.string.kn_refund_offer), confirmTitle = stringResource(R.string.kn_refund),
             rows = listOf(KachatTxRow(stringResource(R.string.kl_offer), KaspaUnit.amount(offer.amount))),
             operation = KachatNamesActions.Operation.Refund(offer), operationKey = offer.id, onClose = onClose, vm = vm,
-            doneTitle = R.string.kn_ev_offer_refunded, onBack = onBack, backTitle = backTitle
+            doneTitle = R.string.kn_ev_offer_refunded, embedded = embedded, onBack = onBack, showsCancel = !embedded
         )
         KachatOfferAction.Kind.ACCEPT -> {
             val n = action.name
@@ -2353,7 +2290,7 @@ fun KachatOfferActionForm(
                     KachatTxRow(stringResource(R.string.kn_buyer), KachatNamesRegistry.address(offer.buyer)?.let { KachatNamesRegistry.shortAddress(it) } ?: ""),
                 ),
                 operation = KachatNamesActions.Operation.Accept(offer, n), operationKey = offer.id, onClose = onClose, vm = vm,
-                doneTitle = R.string.kn_ev_offer_accepted, onBack = onBack, backTitle = backTitle
+                doneTitle = R.string.kn_ev_offer_accepted, embedded = embedded, onBack = onBack, showsCancel = !embedded
             )
         }
         KachatOfferAction.Kind.DECLINE -> KachatTxSheet(
@@ -2364,7 +2301,7 @@ fun KachatOfferActionForm(
                 KachatTxRow(stringResource(R.string.kn_buyer), KachatNamesRegistry.address(offer.buyer)?.let { KachatNamesRegistry.shortAddress(it) } ?: ""),
             ),
             operation = KachatNamesActions.Operation.Decline(offer), operationKey = "decline-${offer.id}", onClose = onClose, vm = vm,
-            doneTitle = R.string.kn_ev_offer_declined, onBack = onBack, backTitle = backTitle
+            doneTitle = R.string.kn_ev_offer_declined, embedded = embedded, onBack = onBack, showsCancel = !embedded
         )
     }
 }
@@ -2433,19 +2370,25 @@ fun KachatBusyNetworkNotice() {
 }
 
 /**
- * Every action's sheet, in the Send screens' style (iOS e426432 `KachatTxSheet`): what it does (a
- * card), its inputs (cards), the network fee with Normal / Fast / Priority or a custom amount (and a
- * notice when the network is busy), the cost, and slide to confirm - the destructive ones show
- * their warning in red above it; the slide itself is the confirmation (iOS e67074c) - then the
- * device lock, then the transaction. Ends on a receipt that follows it into a block
- * ([KachatTxDoneSheet]). With [swipeUp] (buying a name, iOS 5bab351) it confirms with a swipe up,
- * like Send Kaspa, instead of the slide: the screen goes up into the BlockDAG
- * ([SwipeUpToSendScreen]), then shows the transaction and its progress ([KachatTxStageSteps]) in
- * place of the receipt, or Failed with Try Again.
+ * Every action's sheet, in the Send Kaspa flow's steps (iOS 05db583 `KachatTxSheet`): an entry step
+ * when the action takes one ([entryQuestion]: an offer's amount, a price, a new owner - typed on the
+ * keypad or the recipient card, [inputs]), then the review - what it does (a card), the network fee
+ * with Normal / Fast / Priority or Edit for a fee of your own ([SendFeeEditorScreen]), the cost, the
+ * destructive ones' warning in red - and swipe up to confirm ([SwipeUpToSendScreen]; [swipeUp], else
+ * "Swipe up to Confirm"), then the device lock, then the transaction, followed into a block on the
+ * swipe-up's own screen ([KachatTxStageSteps]), or Failed with Try Again.
+ *
+ * Full screen by default, in place of the screen it was opened from. [embedded]: a step of a flow
+ * inside a sheet (an offer's half sheet, Renew's "How long?" first), which already pads for the
+ * system bars. [onBack] is where the review's Back goes when there is no entry step (Renew: back to
+ * "How long?"; an offer action: back to the offer); with [showsCancel] false that Back is the only
+ * way out (iOS `embedded && onBack == nil`: pushed inside the offer's sheet).
  */
 @Composable
 fun KachatTxSheet(
     title: String,
+    /** The action's own word ("Send Offer", "Transfer"): unused since the swipe up, whose bar says
+     *  it (iOS 05db583 keeps it too). */
     confirmTitle: String,
     operation: KachatNamesActions.Operation?,
     operationKey: String,
@@ -2453,40 +2396,44 @@ fun KachatTxSheet(
     warning: String? = null,
     footer: String? = null,
     rows: List<KachatTxRow> = emptyList(),
-    /** The headline of the finished-transaction half sheet (iOS `doneTitle`, 0870fcc). */
+    /** The headline of the finished screen (iOS `doneTitle`). */
     @StringRes doneTitle: Int = R.string.kn_done_tx_sent,
     onDone: (String) -> Unit = {},
     vm: KachatLiveViewModel = hiltViewModel(),
-    /** Shown as a step of a flow inside its own sheet (Renew's "How long?" first; iOS 26bd5dc
-     *  `embedded`): the sheet's inline bar, and Back ([backTitle]), not Cancel, leads back until
-     *  it's sent. Null: the full-screen form with Cancel. */
+    embedded: Boolean = false,
     onBack: (() -> Unit)? = null,
-    backTitle: String = "",
-    /** Confirm with a swipe up instead of the slide (iOS 5bab351 `swipeUp`); full-screen forms only. */
+    showsCancel: Boolean = true,
+    /** The swipe-up's words and what it is for; null: "Swipe up to Confirm" (iOS 05db583). */
     swipeUp: KachatSwipeUp? = null,
+    /** Set: [inputs] are a step of their own before the review, asking this (iOS 05db583). */
+    entryQuestion: String? = null,
+    /** The entry step's Continue ("Review"). */
+    canContinue: Boolean = true,
     inputs: @Composable ColumnScope.() -> Unit = {},
 ) {
     val colors = LocalAppColors.current
     val context = LocalContext.current
-    val view = LocalView.current
+    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
     var plan by remember { mutableStateOf<Plan?>(null) }
     // The fee rate `plan` was built at: the send uses exactly this (iOS 7e2b6cd, IOS-061).
     var planFeerate by remember { mutableStateOf<Double?>(null) }
     // The plan assumes the small coins combined first (`planWithRate`); the combine is sent only
-    // after the slide and the device lock (iOS 778a8fc, IOS-075).
+    // after the swipe and the device lock (iOS 778a8fc, IOS-075).
     var combinesCoins by remember { mutableStateOf(false) }
     var planError by remember { mutableStateOf<String?>(null) }
     var building by remember { mutableStateOf(false) }
     var sending by remember { mutableStateOf(false) }
     var txId by remember { mutableStateOf<String?>(null) }
-    var done by remember { mutableStateOf<KachatTxDone?>(null) }
     var sendError by remember { mutableStateOf<String?>(null) }
     var feeTier by remember { mutableStateOf(ColdFeeTier.NORMAL) }
     var customFee by remember { mutableStateOf<Long?>(null) }
-    var isEditingFee by remember { mutableStateOf(false) }
-    var customFeeText by remember { mutableStateOf("") }
     // The person picked a speed: a busy network no longer moves it for them.
     var feeTouched by remember { mutableStateOf(false) }
+    // The step on screen; null until the first move (iOS 05db583 `screen`).
+    var screen by remember { mutableStateOf<KachatTxScreen?>(null) }
+    // The fee being typed on the fee screen, and the fee it opened with (for its warning).
+    var feeDraft by remember { mutableStateOf("") }
+    var feeAtEdit by remember { mutableStateOf<Long?>(null) }
     val currentOperation by rememberUpdatedState(operation)
     val chattingBalance by vm.wallet.balance.collectAsState()
     val chattingBalanceKnown by vm.wallet.balanceKnown.collectAsState()
@@ -2500,6 +2447,8 @@ fun KachatTxSheet(
     var payerBalance by remember { mutableStateOf<Long?>(null) }
     /** The paying address's own label ("Address #3", or its name) when it is one of yours. */
     var payerOwnLabel by remember { mutableStateOf<String?>(null) }
+    // inside a sheet that already pads for the status and navigation bars
+    val insets = if (embedded) WindowInsets(0) else WindowInsets.systemBars
 
     LaunchedEffect(operationKey) {
         val op = currentOperation
@@ -2529,6 +2478,20 @@ fun KachatTxSheet(
         // a speed replaces a typed fee
         feeTouched = true
         customFee = null
+    }
+
+    val currentScreen = screen ?: if (entryQuestion != null) KachatTxScreen.ENTRY else KachatTxScreen.REVIEW
+
+    fun go(next: KachatTxScreen) {
+        focusManager.clearFocus()
+        screen = next
+    }
+
+    fun openFeeEditor() {
+        val p = plan ?: return
+        feeAtEdit = p.networkFee
+        feeDraft = KaspaUnit.plain(p.networkFee)
+        go(KachatTxScreen.FEE)
     }
 
     // A busy network starts on Fast unless the person already chose.
@@ -2577,13 +2540,9 @@ fun KachatTxSheet(
                     op, maxPrice = plan?.priceFee, fee = fee,
                     exactFeerate = planFeerate, maxNetworkFee = plan?.networkFee
                 )
+                // the swipe-up screen shows it and gives the haptic
                 txId = id
                 onDone(id)
-                // the swipe-up screen shows it (and gives the haptic) itself
-                if (swipeUp == null) {
-                    view.successHaptic()
-                    done = KachatTxDone(id, doneTitle)
-                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -2596,17 +2555,13 @@ fun KachatTxSheet(
     }
 
     fun authorize() {
-        // swipe-up: busy at once, since its screen is already sending through the device check,
-        // and a refused check is its "Failed" (iOS 5bab351)
-        if (swipeUp != null) {
-            sending = true
-            sendError = null
-        }
+        // busy at once: the swipe-up's screen is already sending through the device check, and a
+        // refused check is its "Failed" (iOS 05db583)
+        sending = true
+        sendError = null
         context.kachatAuthorize(onFailure = {
-            if (swipeUp != null) {
-                sendError = context.getString(R.string.kn_not_confirmed_nothing_sent)
-                sending = false
-            }
+            sendError = context.getString(R.string.kn_not_confirmed_nothing_sent)
+            sending = false
         }) { send() }
     }
 
@@ -2623,29 +2578,20 @@ fun KachatTxSheet(
                 }
             }
 
-            inputs()
+            // inputs with a step of their own were filled in there
+            if (entryQuestion == null) inputs()
 
             val estimate = feeEstimate
             if (estimate != null && estimate.isBusy && txId == null) KachatBusyNetworkNotice()
 
+            // The only thing that can still change: the fee (a speed, or Edit for your own).
             SendFeeControls(
                 feeTier = feeTier,
                 onFeeTierChange = { chooseTier(it) },
-                isEditingFee = isEditingFee,
-                customFeeText = customFeeText,
-                onCustomFeeTextChange = { customFeeText = KaspaUnit.sanitizeAmountInput(it) },
                 isEstimatingFee = building,
                 feeText = p?.let { KaspaUnit.amount(it.networkFee) },
-                onStartEditing = {
-                    customFeeText = p?.let { KaspaUnit.plain(it.networkFee) } ?: ""
-                    isEditingFee = true
-                },
-                onCommit = {
-                    isEditingFee = false
-                    feeTouched = true
-                    KaspaUnit.sompiFromUserText(customFeeText)?.takeIf { it > 0 }?.let { customFee = it }
-                },
                 showsCoinControl = false,
+                onEditFee = { openFeeEditor() },
             )
 
             val payer = payerInfo ?: vm.myKey?.let { me -> vm.actions.myAddress?.let { it to me } }
@@ -2686,98 +2632,143 @@ fun KachatTxSheet(
                 Text(footer, color = colors.textSecondary, fontSize = 13.sp, modifier = Modifier.fillMaxWidth())
             }
 
-            // said before the slide: the coins are combined only once it's confirmed (iOS 778a8fc, IOS-075)
+            // said before the swipe: the coins are combined only once it's confirmed (iOS 778a8fc, IOS-075)
             if (combinesCoins && plan != null && txId == null) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Icon(
                         Icons.Default.Layers, contentDescription = null,
                         tint = colors.textSecondary, modifier = Modifier.size(15.dp).padding(top = 1.dp)
                     )
-                    Text(
-                        stringResource(if (swipeUp == null) R.string.kn_combines_coins_on_slide else R.string.kn_combines_coins_on_swipe),
-                        color = colors.textSecondary, fontSize = 13.sp
-                    )
+                    Text(stringResource(R.string.kn_combines_coins_on_swipe), color = colors.textSecondary, fontSize = 13.sp)
                 }
             }
 
-            if (txId == null && swipeUp == null) {
-                // The slide is the confirmation: no second prompt, even for the destructive ones
-                // (their warning is the red card above).
-                Box(Modifier.padding(top = 4.dp)) {
-                    SendActionButton(
-                        title = confirmTitle,
-                        isBusy = sending,
-                        isEnabled = plan != null && !building,
-                        onSend = { authorize() },
-                    )
-                }
-            }
             sendError?.let { Text(it, color = colors.danger, fontSize = 13.sp, modifier = Modifier.fillMaxWidth()) }
         }
     }
-    if (swipeUp != null) {
-        val explorer by vm.settings.kaspaExplorer.collectAsState(initial = com.kachat.app.models.KaspaExplorer.default)
-        // What leaves the wallet: everything the transaction spends from it less what comes back.
-        val payer = payerInfo ?: vm.myKey?.let { me -> vm.actions.myAddress?.let { it to me } }
-        val spentSompi = plan?.let { p -> payer?.let { maxOf(0L, -KachatLive.balanceChange(p, it.second)) } }
-        SwipeUpToSendScreen(
-            screenTitle = swipeUp.screenTitle,
-            onCancel = onClose,
-            barTitle = swipeUp.bar,
-            isBusy = sending,
-            isEnabled = plan != null && !building && txId == null,
-            amountSompi = spentSompi,
-            recipient = swipeUp.recipient,
-            sent = txId?.let { SentTransaction(it, spentSompi, swipeUp.recipient) },
-            failureMessage = sendError,
-            labels = swipeUp.labels,
-            outcome = txId?.let { id -> @Composable { KachatTxStageSteps(id, vm) } },
-            explorerUrl = { explorer.txUrl(it) },
-            onDone = onClose,
-            onSwipe = { authorize() },
-        ) {
-            Column(Modifier.padding(16.dp).padding(bottom = 24.dp), content = form)
-        }
-    } else if (onBack != null) {
-        KachatSheetStep(title, backTitle = backTitle, onBack = onBack, onDone = onClose, finished = txId != null, content = form)
-    } else {
-        KachatLiveForm(title = title, onClose = onClose, finished = txId != null, content = form)
-    }
 
-    // Closing the finished-transaction sheet closes the action too (iOS onDismiss: dismiss()).
-    done?.let { KachatTxDoneSheet(it, onDismiss = { done = null; onClose() }, vm = vm) }
+    val swipe = swipeUp ?: KachatSwipeUp(
+        bar = "Swipe up to Confirm",
+        labels = SwipeUpLabels.transaction(done = stringResource(doneTitle)),
+        showsAmount = false,
+    )
+    val explorer by vm.settings.kaspaExplorer.collectAsState(initial = com.kachat.app.models.KaspaExplorer.default)
+    // What leaves the wallet: everything the transaction spends from it less what comes back.
+    val payer = payerInfo ?: vm.myKey?.let { me -> vm.actions.myAddress?.let { it to me } }
+    val spentSompi = plan?.let { p -> payer?.let { maxOf(0L, -KachatLive.balanceChange(p, it.second)) } }
+
+    KachatSteps(currentScreen) { step ->
+        when (step) {
+            KachatTxScreen.ENTRY -> SendStepScreen(
+                title = title,
+                onCancel = onClose,
+                canContinue = canContinue,
+                onContinue = { go(KachatTxScreen.REVIEW) },
+                onBack = onBack,
+                continueTitle = "Review",
+                insets = insets,
+            ) {
+                entryQuestion?.let { SendStepQuestion(it, Modifier.padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 16.dp)) }
+                inputs()
+            }
+            KachatTxScreen.REVIEW -> SwipeUpToSendScreen(
+                screenTitle = title,
+                onCancel = onClose,
+                // The review's Back: to the entry step, else the flow's own Back.
+                onBack = if (entryQuestion != null) ({ go(KachatTxScreen.ENTRY) }) else onBack,
+                showsCancel = showsCancel || entryQuestion != null,
+                barTitle = swipe.bar,
+                isBusy = sending,
+                isEnabled = plan != null && !building && txId == null,
+                amountSompi = if (swipe.showsAmount) spentSompi else null,
+                recipient = swipe.recipient,
+                sent = txId?.let { SentTransaction(it, spentSompi, swipe.recipient) },
+                failureMessage = sendError,
+                labels = swipe.labels,
+                outcome = txId?.let { id -> @Composable { KachatTxStageSteps(id, vm) } },
+                explorerUrl = { explorer.txUrl(it) },
+                onDone = onClose,
+                onSwipe = { authorize() },
+                insets = insets,
+            ) {
+                Column(Modifier.padding(16.dp).padding(bottom = 24.dp), content = form)
+            }
+            KachatTxScreen.FEE -> SendFeeEditorScreen(
+                draft = feeDraft,
+                onDraftChange = { feeDraft = it },
+                onCancel = { go(KachatTxScreen.REVIEW) },
+                onConfirm = { typed ->
+                    feeTouched = true
+                    customFee = typed
+                    go(KachatTxScreen.REVIEW)
+                },
+                referenceSompi = feeAtEdit,
+                insets = insets,
+            )
+        }
+    }
+}
+
+/** [KachatTxSheet]'s steps, in order (iOS 05db583 `Screen`). */
+private enum class KachatTxScreen { ENTRY, REVIEW, FEE }
+
+/**
+ * A flow's steps, one at a time, sliding like iOS's `.move(edge:)` transitions under
+ * `.spring(response: 0.4, dampingFraction: 0.9)`: a later step comes in from the trailing edge, an
+ * earlier one from the leading edge (iOS 05db583 `go(to:)`).
+ */
+@Composable
+private fun <S : Enum<S>> KachatSteps(step: S, content: @Composable (S) -> Unit) {
+    AnimatedContent(
+        targetState = step,
+        transitionSpec = {
+            val forward = targetState.ordinal > initialState.ordinal
+            val motion = spring<IntOffset>(dampingRatio = 0.9f, stiffness = 247f)
+            (slideInHorizontally(motion) { if (forward) it else -it } togetherWith
+                slideOutHorizontally(motion) { if (forward) -it else it })
+        },
+        label = "kachatSteps",
+        modifier = Modifier.fillMaxSize(),
+    ) { content(it) }
 }
 
 /**
- * How a [KachatTxSheet] confirms with a swipe up (iOS 5bab351 `KachatSwipeUp`): the screen's
- * title, the bar's words, what the sending screen says, and what it is for ("name.kachat").
+ * How a [KachatTxSheet] confirms with a swipe up (iOS 05db583 `KachatSwipeUp`): the bar's words,
+ * what the sending screen says, what it is for ("name.kachat"), and whether it shows what leaves
+ * the wallet (a purchase, an offer) or not (a listing, a transfer: only a fee).
  */
 data class KachatSwipeUp(
-    val screenTitle: String,
     val bar: String,
     val labels: SwipeUpLabels,
     val recipient: String? = null,
+    val showsAmount: Boolean = true,
 )
 
 // MARK: - Claim
 
 /**
- * Claim a free name, in a sheet (iOS `KachatClaimSheet`): 1 or 2 years; price x years to miners,
- * the bond and the registry deposit (both back on release), the commit (back at registration),
- * network fees, total and what the chatting address has. Swipe up to claim, like Send Kaspa (iOS
- * 5bab351, [SwipeUpToSendScreen]): the screen goes up into the BlockDAG while the commit goes out,
- * then shows "Claim Started" with the registration's progress ([KachatClaimOutcome]), or Failed
- * with Try Again - from the marketplace and from Your Domains alike. Closing it leaves the claim
- * running: the .kachat screen's claims button lists it (iOS b219bb0).
+ * Claim a free name, in a sheet, in steps like a send (iOS 05db583 `KachatClaimSheet`): "For how
+ * long?" - a button per length with its price; a tap goes on - then the review: the name and its
+ * length; price to miners, the bond and the registry deposit (both back on release), the commit
+ * (back at registration), network fees, total and what the chatting address has; the fee with
+ * Normal / Fast / Priority or Edit for a fee of your own ([SendFeeEditorScreen]: both transactions'
+ * fees together, which becomes a rate in proportion to the quote's that the commit and the
+ * register both pay, [PendingRegistration.customFeerate]). Swipe up to claim (iOS 5bab351,
+ * [SwipeUpToSendScreen]): the screen goes up into the BlockDAG while the commit goes out, then shows
+ * "Claim Started" with the registration's progress ([KachatClaimOutcome]), or Failed with Try Again
+ * - from the marketplace and from Your Domains alike. Closing it leaves the claim running: the
+ * .kachat screen's claims button lists it (iOS b219bb0).
  *
  * Opens at full height (iOS's large detent) and can be pulled to half (medium). While the swipe's
  * screen is up it can't be swiped away, only closed with Done (iOS `interactiveDismissDisabled`).
+ * System Back goes back a step, as the steps' Back does; on "For how long?" it closes the sheet.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun KachatClaimSheet(target: KachatClaimTarget, onClose: () -> Unit, onStarted: () -> Unit = {}, vm: KachatLiveViewModel = hiltViewModel()) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val haptic = com.kachat.app.util.rememberHaptics()
     val manifest by vm.service.manifest.collectAsState()
     val pending by vm.actions.pending.collectAsState()
     var years by remember { mutableLongStateOf(1L) }
@@ -2791,10 +2782,16 @@ fun KachatClaimSheet(target: KachatClaimTarget, onClose: () -> Unit, onStarted: 
     // The fee speed for the commit and the register (iOS e426432).
     var feeTier by remember { mutableStateOf(ColdFeeTier.NORMAL) }
     var feeTouched by remember { mutableStateOf(false) }
+    // A fee of the person's own (the review's Edit), as a rate; a speed replaces it (iOS 05db583).
+    var customFeerate by remember { mutableStateOf<Double?>(null) }
+    var feeDraft by remember { mutableStateOf("") }
+    // How long first, then the review (costs, the fee) and swipe up to claim (iOS 05db583 `Step`).
+    var step by remember { mutableStateOf(KachatClaimStep.YEARS) }
     val feeEstimate by vm.actions.feeEstimate.collectAsState()
     // Once the registration started, this sheet shows its progress (iOS `progressId`).
     var progressId by remember { mutableStateOf<String?>(null) }
-    val maxYears = manifest?.params?.maxYears ?: 2L
+    val params = manifest?.params
+    val maxYears = params?.maxYears ?: 2L
     val registration = progressId?.let { id -> pending.firstOrNull { it.id == id } }
     val close by rememberUpdatedState(onClose)
     // The swipe-up screen is up (sending, or showing how it went): not swiped away meanwhile.
@@ -2830,12 +2827,12 @@ fun KachatClaimSheet(target: KachatClaimTarget, onClose: () -> Unit, onStarted: 
         if (estimate != null && estimate.isBusy && !feeTouched) feeTier = ColdFeeTier.FAST
     }
 
-    LaunchedEffect(years, feeTier) {
+    LaunchedEffect(years, feeTier, customFeerate) {
         quote = null
         quoteError = null
         notOpen = null
         try {
-            val built = vm.actions.quote(target.name, years, target.gap, feeTier)
+            val built = vm.actions.quote(target.name, years, target.gap, feeTier, customFeerate)
             // a newer choice of years replaced this build: it owns the sheet (iOS 5e707f4)
             ensureActive()
             quote = built
@@ -2854,6 +2851,31 @@ fun KachatClaimSheet(target: KachatClaimTarget, onClose: () -> Unit, onStarted: 
         }
     }
 
+    fun chooseTier(tier: ColdFeeTier) {
+        if (tier == feeTier) return
+        feeTier = tier
+        feeTouched = true
+        // a speed replaces a typed fee
+        customFeerate = null
+    }
+
+    /** The registration price for [y] years from the manifest (the first period at the register
+     *  price, any further one at the renewal price). */
+    fun price(y: Long): Long? = params?.registerCost(target.name.toByteArray(Charsets.UTF_8).size, y)
+
+    /** Both fees at the network's floor rate. */
+    fun minimumFee(): Long? {
+        val q = quote ?: return null
+        if (q.feerate <= 0) return null
+        return kotlin.math.ceil(q.networkFee.toDouble() * KachatNames.MIN_FEERATE / q.feerate).toLong()
+    }
+
+    fun openFeeEditor() {
+        val q = quote ?: return
+        feeDraft = KaspaUnit.plain(q.networkFee)
+        step = KachatClaimStep.FEE
+    }
+
     fun start() {
         // the price shown is the most the registration will ever pay (iOS 4f5d95e)
         val q = quote
@@ -2867,7 +2889,7 @@ fun KachatClaimSheet(target: KachatClaimTarget, onClose: () -> Unit, onStarted: 
         startError = null
         vm.launch {
             try {
-                vm.actions.startRegistration(target.name, years, maxPrice = q.price, feeTier = feeTier)
+                vm.actions.startRegistration(target.name, years, maxPrice = q.price, feeTier = feeTier, customFeerate = customFeerate)
                 // the swipe-up screen gives the haptic and shows the progress (iOS 5bab351)
                 onStarted()
                 progressId = vm.actions.pending.value.lastOrNull { it.name == target.name && it.isOpen }?.id
@@ -2893,6 +2915,9 @@ fun KachatClaimSheet(target: KachatClaimTarget, onClose: () -> Unit, onStarted: 
         }) { start() }
     }
 
+    // the sheet already sits clear of the status and navigation bars
+    val noInsets = WindowInsets(0)
+
     com.kachat.app.ui.theme.IosSheetColors(grouped = true) {
         val colors = LocalAppColors.current
         ModalBottomSheet(
@@ -2900,167 +2925,264 @@ fun KachatClaimSheet(target: KachatClaimTarget, onClose: () -> Unit, onStarted: 
             shape = com.kachat.app.ui.theme.IosSheetShape,
             tonalElevation = com.kachat.app.ui.theme.IosSheetTonalElevation,
             windowInsets = androidx.compose.foundation.layout.WindowInsets.statusBars,
-            // A swipe, a tap outside or Back closes the form; once the swipe's screen is up, its
-            // Done does (the claim keeps running; iOS b219bb0, 5bab351).
+            // A swipe or a tap outside closes the form; once the swipe's screen is up, its Done
+            // does (the claim keeps running; iOS b219bb0, 5bab351).
             onDismissRequest = { if (!swipeSending) close() },
             sheetState = sheetState,
             containerColor = colors.background,
             dragHandle = { KachatSheetGrabber() },
+            // System Back steps back through the steps (each step's own BackHandler), as their
+            // Back does; with nothing to step back to it closes the sheet. A BackHandler inside
+            // the sheet's window never hears Back on its own, so the window's Back is routed
+            // through a dispatcher of the sheet's (the KachatRenewSheet pattern).
+            properties = androidx.compose.material3.ModalBottomSheetProperties(
+                securePolicy = androidx.compose.ui.window.SecureFlagPolicy.Inherit,
+                isFocusable = true,
+                shouldDismissOnBackPress = false,
+            ),
         ) {
+            val backDispatcher = remember { androidx.activity.OnBackPressedDispatcher() }
+            val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+            val backOwner = remember(lifecycleOwner) {
+                object : androidx.activity.OnBackPressedDispatcherOwner {
+                    override val onBackPressedDispatcher: androidx.activity.OnBackPressedDispatcher = backDispatcher
+                    override val lifecycle: androidx.lifecycle.Lifecycle get() = lifecycleOwner.lifecycle
+                }
+            }
+            SheetWindowBack { if (backDispatcher.hasEnabledCallbacks()) backDispatcher.onBackPressed() else dismiss() }
+            androidx.compose.runtime.CompositionLocalProvider(
+                androidx.activity.compose.LocalOnBackPressedDispatcherOwner provides backOwner,
+            ) {
             // The sheet runs down behind the navigation bar, as iOS's does behind the home indicator;
             // its content stays above it.
             Column(Modifier.navigationBarsPadding()) {
-                // Its own inline bar (Cancel, "Claim Name"), which goes up with the swipe.
-                SwipeUpToSendScreen(
-                    screenTitle = stringResource(R.string.kn_claim_name_title),
-                    onCancel = { dismiss() },
-                    barTitle = stringResource(R.string.swipe_up_to_claim),
-                    isBusy = starting,
-                    isEnabled = quote?.affordable == true,
-                    amountSompi = quote?.total,
-                    recipient = "${target.name}.kachat",
-                    sent = null,
-                    failureMessage = startError,
-                    labels = SwipeUpLabels.Claim,
-                    succeeded = progressId != null,
-                    outcome = progressId?.let { id -> @Composable { KachatClaimOutcome(id, vm) } },
-                    onDone = { dismiss() },
-                    onSwipe = { authorizeAndStart() },
-                    // the sheet already sits clear of the status and navigation bars
-                    insets = androidx.compose.foundation.layout.WindowInsets(0),
-                    onSendingChange = { swipeSending = it },
-                ) {
-                        Column(
-                            Modifier.padding(16.dp).padding(bottom = 24.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            KachatCard {
-                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                    Text(stringResource(R.string.kl_name), color = colors.textPrimary)
-                                    Spacer(Modifier.weight(1f))
-                                    Text("${target.name}.kachat", color = colors.textPrimary, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                }
-                                val count = maxOf(1, maxYears.toInt())
-                                KachatSegmented((1..count).map { yearsText(it, manifest?.params) }, (years - 1).toInt(), inset = false) { years = (it + 1).toLong() }
-                            }
-
-                            notOpen?.let { note ->
-                                KachatCard {
-                                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-                                        Icon(
-                                            Icons.Outlined.Schedule, contentDescription = null,
-                                            tint = colors.warning, modifier = Modifier.size(18.dp)
-                                        )
-                                        Spacer(Modifier.width(8.dp))
-                                        Text(note, color = colors.textPrimary, fontSize = 15.sp)
-                                    }
-                                    if (notOpenIsMigration) {
-                                        Text(stringResource(R.string.kn_registration_not_open_note), color = colors.textSecondary, fontSize = 12.sp)
+                KachatSteps(step) { shown ->
+                    when (shown) {
+                        // MARK: How long
+                        // "For how long?": one button per length, each with its price; a tap goes to the review.
+                        KachatClaimStep.YEARS -> Column(Modifier.fillMaxSize().background(colors.background)) {
+                            SendStepHeader(title = stringResource(R.string.kn_claim_name_title))
+                            Column(
+                                Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
+                                    .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 16.dp),
+                                verticalArrangement = Arrangement.spacedBy(14.dp)
+                            ) {
+                                SendStepQuestion("For how long?")
+                                Text("${target.name}.kachat", color = KaspaTeal, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+                                for (y in 1..maxOf(1, maxYears.toInt())) {
+                                    KachatClaimLengthButton(yearsText(y, params), price(y.toLong())?.let { KaspaUnit.amount(it) }) {
+                                        haptic(com.kachat.app.util.IosHaptic.IMPACT_LIGHT)
+                                        years = y.toLong()
+                                        step = KachatClaimStep.REVIEW
                                     }
                                 }
-                            }
-
-                            KachatCard {
-                                val q = quote
-                                val qe = quoteError
-                                when {
-                                    q != null -> {
-                                        // the first period at the registration price, any further one at the renewal price (iOS c8f1086)
-                                        KachatCardRow(stringResource(R.string.kn_price_to_miners), KaspaUnit.amount(q.price))
-                                        KachatCardRow(stringResource(R.string.kn_bond_returned), KaspaUnit.amount(q.bond))
-                                        KachatCardRow(stringResource(R.string.kn_deposit_returned), KaspaUnit.amount(q.gapDeposit))
-                                        KachatCardRow(stringResource(R.string.kn_commit_returned), KaspaUnit.amount(q.commit))
-                                        KachatCardRow(stringResource(R.string.kn_network_fees), KaspaUnit.amount(q.networkFee))
-                                        HorizontalDivider(color = colors.divider)
-                                        KachatCardRow(stringResource(R.string.kl_total), KaspaUnit.amount(q.total), bold = true)
-                                        // the bond and the deposit stay with the name: said once, as one amount (iOS b3b62f5)
-                                        Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.Top) {
-                                            Icon(Icons.Default.Lock, contentDescription = null, tint = KaspaTeal, modifier = Modifier.padding(top = 1.dp).size(15.dp))
-                                            Spacer(Modifier.width(6.dp))
-                                            Text(
-                                                stringResource(R.string.kn_locked_claim_note, KaspaUnit.amount(q.bond + q.gapDeposit)),
-                                                color = KaspaTeal, fontSize = 13.sp, fontWeight = FontWeight.SemiBold
-                                            )
-                                        }
-                                    }
-                                    qe != null -> Text(qe, color = colors.danger)
-                                    notOpen != null -> Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                        Text(stringResource(R.string.kl_total), color = colors.textPrimary, modifier = Modifier.weight(1f))
-                                        Text("-", color = colors.textSecondary)
-                                    }
-                                    else -> Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                        Text(stringResource(R.string.kl_total), color = colors.textPrimary, modifier = Modifier.weight(1f))
-                                        IosActivityIndicator(color = KaspaTeal, modifier = Modifier.size(18.dp))
-                                    }
-                                }
-                            }
-
-                            val estimate = feeEstimate
-                            if (estimate != null && estimate.isBusy) KachatBusyNetworkNotice()
-
-                            KachatCard {
-                                Text(stringResource(R.string.network_fee), color = colors.textPrimary, fontSize = 15.sp)
-                                KachatSegmented(ColdFeeTier.entries.map { feeTierLabel(it) }, feeTier.ordinal, inset = false) {
-                                    val tier = ColdFeeTier.entries[it]
-                                    if (tier != feeTier) {
-                                        feeTier = tier
-                                        feeTouched = true
-                                    }
-                                }
-                                Text(stringResource(R.string.kn_claim_fee_note), color = colors.textSecondary, fontSize = 12.sp)
-                            }
-
-                            quote?.let { q ->
-                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    SendInfoPill { Text(stringResource(R.string.kn_available_value, KaspaUnit.amount(q.spendable))) }
-                                }
-                                // said up front: the KAS is in many small coins (iOS f1c16ec)
-                                if (q.combinesCoins && q.affordable) {
-                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                        Icon(
-                                            Icons.AutoMirrored.Filled.CallMerge, contentDescription = null,
-                                            tint = colors.textSecondary, modifier = Modifier.size(14.dp).padding(top = 1.dp)
-                                        )
-                                        Text(stringResource(R.string.kn_combines_coins_note), color = colors.textSecondary, fontSize = 12.sp)
-                                    }
-                                }
-                            }
-
-                            KachatCard {
-                                Text(stringResource(R.string.kn_how_claiming_works), color = colors.textSecondary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                                val params = manifest?.params
-                                val step3 = if (KachatLive.yearlyPeriods(params)) {
-                                    stringResource(R.string.kn_claim_step3_cap)
-                                } else {
-                                    stringResource(R.string.kn_claim_step3_time, yearsText(maxYears.toInt(), params), KachatLive.duration(params?.renewWindowMs ?: 0L, context))
-                                }
-                                listOf(stringResource(R.string.kn_claim_step1), stringResource(R.string.kn_claim_step2), step3).forEachIndexed { index, text ->
-                                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-                                        Box(Modifier.size(22.dp).clip(CircleShape).background(KaspaTeal.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
-                                            Text("${index + 1}", color = KaspaTeal, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                                        }
-                                        Spacer(Modifier.width(12.dp))
-                                        Text(text, color = colors.textPrimary, fontSize = 15.sp)
-                                    }
-                                }
-                            }
-
-                            val q = quote
-                            if (q != null && !q.affordable) {
                                 Text(
-                                    KaspaUnit.label(
-                                        stringResource(R.string.kn_not_enough)
-                                    ),
-                                    color = colors.danger, fontSize = 13.sp, modifier = Modifier.fillMaxWidth()
+                                    "The price goes to the miners - KaChat takes nothing.",
+                                    color = colors.textSecondary, fontSize = 13.sp, modifier = Modifier.padding(top = 4.dp)
                                 )
-                            } else {
-                                Text(stringResource(R.string.kn_claim_footer), color = colors.textSecondary, fontSize = 13.sp, modifier = Modifier.fillMaxWidth())
                             }
-
-                            startError?.let { Text(it, color = colors.danger, fontSize = 13.sp, modifier = Modifier.fillMaxWidth()) }
+                            KachatCancelCapsule(onClick = { dismiss() })
                         }
+
+                        // MARK: Review
+                        KachatClaimStep.REVIEW -> SwipeUpToSendScreen(
+                            screenTitle = stringResource(R.string.kn_claim_name_title),
+                            onCancel = { dismiss() },
+                            onBack = { step = KachatClaimStep.YEARS },
+                            barTitle = stringResource(R.string.swipe_up_to_claim),
+                            isBusy = starting,
+                            isEnabled = quote?.affordable == true,
+                            amountSompi = quote?.total,
+                            recipient = "${target.name}.kachat",
+                            sent = null,
+                            failureMessage = startError,
+                            labels = SwipeUpLabels.Claim,
+                            succeeded = progressId != null,
+                            outcome = progressId?.let { id -> @Composable { KachatClaimOutcome(id, vm) } },
+                            onDone = { dismiss() },
+                            onSwipe = { authorizeAndStart() },
+                            insets = noInsets,
+                            onSendingChange = { swipeSending = it },
+                        ) {
+                            Column(
+                                Modifier.padding(16.dp).padding(bottom = 24.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                notOpen?.let { note ->
+                                    KachatCard {
+                                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                                            Icon(
+                                                Icons.Outlined.Schedule, contentDescription = null,
+                                                tint = colors.warning, modifier = Modifier.size(18.dp)
+                                            )
+                                            Spacer(Modifier.width(8.dp))
+                                            Text(note, color = colors.textPrimary, fontSize = 15.sp)
+                                        }
+                                        if (notOpenIsMigration) {
+                                            Text(stringResource(R.string.kn_registration_not_open_note), color = colors.textSecondary, fontSize = 12.sp)
+                                        }
+                                    }
+                                }
+
+                                KachatCard {
+                                    KachatCardRow(stringResource(R.string.kl_name), "${target.name}.kachat")
+                                    KachatCardRow("Length", yearsText(years.toInt(), params))
+                                    HorizontalDivider(color = colors.divider)
+                                    val q = quote
+                                    val qe = quoteError
+                                    when {
+                                        q != null -> {
+                                            // the first period at the registration price, any further one at the renewal price (iOS c8f1086)
+                                            KachatCardRow(stringResource(R.string.kn_price_to_miners), KaspaUnit.amount(q.price))
+                                            KachatCardRow(stringResource(R.string.kn_bond_returned), KaspaUnit.amount(q.bond))
+                                            KachatCardRow(stringResource(R.string.kn_deposit_returned), KaspaUnit.amount(q.gapDeposit))
+                                            KachatCardRow(stringResource(R.string.kn_commit_returned), KaspaUnit.amount(q.commit))
+                                            KachatCardRow(stringResource(R.string.kn_network_fees), KaspaUnit.amount(q.networkFee))
+                                            HorizontalDivider(color = colors.divider)
+                                            KachatCardRow(stringResource(R.string.kl_total), KaspaUnit.amount(q.total), bold = true)
+                                            // the bond and the deposit stay with the name: said once, as one amount (iOS b3b62f5)
+                                            Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.Top) {
+                                                Icon(Icons.Default.Lock, contentDescription = null, tint = KaspaTeal, modifier = Modifier.padding(top = 1.dp).size(15.dp))
+                                                Spacer(Modifier.width(6.dp))
+                                                Text(
+                                                    stringResource(R.string.kn_locked_claim_note, KaspaUnit.amount(q.bond + q.gapDeposit)),
+                                                    color = KaspaTeal, fontSize = 13.sp, fontWeight = FontWeight.SemiBold
+                                                )
+                                            }
+                                        }
+                                        qe != null -> Text(qe, color = colors.danger)
+                                        notOpen != null -> Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                            Text(stringResource(R.string.kl_total), color = colors.textPrimary, modifier = Modifier.weight(1f))
+                                            Text("-", color = colors.textSecondary)
+                                        }
+                                        else -> Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                            Text(stringResource(R.string.kl_total), color = colors.textPrimary, modifier = Modifier.weight(1f))
+                                            IosActivityIndicator(color = KaspaTeal, modifier = Modifier.size(18.dp))
+                                        }
+                                    }
+                                }
+
+                                val estimate = feeEstimate
+                                if (estimate != null && estimate.isBusy) KachatBusyNetworkNotice()
+
+                                // The only thing that can still change: the fee (a speed, or Edit for your own).
+                                SendFeeControls(
+                                    feeTier = feeTier,
+                                    onFeeTierChange = { chooseTier(it) },
+                                    isEstimatingFee = quote == null && quoteError == null && notOpen == null,
+                                    feeText = quote?.let { KaspaUnit.amount(it.networkFee) },
+                                    showsCoinControl = false,
+                                    onEditFee = { openFeeEditor() },
+                                )
+
+                                Text(
+                                    "Claiming sends two transactions: the commit now, the registration about a minute later. Both pay this fee rate.",
+                                    color = colors.textSecondary, fontSize = 12.sp, modifier = Modifier.fillMaxWidth()
+                                )
+
+                                quote?.let { q ->
+                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        SendInfoPill { Text(stringResource(R.string.kn_available_value, KaspaUnit.amount(q.spendable))) }
+                                    }
+                                    // said up front: the KAS is in many small coins (iOS f1c16ec)
+                                    if (q.combinesCoins && q.affordable) {
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            Icon(
+                                                Icons.AutoMirrored.Filled.CallMerge, contentDescription = null,
+                                                tint = colors.textSecondary, modifier = Modifier.size(14.dp).padding(top = 1.dp)
+                                            )
+                                            Text(stringResource(R.string.kn_combines_coins_note), color = colors.textSecondary, fontSize = 12.sp)
+                                        }
+                                    }
+                                    if (!q.affordable) {
+                                        Text(
+                                            KaspaUnit.label(stringResource(R.string.kn_not_enough)),
+                                            color = colors.danger, fontSize = 13.sp, modifier = Modifier.fillMaxWidth()
+                                        )
+                                    }
+                                }
+
+                                startError?.let { Text(it, color = colors.danger, fontSize = 13.sp, modifier = Modifier.fillMaxWidth()) }
+                            }
+                        }
+
+                        // MARK: Fee
+                        // Both transactions' fees together, typed on the keypad. Becomes a rate in
+                        // proportion to the quote's, never under the relay floor (iOS 05db583).
+                        KachatClaimStep.FEE -> SendFeeEditorScreen(
+                            draft = feeDraft,
+                            onDraftChange = { feeDraft = it },
+                            onCancel = { step = KachatClaimStep.REVIEW },
+                            onConfirm = { typed ->
+                                val q = quote
+                                if (q != null && q.networkFee > 0 && q.feerate > 0) {
+                                    customFeerate = maxOf(KachatNames.MIN_FEERATE, q.feerate * typed.toDouble() / q.networkFee.toDouble())
+                                    feeTouched = true
+                                }
+                                step = KachatClaimStep.REVIEW
+                            },
+                            minimumSompi = minimumFee(),
+                            referenceSompi = quote?.networkFee,
+                            insets = noInsets,
+                        )
+                    }
                 }
             }
+            }
+        }
+    }
+}
+
+/** [KachatClaimSheet]'s steps, in order (iOS 05db583 `Step`). */
+private enum class KachatClaimStep { YEARS, REVIEW, FEE }
+
+/** One length on the claim's "For how long?" (iOS 05db583): a 68-high glass row - the length, its
+ *  price in grey, an accent chevron - dimming while held (iOS `.buttonStyle(.plain)`). */
+@Composable
+private fun KachatClaimLengthButton(title: String, price: String?, onClick: () -> Unit) {
+    val colors = LocalAppColors.current
+    val interaction = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(68.dp)
+            .alpha(if (pressed) 0.4f else 1f)
+            .sendKaspaGlass(20.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .clickable(interactionSource = interaction, indication = null, role = androidx.compose.ui.semantics.Role.Button, onClick = onClick)
+            .padding(horizontal = 20.dp)
+    ) {
+        Text(title, color = colors.textPrimary, fontSize = 20.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+        if (price != null) {
+            Text(price, color = colors.textSecondary, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.width(8.dp))
+        }
+        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = KaspaTeal, modifier = Modifier.size(22.dp))
+    }
+}
+
+/** A first step's lone Cancel at the bottom, where a send's Continue would be (iOS 05db583's claim
+ *  "For how long?": a 56-high glass capsule with an accent edge on the bar). [SendContinueButton]
+ *  always has a Continue beside its Cancel, so this step draws its own. */
+@Composable
+private fun KachatCancelCapsule(onClick: () -> Unit) {
+    val colors = LocalAppColors.current
+    Box(
+        Modifier.fillMaxWidth().background(colors.background).padding(horizontal = 20.dp, vertical = 8.dp)
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .clip(CircleShape)
+                .background(colors.surface)
+                .border(1.dp, KaspaTeal.copy(alpha = 0.35f), CircleShape)
+                .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick),
+        ) {
+            Text(stringResource(R.string.cancel), color = colors.textPrimary, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
         }
     }
 }
@@ -3245,7 +3367,7 @@ fun KachatLiveNameDetailScreen(
     )
     // The offer's half sheet, over the detail (iOS .sheet).
     openOffer?.let { o -> KachatOfferDetailSheet(offerState(o), onClose = { openOffer = null }, vm = vm) }
-    // Renew is a half sheet over the detail (iOS 26bd5dc), not a full-screen swap.
+    // Renew is a sheet over the detail (iOS 26bd5dc, 05db583), not a full-screen swap.
     if (sheet == KachatDetailSheet.RENEW) KachatRenewSheet(info, onClose = { sheet = null }, vm = vm)
     sheet?.takeIf { it != KachatDetailSheet.RENEW }?.let { s ->
         val close = { sheet = null }
@@ -3662,24 +3784,30 @@ fun KachatLiveBuySheet(info: NameInfo, onClose: () -> Unit, vm: KachatLiveViewMo
         ),
         operation = KachatNamesActions.Operation.Buy(info), operationKey = "buy-${KachatNames.hex(info.outpoint.txid)}",
         onClose = onClose, vm = vm,
-        // swipe up to buy, like Send Kaspa: the BlockDAG, then "Name Bought" with the
-        // transaction's progress, or Failed with Try Again (iOS 5bab351)
-        swipeUp = KachatSwipeUp(
-            screenTitle = stringResource(R.string.kl_buy_name),
-            bar = stringResource(R.string.swipe_up_to_buy),
-            labels = SwipeUpLabels.Buy,
-            recipient = info.display,
-        ),
+        // the review, then swipe up to buy: the BlockDAG, then "Name Bought" with the
+        // transaction's progress, or Failed with Try Again (iOS 5bab351, 05db583)
+        swipeUp = KachatSwipeUp(bar = stringResource(R.string.swipe_up_to_buy), labels = SwipeUpLabels.Buy, recipient = info.display),
     )
 }
 
 /**
  * An offer on [info], the name as registered: it is made to its current owner, the only one who
- * can accept or decline it, and runs for at most 7 days (registry v3, iOS 49c0baa).
+ * can accept or decline it, and runs for at most 7 days (registry v3, iOS 49c0baa). Two steps
+ * (iOS 05db583): "How much do you offer?" - when it becomes refundable, the amount on the keypad -
+ * then the review with swipe up.
  */
 @Composable
-fun KachatLiveOfferSheet(info: NameInfo, onClose: () -> Unit, vm: KachatLiveViewModel = hiltViewModel()) {
+fun KachatLiveOfferSheet(
+    info: NameInfo,
+    onClose: () -> Unit,
+    vm: KachatLiveViewModel = hiltViewModel(),
+    portfolioViewModel: com.kachat.app.viewmodels.PortfolioViewModel = hiltViewModel(),
+) {
+    val colors = LocalAppColors.current
+    val fiatPriceInCurrency by portfolioViewModel.currentPriceUsd.collectAsState()
+    val fiatCurrencyCode by portfolioViewModel.currency.collectAsState()
     var amountText by remember { mutableStateOf("") }
+    val fiatAmountState = com.kachat.app.util.rememberKaspaFiatAmountState(onKasTextChange = { amountText = it })
     var days by remember { mutableIntStateOf(3) }
     var virtualDaa by remember { mutableStateOf<Long?>(null) }
     LaunchedEffect(Unit) { virtualDaa = runCatching { vm.service.currentVirtualDaaScore() }.getOrNull() }
@@ -3703,26 +3831,53 @@ fun KachatLiveOfferSheet(info: NameInfo, onClose: () -> Unit, vm: KachatLiveView
         if (info.isListed) add(KachatTxRow(stringResource(R.string.kl_listed_at), KaspaUnit.amount(info.price)))
         add(KachatTxRow(stringResource(R.string.kn_expires), KachatLive.day(info.expiresAt)))
         if (amount != null) add(KachatTxRow(stringResource(R.string.kl_offer), KaspaUnit.amount(amount)))
+        if (refundAfter != null) {
+            add(
+                KachatTxRow(
+                    stringResource(R.string.kn_refundable_after),
+                    if (cappedByExpiry) KachatLive.day(info.expiresAt - 600_000L) else if (days == 1) "1 day" else "$days days"
+                )
+            )
+        }
     }
     // up to 7 days, the app's cap (KachatNamesActions.MAX_OFFER_DAYS)
     val choices = listOf(1 to R.string.kl_1d, 3 to R.string.kl_3d, 7 to R.string.kl_7d)
     KachatTxSheet(
         title = stringResource(R.string.kl_make_offer), confirmTitle = stringResource(R.string.kl_send_offer),
         doneTitle = R.string.kn_done_offer_sent,
-        footer = if (belowListing) stringResource(R.string.kn_offer_below_listing_buy) else null,
+        footer = if (belowListing) stringResource(R.string.kn_offer_below_listing_buy)
+        else KaspaUnit.label(stringResource(R.string.kn_offer_locked_decline)),
         rows = rows,
         operation = operation, operationKey = "${amount ?: 0}-$days-${virtualDaa ?: 0}",
-        onClose = onClose, vm = vm
+        onClose = onClose, vm = vm,
+        swipeUp = KachatSwipeUp(
+            bar = "Swipe up to Offer",
+            labels = SwipeUpLabels.transaction(done = stringResource(R.string.kn_done_offer_sent)),
+            recipient = "${info.name}.kachat",
+        ),
+        entryQuestion = "How much do you offer?",
+        canContinue = operation != null,
     ) {
-        KachatInputCard(title = stringResource(R.string.kl_your_offer), footer = KaspaUnit.label(stringResource(R.string.kn_offer_locked_decline))) {
-            AmountField(amountText) { amountText = it }
-        }
-        KachatInputCard(
-            title = stringResource(R.string.kn_refundable_after),
-            footer = if (cappedByExpiry) stringResource(R.string.kn_offer_refundable_from_expiry, KachatLive.day(info.expiresAt - 600_000L)) else null
-        ) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(stringResource(R.string.kn_refundable_after), color = colors.textSecondary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
             KachatSegmented(choices.map { stringResource(it.second) }, choices.indexOfFirst { it.first == days }, inset = false) { days = choices[it].first }
+            if (cappedByExpiry) {
+                Text(
+                    stringResource(R.string.kn_offer_refundable_from_expiry, KachatLive.day(info.expiresAt - 600_000L)),
+                    color = colors.textSecondary, fontSize = 12.sp
+                )
+            }
         }
+        Spacer(Modifier.height(8.dp))
+        KaspaKeypadAmountEntry(
+            fiatAmountState = fiatAmountState,
+            priceInCurrency = fiatPriceInCurrency,
+            currencyCode = fiatCurrencyCode,
+            onMax = {},
+            showsMax = false,
+            footnote = if (info.isListed) "${stringResource(R.string.kl_listed_at)} ${KaspaUnit.amount(info.price)}" else null,
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 
@@ -3730,6 +3885,7 @@ fun KachatLiveOfferSheet(info: NameInfo, onClose: () -> Unit, vm: KachatLiveView
  * `extend` (iOS bd2c54a / 49c0baa `KachatExtendSheet`): periods added to the current paid period
  * (periodStart kept), up to `maxYears` periods past its start - in practice a 1-period name extended
  * to 2. Anyone may extend any name. Each period costs the renewal price (registry v4, iOS c8f1086).
+ * The review with swipe up (iOS 05db583).
  */
 @Composable
 fun KachatExtendSheet(info: NameInfo, onClose: () -> Unit, vm: KachatLiveViewModel = hiltViewModel()) {
@@ -3759,7 +3915,12 @@ fun KachatExtendSheet(info: NameInfo, onClose: () -> Unit, vm: KachatLiveViewMod
             KachatTxRow(stringResource(R.string.kn_new_expiry), KachatLive.day(info.expiresAt + years * periodMs)),
         ),
         operation = KachatNamesActions.Operation.Extend(info, minOf(years, available)), operationKey = "extend-$years",
-        onClose = onClose, vm = vm
+        onClose = onClose, vm = vm,
+        swipeUp = KachatSwipeUp(
+            bar = "Swipe up to Extend",
+            labels = SwipeUpLabels.transaction(done = stringResource(R.string.kn_ev_extended)),
+            recipient = info.display,
+        ),
     ) {
         if (available > 1) {
             KachatInputCard {
@@ -3774,9 +3935,9 @@ fun KachatExtendSheet(info: NameInfo, onClose: () -> Unit, vm: KachatLiveViewMod
  * window is open (`renewWindowMs` before the expiry; the detail screen says when; iOS bd2c54a,
  * 49c0baa). Each period costs the renewal price (registry v4, iOS c8f1086).
  *
- * A half sheet in two steps (iOS 26bd5dc): how long (10m / 20m on testnet's clock, 1 / 2 years on
- * mainnet's) as full-width choices with what each costs, then Next to the review with the fee and
- * Renew, in the same sheet. Pulls up to full height (iOS's medium and large detents).
+ * Two steps, like a send (iOS 05db583), in a sheet at full height (iOS's large detent): how long
+ * (10m / 20m on testnet's clock, 1 / 2 years on mainnet's) as full-width choices with what each
+ * costs, Review at the bottom; then the review with the fee and swipe up.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -3785,12 +3946,13 @@ fun KachatRenewSheet(info: NameInfo, onClose: () -> Unit, vm: KachatLiveViewMode
     val params = manifest?.params
     // Nothing is chosen until the person taps one.
     var years by remember { mutableStateOf<Int?>(null) }
-    var showReview by remember { mutableStateOf(false) }
+    var step by remember { mutableStateOf(KachatRenewStep.CHOOSE) }
     val maxYears = (params?.maxYears ?: 2L).toInt()
     val perYear = KachatLive.renewPrice(vm.registry, info.name) ?: 0L
+    val haptic = com.kachat.app.util.rememberHaptics()
     val scope = rememberCoroutineScope()
     val close by rememberUpdatedState(onClose)
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     fun dismiss() {
         scope.launch { sheetState.hide() }.invokeOnCompletion { close() }
@@ -3808,9 +3970,9 @@ fun KachatRenewSheet(info: NameInfo, onClose: () -> Unit, vm: KachatLiveViewMode
             containerColor = colors.background,
             dragHandle = { KachatSheetGrabber() },
             // System Back steps back from the review to "How long?" (the review's own BackHandler),
-            // as its Back button does; with nothing to step back to it closes the sheet. A
-            // BackHandler inside the sheet's window never hears Back on its own, so the window's
-            // Back is routed through a dispatcher of the sheet's (the IosFullSheet pattern).
+            // as its Back button does; on "How long?" it is Cancel. A BackHandler inside the
+            // sheet's window never hears Back on its own, so the window's Back is routed through a
+            // dispatcher of the sheet's (the IosFullSheet pattern).
             properties = androidx.compose.material3.ModalBottomSheetProperties(
                 securePolicy = androidx.compose.ui.window.SecureFlagPolicy.Inherit,
                 isFocusable = true,
@@ -3830,31 +3992,37 @@ fun KachatRenewSheet(info: NameInfo, onClose: () -> Unit, vm: KachatLiveViewMode
                 androidx.activity.compose.LocalOnBackPressedDispatcherOwner provides backOwner,
             ) {
             Column(Modifier.navigationBarsPadding()) {
-                val chosen = years
-                if (showReview && chosen != null) {
-                    KachatRenewReview(info, chosen.toLong(), onBack = { showReview = false }, onClose = { dismiss() }, vm = vm)
-                } else {
-                    Column(Modifier.fillMaxSize()) {
-                        // The inline navigation bar: Cancel (left) and "Renew", Cancel on glass.
-                        SheetNavBar(
+                KachatSteps(step) { shown ->
+                    val chosen = years
+                    if (shown == KachatRenewStep.REVIEW && chosen != null) {
+                        KachatRenewReview(info, chosen.toLong(), onBack = { step = KachatRenewStep.CHOOSE }, onClose = { dismiss() }, vm = vm)
+                    } else {
+                        SendStepScreen(
                             title = stringResource(R.string.kn_renew),
-                            leading = { SheetBarButton(stringResource(R.string.cancel), onClick = { dismiss() }) },
-                        )
-                        Column(
-                            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(14.dp)
+                            onCancel = { dismiss() },
+                            canContinue = years != null,
+                            onContinue = { step = KachatRenewStep.REVIEW },
+                            continueTitle = "Review",
+                            // the sheet already sits clear of the status and navigation bars
+                            insets = WindowInsets(0),
                         ) {
-                            Text(stringResource(R.string.kn_how_long), color = colors.textPrimary, fontWeight = FontWeight.Bold, fontSize = 22.sp)
-                            Text(stringResource(R.string.kn_renew_starts_at_expiry), color = colors.textSecondary, fontSize = 15.sp)
-                            for (y in 1..maxOf(1, maxYears)) {
-                                KachatPeriodChoice(
-                                    title = yearsText(y, params),
-                                    amount = KaspaUnit.amount(perYear * y),
-                                    chosen = years == y,
-                                ) { years = y }
-                            }
-                            KachatNextButton(stringResource(R.string.next), enabled = years != null, modifier = Modifier.padding(top = 6.dp)) {
-                                showReview = true
+                            Column(
+                                Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
+                                    .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 16.dp),
+                                verticalArrangement = Arrangement.spacedBy(14.dp)
+                            ) {
+                                SendStepQuestion(stringResource(R.string.kn_how_long))
+                                Text(stringResource(R.string.kn_renew_starts_at_expiry), color = colors.textSecondary, fontSize = 15.sp)
+                                for (y in 1..maxOf(1, maxYears)) {
+                                    KachatPeriodChoice(
+                                        title = yearsText(y, params),
+                                        amount = KaspaUnit.amount(perYear * y),
+                                        chosen = years == y,
+                                    ) {
+                                        haptic(com.kachat.app.util.IosHaptic.IMPACT_LIGHT)
+                                        years = y
+                                    }
+                                }
                             }
                         }
                     }
@@ -3865,12 +4033,16 @@ fun KachatRenewSheet(info: NameInfo, onClose: () -> Unit, vm: KachatLiveViewMode
     }
 }
 
-/** One period choice of Renew's "How long?": full width, filled with the accent (white text) when
- *  chosen, outlined otherwise; the period on the left, what it costs on the right (iOS 26bd5dc). */
+/** [KachatRenewSheet]'s steps, in order. */
+private enum class KachatRenewStep { CHOOSE, REVIEW }
+
+/** One period choice of Renew's "How long?": full width, filled with the accent (black text) when
+ *  chosen, outlined otherwise; the period on the left, what it costs on the right (iOS 26bd5dc,
+ *  05db583). */
 @Composable
 private fun KachatPeriodChoice(title: String, amount: String, chosen: Boolean, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(12.dp)
-    val tint = if (chosen) Color.White else KaspaTeal
+    val shape = RoundedCornerShape(16.dp)
+    val tint = if (chosen) Color.Black else KaspaTeal
     // dims while held instead of rippling (iOS `.buttonStyle(.plain)`)
     val interaction = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
@@ -3902,24 +4074,8 @@ private fun KachatPeriodChoice(title: String, amount: String, chosen: Boolean, o
     }
 }
 
-/** The accent-filled Next button (iOS `CreateWalletNextButton`): white text, dimmed while disabled. */
-@Composable
-private fun KachatNextButton(title: String, enabled: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Box(
-        modifier
-            .fillMaxWidth()
-            .alpha(if (enabled) 1f else 0.4f)
-            .clip(RoundedCornerShape(12.dp))
-            .background(KaspaTeal)
-            .clickable(enabled = enabled, onClick = onClick)
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(title, color = Color.White, fontSize = 17.sp)
-    }
-}
-
-/** Renew, step 2: what the chosen period costs, and Renew (iOS 26bd5dc `KachatRenewReview`). */
+/** Renew, step 2: what the chosen period costs, the fee, and swipe up to renew (iOS 26bd5dc,
+ *  05db583 `KachatRenewReview`). */
 @Composable
 private fun KachatRenewReview(info: NameInfo, years: Long, onBack: () -> Unit, onClose: () -> Unit, vm: KachatLiveViewModel) {
     val manifest by vm.service.manifest.collectAsState()
@@ -3940,43 +4096,65 @@ private fun KachatRenewReview(info: NameInfo, years: Long, onBack: () -> Unit, o
         ),
         operation = KachatNamesActions.Operation.Renew(info, years), operationKey = "renew-$years",
         onClose = onClose, vm = vm,
-        onBack = onBack, backTitle = stringResource(R.string.kn_renew),
+        embedded = true, onBack = onBack,
+        swipeUp = KachatSwipeUp(
+            bar = "Swipe up to Renew",
+            labels = SwipeUpLabels.transaction(done = stringResource(R.string.kn_ev_renewed)),
+            recipient = info.display,
+        ),
     )
 }
 
+/** List for sale, or change the price (iOS 05db583): "What's your price?" on the keypad, then the
+ *  review with swipe up. */
 @Composable
-fun KachatListSheet(info: NameInfo, onClose: () -> Unit) {
+fun KachatListSheet(
+    info: NameInfo,
+    onClose: () -> Unit,
+    portfolioViewModel: com.kachat.app.viewmodels.PortfolioViewModel = hiltViewModel(),
+) {
+    val fiatPriceInCurrency by portfolioViewModel.currentPriceUsd.collectAsState()
+    val fiatCurrencyCode by portfolioViewModel.currency.collectAsState()
     var priceText by remember { mutableStateOf("") }
+    val fiatAmountState = com.kachat.app.util.rememberKaspaFiatAmountState(onKasTextChange = { priceText = it })
     val price = KaspaUnit.sompiFromUserText(priceText)?.takeIf { it > 0 }
+    val rows = buildList {
+        add(KachatTxRow(stringResource(R.string.kl_name), info.display))
+        if (info.isListed) add(KachatTxRow(stringResource(R.string.kl_listed_at), KaspaUnit.amount(info.price)))
+        if (price != null) add(KachatTxRow(if (info.isListed) "New price" else stringResource(R.string.kl_price), KaspaUnit.amount(price)))
+    }
+    val doneTitle = if (info.isListed) R.string.kn_done_price_changed else R.string.kn_done_listed
     KachatTxSheet(
         title = stringResource(if (info.isListed) R.string.kn_change_price else R.string.kn_list_for_sale),
         confirmTitle = stringResource(if (info.isListed) R.string.kn_change_price else R.string.km_list),
-        doneTitle = if (info.isListed) R.string.kn_done_price_changed else R.string.kn_done_listed,
+        doneTitle = doneTitle,
         footer = stringResource(R.string.kn_list_footer),
-        rows = if (info.isListed) listOf(KachatTxRow(stringResource(R.string.kl_listed_at), KaspaUnit.amount(info.price))) else emptyList(),
+        rows = rows,
         operation = price?.let { KachatNamesActions.Operation.List(info, it) }, operationKey = "list-${price ?: 0}",
-        onClose = onClose
+        onClose = onClose,
+        swipeUp = KachatSwipeUp(
+            bar = if (info.isListed) "Swipe up to Change Price" else "Swipe up to List",
+            labels = SwipeUpLabels.transaction(done = stringResource(doneTitle)),
+            recipient = info.display,
+            showsAmount = false,
+        ),
+        entryQuestion = if (info.isListed) "What's the new price?" else "What's your price?",
+        canContinue = price != null,
     ) {
-        KachatInputCard(title = stringResource(R.string.kl_price)) {
-            AmountField(priceText) { priceText = it }
-        }
+        KaspaKeypadAmountEntry(
+            fiatAmountState = fiatAmountState,
+            priceInCurrency = fiatPriceInCurrency,
+            currencyCode = fiatCurrencyCode,
+            onMax = {},
+            showsMax = false,
+            footnote = if (info.isListed) "${stringResource(R.string.kl_listed_at)} ${KaspaUnit.amount(info.price)}" else null,
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 
-/** A round accent icon beside a field (the Send screens' Paste / Scan QR / Address Book). */
-@Composable
-private fun KachatFieldIconButton(icon: ImageVector, label: String, onClick: () -> Unit) {
-    Icon(
-        icon,
-        contentDescription = label,
-        tint = KaspaTeal,
-        modifier = Modifier
-            .size(22.dp)
-            .clip(CircleShape)
-            .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick),
-    )
-}
-
+/** Transfer a name (iOS 05db583): "Who gets the name?" on the Send screens' recipient card
+ *  ([SendRecipientCard]: Paste, Scan QR and Contacts under it), then the review with swipe up. */
 @Composable
 fun KachatTransferSheet(info: NameInfo, onClose: () -> Unit, vm: KachatLiveViewModel = hiltViewModel()) {
     val colors = LocalAppColors.current
@@ -3988,9 +4166,6 @@ fun KachatTransferSheet(info: NameInfo, onClose: () -> Unit, vm: KachatLiveViewM
     val resolveContext = androidx.compose.ui.platform.LocalContext.current
     var resolving by remember { mutableStateOf(false) }
     var showScanner by remember { mutableStateOf(false) }
-    var showAddressBook by remember { mutableStateOf(false) }
-    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
-    val addressBook = rememberAddressBookEntries()
 
     // A typed name: what it resolved as (.kachat first) and every service's answer (iOS 6ac48a7).
     var resolvedName by remember { mutableStateOf<String?>(null) }
@@ -4051,72 +4226,45 @@ fun KachatTransferSheet(info: NameInfo, onClose: () -> Unit, vm: KachatLiveViewM
         doneTitle = R.string.kn_done_transferred,
         warning = stringResource(R.string.kn_transfer_warning),
         rows = listOf(KachatTxRow(stringResource(R.string.kl_name), info.display)) +
-            (target?.let { listOf(KachatTxRow(stringResource(R.string.to), it.first)) } ?: emptyList()),
+            (target?.let { r ->
+                listOf(KachatTxRow(stringResource(R.string.to), resolvedName?.let { "$it · ${KachatNamesRegistry.compactAddress(r.first)}" } ?: r.first))
+            } ?: emptyList()),
         operation = target?.let { KachatNamesActions.Operation.Transfer(info, it.second) }, operationKey = target?.first ?: "-",
-        onClose = onClose, vm = vm
+        onClose = onClose, vm = vm,
+        swipeUp = KachatSwipeUp(
+            bar = "Swipe up to Transfer",
+            labels = SwipeUpLabels.transaction(done = stringResource(R.string.kn_done_transferred)),
+            recipient = info.display,
+            showsAmount = false,
+        ),
+        entryQuestion = "Who gets the name?",
+        canContinue = target != null && !resolving,
     ) {
-        KachatInputCard(title = stringResource(R.string.kn_new_owner), footer = stringResource(R.string.kn_transfer_footer_domain)) {
-            // The Send screens' recipient field: Paste, Scan QR and the Address Book beside it (iOS bfe7ef9).
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                androidx.compose.foundation.text.BasicTextField(
-                    value = input,
-                    onValueChange = { input = it },
-                    singleLine = true,
-                    textStyle = TextStyle(color = colors.textPrimary, fontSize = 15.sp, fontFamily = FontFamily.Monospace),
-                    cursorBrush = androidx.compose.ui.graphics.SolidColor(KaspaTeal),
-                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.None, autoCorrect = false, keyboardType = KeyboardType.Uri),
-                    modifier = Modifier.weight(1f),
-                    decorationBox = { inner ->
-                        Box {
-                            if (input.isEmpty()) {
-                                Text(stringResource(if (KachatNamesService.addressPrefix == "kaspa") R.string.kaspa_qr_or_domain else R.string.kn_transfer_placeholder_domain), color = colors.textTertiary, fontSize = 15.sp, fontFamily = FontFamily.Monospace, maxLines = 1)
-                            }
-                            inner()
-                        }
-                    },
-                )
-                KachatFieldIconButton(Icons.Default.ContentPaste, stringResource(R.string.paste)) {
-                    clipboard.getText()?.text?.let { input = it.trim() }
-                }
-                KachatFieldIconButton(Icons.Default.QrCodeScanner, stringResource(R.string.scan_qr)) { showScanner = true }
-                KachatFieldIconButton(Icons.Outlined.Book, stringResource(R.string.addresses)) { showAddressBook = true }
-            }
-            // The name it has in your Address Book.
-            val saved = remember(addressBook, target, input) { AddressBookManager.shared?.entry(target?.first ?: input) }
-            if (saved != null) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Icon(Icons.Filled.Book, contentDescription = null, tint = KaspaTeal, modifier = Modifier.size(14.dp))
-                    Text(saved.name, color = KaspaTeal, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-            }
-            when {
-                resolving -> IosActivityIndicator(color = KaspaTeal)
-                target != null -> Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    resolvedName?.let { shownName ->
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = colors.success, modifier = Modifier.size(14.dp))
-                            Text(stringResource(R.string.resolved_name, shownName), color = colors.success, fontSize = 12.sp)
-                        }
-                    }
-                    SelectionContainer {
-                        Text(target.first, color = colors.textSecondary, fontSize = 12.sp, fontFamily = FontFamily.Monospace)
-                    }
-                }
-                resolveErrorText != null -> Text(resolveErrorText ?: "", color = colors.danger, fontSize = 12.sp)
-                resolveError != null -> Text(stringResource(resolveError!!), color = colors.danger, fontSize = 12.sp)
-            }
-            if (!resolving) {
-                OtherDomainsDropdown(nameResolutions, selectedTld) { use(it) }
-            }
+        Column(
+            Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            SendRecipientCard(
+                input = input,
+                onInputChange = { input = it },
+                isResolving = resolving,
+                resolvedAddress = if (resolvedName != null) target?.first else null,
+                resolvedName = resolvedName,
+                lookupError = resolveErrorText ?: resolveError?.let { stringResource(it) },
+                isValidAddress = target != null,
+                onScan = { showScanner = true },
+                nameResolutions = nameResolutions,
+                selectedTld = selectedTld,
+                onSelectResolution = { use(it) },
+                focusOnAppear = true,
+            )
+            Text(stringResource(R.string.kn_transfer_footer_domain), color = colors.textSecondary, fontSize = 12.sp)
         }
     }
 
     if (showScanner) {
         // a payment link's ?query is dropped
         QrScannerSheet(onScanned = { input = KaspaAddress.fromScanned(it) }, onDismiss = { showScanner = false })
-    }
-    if (showAddressBook) {
-        AddressBookPickerSheet(onDismiss = { showAddressBook = false }, onSelect = { input = it.address })
     }
 }
 
@@ -4416,13 +4564,12 @@ fun KachatNameLookupScreen(name: String, onBack: () -> Unit, onRetry: (() -> Uni
 }
 
 /**
- * A name released or reclaimed since its notification: free to claim, with its price and Claim
- * on the gap it sits in (disabled while the source has no gap for it; iOS b799091 `freeName`).
+ * A name released or reclaimed since its notification: free to claim, with Claim on the gap it
+ * sits in (disabled while the source has no gap for it; iOS b799091 `freeName`).
  */
 @Composable
 fun KachatFreeNameScreen(name: String, gap: GapInfo?, onBack: () -> Unit, onClaim: (KachatClaimTarget) -> Unit, vm: KachatLiveViewModel) {
     val colors = LocalAppColors.current
-    val params = vm.service.manifest.collectAsState().value?.params
     KachatRoutePage(onBack) {
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -4439,14 +4586,7 @@ fun KachatFreeNameScreen(name: String, gap: GapInfo?, onBack: () -> Unit, onClai
                     Text(stringResource(R.string.kn_free_to_claim), color = colors.textSecondary, fontSize = 15.sp, modifier = Modifier.weight(1f))
                     KachatAvailablePill()
                 }
-                vm.pricePerYear(name)?.let { price ->
-                    val text = if (KachatLive.yearlyPeriods(params)) {
-                        stringResource(R.string.kn_available_per_year, KaspaUnit.amount(price))
-                    } else {
-                        stringResource(R.string.kn_available_per_period, KaspaUnit.amount(price), yearsText(1, params))
-                    }
-                    Text(text, color = colors.textSecondary, fontSize = 12.sp)
-                }
+                // no price a year: the claim's "For how long?" shows each length's (iOS 05db583)
             }
             KachatButton(stringResource(R.string.km_claim), Modifier.fillMaxWidth(), Icons.Default.AlternateEmail, prominent = true, enabled = gap != null, large = true) {
                 if (gap != null) onClaim(KachatClaimTarget(name, gap))
