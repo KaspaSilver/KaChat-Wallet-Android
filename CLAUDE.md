@@ -44,9 +44,33 @@ Account setup: `KaChatApp` -> `OnboardingScreen` (create / import a seed) -> `Ma
 sign-in screen says "KaPay" with the wallet logo and no tagline. Settings: Customization,
 Security, Connection (Push / Node / Domains - the .kachat indexer is editable there - / Explorer),
 Notifications (one page), Storage (Nextcloud backup), Diagnostics, View Seed Phrase, Log Out.
-Every send (Send Kaspa, Compound UTXOs, .kachat Claim and Buy) is the swipe-up screen
-(`SwipeUpSendScreen.kt`); in debug builds `adb shell setprop debug.kachat.fail_send 1` makes
-sends fail, for testing.
+In debug builds `adb shell setprop debug.kachat.fail_send 1` makes sends fail, for testing.
+
+## Send Kaspa (and every other send)
+
+Every screen that moves Kaspa is the same steps (iOS wallet 05db583), built from the shared pieces
+in `ui/screens/SendKaspaComponents.kt` and `SwipeUpSendScreen.kt`. Change those pieces, not one
+screen.
+
+1. **To**: `SendStepScreen` + `SendStepQuestion` ("Who are you sending to?") + `SendRecipientCard`
+   (address or name; Paste, Scan QR and Contacts pills under the field). Cancel sits at the bottom
+   beside Continue (`SendContinueButton`) on a first step; later steps have Back and Cancel in the
+   header (`SendStepHeader`).
+2. **From**: the Chatting Address, or Choose an Address with the list right on the screen
+   (`OwnAddressList`, no sheet). Skipped when the From is fixed (an address's own Send).
+3. **Amount**: `KaspaKeypadAmountEntry`, the app's own number pad (`KaspaKeypad`,
+   `KeypadAmountText`), so no system keyboard covers the screen; "To" and "From" chips
+   (`SendStepChip`), the KAS / currency switch and Max.
+4. **Review**: `SwipeUpToSendScreen` with Back: the amount, To, From, Total. Only the fee and coin
+   control can change (`SendFeeControls`); the fee's Edit (`onEditFee`) opens `SendFeeEditorScreen`
+   (the fee on the keypad, never under the network's minimum, warned above ten times it).
+
+Where: `SpendingAddressSendFlow` (`Screens.kt`: the Wallet tab's Send, an address's, a contact's,
+paying a payment request, Compound UTXOs); Cold Storage's `ColdSendFlow` (then Sign with KasSigner
+and the signed screen with swipe up to send); Request Payment's `CreatePaymentRequestSheet`
+(`PaymentRequestViews.kt`: where to be paid, how much, the review with Copy and Share); .kachat's
+`KachatTxSheet` / `KachatClaimSheet` (`KachatNamesLiveScreens.kt`: an entry step when the action
+takes one, then the review with the fee editor and swipe up).
 
 ## No chat code
 
