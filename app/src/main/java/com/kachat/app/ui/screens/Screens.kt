@@ -2520,15 +2520,21 @@ private fun AddressVisibilityChainList(
     // that a row could not be tapped. `deriveSpendingAddresses` pays the seed cost once for the
     // whole range, and it happens in a coroutine on the default dispatcher.
     var derivedAddresses by remember { mutableStateOf<Map<Int, String>>(emptyMap()) }
+    // The page whose derivation has finished: until then its beyond-list rows show "deriving...";
+    // after, a row that still has no address is left out (iOS rebuildPage's compactMap).
+    var derivedPage by remember { mutableStateOf<Int?>(null) }
     LaunchedEffect(page, chainMax) {
         val needed = (start..end).filter { it > chainMax }
         if (needed.isEmpty()) {
             derivedAddresses = emptyMap()
+            derivedPage = page
             return@LaunchedEffect
         }
+        derivedPage = null
         derivedAddresses = withContext(Dispatchers.Default) {
             viewModel.spendingAddressesAt(needed)
         }
+        derivedPage = page
     }
     // One sweep per page for the Used badges on derived rows, paced so a page flip is a trickle
     // rather than fifty simultaneous history probes. Cache-first: an address already known used
@@ -2540,8 +2546,9 @@ private fun AddressVisibilityChainList(
             delay(60)
         }
     }
-    val pageEntries = remember(byIndex, page, derivedAddresses) {
-        (start..end).map { index ->
+    val pageEntries = remember(byIndex, page, derivedAddresses, derivedPage) {
+        (start..end).mapNotNull { index ->
+            if (index !in byIndex && derivedPage == page && derivedAddresses[index].isNullOrEmpty()) return@mapNotNull null
             byIndex[index] ?: com.kachat.app.services.WalletService.SpendingAddressEntry(
                 index = index,
                 address = derivedAddresses[index].orEmpty(),
@@ -2610,6 +2617,16 @@ private fun AddressVisibilityChainList(
             contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
+            if (pageEntries.isEmpty()) {
+                item {
+                    Text(
+                        stringResource(R.string.address_visibility_derive_failed),
+                        color = LocalAppColors.current.textSecondary,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
+            }
             items(pageEntries, key = { it.index }) { entry ->
                 val funded = entry.balanceSompi > 0
                 // Every row toggles both ways - funded ones too (Hide All starts the list over).
