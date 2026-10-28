@@ -388,7 +388,6 @@ fun WelcomeScreen(
                                 onLogin = { viewModel.login(account.address) },
                                 onRename = { newName -> viewModel.renameAccount(account.address, newName) },
                                 onDelete = { alsoRemoveBackup -> viewModel.deleteWallet(account.address, alsoRemoveBackup) },
-                                nextcloudConnected = viewModel.nextcloudConnected()
                             )
                             Spacer(modifier = Modifier.height(12.dp))
                         }
@@ -493,10 +492,9 @@ fun SavedAccountCard(
     requireBiometricLogin: Boolean = false,
     onLogin: () -> Unit,
     onRename: (String) -> Unit,
-    /** True also removes the encrypted Nextcloud archive - the second destructive choice. */
+    /** True would also remove the encrypted Nextcloud archive; the sign-in screen, like iOS's,
+     *  only removes the account from this device (false). */
     onDelete: (Boolean) -> Unit,
-    /** Whether that second choice is offered at all. */
-    nextcloudConnected: Boolean = false
 ) {
     var showMenu by remember { mutableStateOf(false) }
     var showRenameDialog by remember { mutableStateOf(false) }
@@ -598,9 +596,14 @@ fun SavedAccountCard(
             containerColor = LocalAppColors.current.surface,
             title = { Text(stringResource(R.string.rename_account), color = LocalAppColors.current.textPrimary) },
             text = {
+                // iOS's alert message, then its "Account name" field.
+                Column {
+                Text("Enter a new name for this saved account.", color = LocalAppColors.current.textSecondary, style = MaterialTheme.typography.bodySmall)
+                Spacer(Modifier.height(12.dp))
                 com.kachat.app.ui.theme.IosTextField(
                     value = nameInput,
                     onValueChange = { nameInput = it },
+                    placeholder = { Text("Account name") },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = LocalAppColors.current.textPrimary,
@@ -610,6 +613,7 @@ fun SavedAccountCard(
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
+                }
             },
             confirmButton = {
                 TextButton(
@@ -631,24 +635,17 @@ fun SavedAccountCard(
     }
 
     if (showDeleteConfirm) {
+        // iOS OnboardingView's removal sheet: "Remove Saved Account", one "Remove from Device"
+        // row naming the account and its short address (`shortPublicAddress`: the first 10 and
+        // last 6 characters).
+        val shortAddress = account.address.let { if (it.length > 16) "${it.take(10)}...${it.takeLast(6)}" else it }
         ConfirmActionSheet(
-            title = stringResource(R.string.delete_account),
-            confirmTitle = stringResource(R.string.delete),
-            confirmSubtitle = "Removes \"${account.name}\" and everything it holds on this device - its " +
-                "chats, contacts, groups and keys. Messages and posts already on the Kaspa blockDAG " +
-                "stay there and cannot be deleted. " +
-                (if (nextcloudConnected) "Your encrypted Nextcloud backup stays. " else "") +
-                "Without its seed phrase written down, any remaining balance is unrecoverable.",
+            title = "Remove Saved Account",
+            confirmTitle = "Remove from Device",
+            confirmSubtitle = "Deletes ${account.name.trim().ifEmpty { "Saved Account" }} ($shortAddress) and its local data from this device.",
             confirmIcon = Icons.Default.Delete,
             onConfirm = { onDelete(false) },
             onDismiss = { showDeleteConfirm = false },
-            secondaryTitle = if (nextcloudConnected) "Delete and Remove Nextcloud Backup" else null,
-            secondarySubtitle = if (nextcloudConnected) {
-                "The same, and deletes the encrypted archive from your Nextcloud. Your other " +
-                    "devices lose it too, and it cannot be brought back from here."
-            } else null,
-            secondaryIcon = if (nextcloudConnected) Icons.Default.CloudOff else null,
-            onSecondary = if (nextcloudConnected) ({ onDelete(true) }) else null,
         )
     }
 }

@@ -102,7 +102,7 @@
     <string name="every_member_will_see_the_new">هر عضو نام جدید را خواهد دید.</string>
     <string name="failed_to_send">ارسال ناموفق بود</string>
     <string name="fee_kas">کارمزد (KAS)</string>
-    <string name="fee_usd_optional">کارمزد (دلار، اختیاری)</string>
+    <string name="fee_usd_optional">کارمزد (اختیاری)</string>
     <string name="first_let_s_create_your_identity">ابتدا هویت شما را با یک نام دامنه ایجاد کنیم</string>
     <string name="from">از</string>
     <string name="fund_your_chatting_address">آدرس گفتگوی خود را شارژ کنید</string>
@@ -181,7 +181,6 @@
     <string name="ok">تایید</string>
     <string name="only_notify_if_i_m_mentioned">فقط در صورت ذکر نام من مطلع شوم</string>
     <string name="open_settings">باز کردن تنظیمات</string>
-    <string name="other_nodes">گره‌های دیگر</string>
     <string name="paste_from_clipboard">جای‌گذاری از حافظه</string>
     <string name="paste_kpub">چسباندن kpub</string>
     <string name="payment">پرداخت</string>
@@ -193,7 +192,6 @@
     <string name="pool_health">سلامت مجموعه</string>
     <string name="portfolio">سبد دارایی</string>
     <string name="powered_by_changenow">قدرت‌گرفته از ChangeNOW</string>
-    <string name="price_needed">قیمت مورد نیاز — برای تنظیم ضربه بزنید</string>
     <string name="price_per_coin">قیمت هر سکه</string>
     <string name="promote_pawn_to">ارتقای سرباز به:</string>
     <string name="qr_code">کد QR</string>
@@ -329,7 +327,6 @@
     <string name="kaspa_node">گره کاسپا</string>
     <string name="default_recommended">پیش‌فرض (توصیه‌شده)</string>
     <string name="automatic_scan">اسکن خودکار</string>
-    <string name="kaspa_node_quick_access_footer">اسکن خودکار بهترین گره‌های موجود را پیدا کرده و به آن‌ها متصل می‌شود. با انتخاب یک گره خاص، اتصال فقط به همان گره انجام شده و از گره‌های جایگزین استفاده نمی‌شود. آدرس‌های ذخیره‌شده را در تنظیمات اتصال &gt; دفترچه آدرس IP مدیریت کنید.</string>
     <string name="last_sync">آخرین همگام‌سازی</string>
     <string name="latency">تاخیر</string>
     <string name="message_indexer_service_for_chat_functionality">سرویس ایندکس پیام برای عملکرد گفتگو</string>
@@ -397,7 +394,6 @@
     <string name="select_the_currency_youd_like_prices">واحد پولی که می‌خواهید قیمت‌ها به آن نمایش داده شوند را انتخاب کنید.</string>
     <string name="i_have_written_down_my_seed_phrase">عبارت بازیابی خود را نوشته‌ام و آن را به‌طور امن نگهداری کرده‌ام</string>
     <string name="i_already_have_a_domain_somewhere">من قبلاً یک دامنه در جای دیگری دارم</string>
-    <string name="transfer_your_domain_to_this_address">دامنه خود را به این آدرس منتقل کنید تا هویت شما به KaChat متصل شود.</string>
     <string name="user_info">اطلاعات کاربر</string>
     <!-- Message actions: translation, share, read state (iOS 3eee9e4) -->
     <string name="share">اشتراک‌گذاری</string>
@@ -424,7 +420,6 @@
     <string name="could_not_reach_service">دسترسی به %1$s ممکن نشد. برای تلاش دوباره به پایین بکشید.</string>
     <string name="no_names_yet">هنوز نام %1$s ندارد.</string>
     <string name="kachat_names_are_coming">نام‌های .kachat به‌زودی می‌آیند</string>
-    <string name="kachat_names_coming_body">نام‌های اختصاصی KaChat اینجا خواهند بود: یکی بگیرید، آن را نام خود در گفتگوها کنید و به‌عنوان پیوند نمایه به اشتراک بگذارید.</string>
     <!-- 5.2 name lookups (iOS a0dbc15, 79b6ac8, 9858bd1) -->
     <string name="no_domain_found">دامنه‌ای پیدا نشد</string>
     <string name="no_tld_domain_found">دامنه %1$s پیدا نشد</string>
@@ -511,7 +506,6 @@
     <string name="ks_try_again">تلاش مجدد</string>
     <!-- .kachat setup guide (iOS b000310, 66b152f) -->
     <string name="kg_claim_title">نام ‎.kachat خود را بگیرید</string>
-    <string name="kg_claim_body">این نامی است که دیگران شما را در سراسر KaChat با آن می‌بینند - در گفتگوها، پست‌ها و پیوند نمایه‌تان. بدون آن، نشانی شما دیده می‌شود.</string>
     <string name="kg_welcome_body">معرفی کامل شروع کار: کیف پول، گفتگوها، پرداخت‌ها و بیشتر.</string>
     <string name="kg_previous">قبلی</string>
     <string name="kg_setup_guide">راهنمای راه‌اندازی</string>
@@ -856,7 +850,6 @@
     <string name="chats_new_public_subtitle">به یک اتاق عمومی بپیوندید یا یکی بسازید.</string>
     <string name="chats_fund_subtitle">کد QR را برای افزودن Kaspa جهت ارسال پیام نشان می‌دهد.</string>
     <string name="chats_receive_subtitle">یک آدرس تازه برای دریافت پول نشان می‌دهد.</string>
-    <string name="qr_receive_address_subtitle">یک آدرس تازه که هرگز استفاده نشده است. Kaspa ارسال‌شده به اینجا وارد این حساب می‌شود و در موجودی قابل خرج شما نمایش داده می‌شود. از این آدرس برای هر چیزی که به گفتگو یا دامنه مربوط نیست استفاده کنید.</string>
     <string name="qr_chatting_address_subtitle">این آدرس فقط برای گفتگو و دامنه‌هاست. ۱ Kaspa برای حدود ۵۰۰ تعامل در برنامه کافی است. قیمت دامنه‌ها بسته به نام از ۳۵ تا ۴٬۰۰۰ Kaspa است.</string>
     <!-- Send Kaspa screens: shared pieces (iOS 4d0324f) -->
     <string name="fee_tier_normal">عادی</string>
@@ -1250,12 +1243,9 @@
     <!-- Payment requests (iOS c6851d6, 7c71a98, 1fe8388, 6594936) -->
     <string name="pr_request_payment">درخواست پرداخت</string>
     <string name="pr_request_payment_hint">پیوندی که مبلغی دقیق را با دلیلش درخواست می‌کند.</string>
-    <string name="pr_chatting_footer">پرداخت با یادداشت در گفتگوی شما با پرداخت‌کننده ثبت می‌شود.</string>
     <string name="pr_memo_placeholder">بابت چه (اختیاری)</string>
     <string name="pr_copy">کپی درخواست پرداخت</string>
     <string name="pr_requested">درخواست‌شده</string>
-    <string name="pr_paid_as_chat_payment">به‌صورت پرداخت در گفتگو: در گفتگوی شما با او نمایش داده می‌شود.</string>
-    <string name="pr_paid_to_their_spending">به آدرس هزینه او پرداخت می‌شود.</string>
     <string name="pr_payment_request">درخواست پرداخت</string>
     <string name="pr_preview">درخواست پرداخت: %1$s KAS</string>
     <string name="pr_tap_to_pay">برای پرداخت ضربه بزنید.</string>
@@ -1265,8 +1255,6 @@
     <string name="pr_not_signed">امضا نشده: سازنده این درخواست قابل تأیید نیست.</string>
     <string name="pr_your_payment_request">درخواست پرداخت شما</string>
     <string name="pr_your_request_tap_to_view">درخواست پرداخت شما. برای دیدن ضربه بزنید.</string>
-    <string name="pr_paid_to_your_chatting">به آدرس گفتگوی شما پرداخت می‌شود</string>
-    <string name="pr_paid_to_your_spending">به آدرس هزینه شما پرداخت می‌شود</string>
     <string name="pr_ask_contact_hint">از این مخاطب مبلغی دقیق را با دلیلش درخواست کنید.</string>
     <string name="pr_send_request">ارسال درخواست پرداخت</string>
     <!-- Chat list: delete one chat (iOS ChatListView rowDeleteContact) -->
@@ -1290,7 +1278,6 @@
     <string name="pr_used">استفاده‌شده</string>
     <string name="pr_unused">استفاده‌نشده</string>
     <string name="pr_checking">در حال بررسی</string>
-    <string name="pr_spending_footer_new">به یک آدرس کاملاً تازه شما پرداخت می‌شود که فقط برای همین درخواست است. پرداخت‌کننده یادداشت را می‌بیند، اما همراه پرداخت ارسال نمی‌شود.</string>
     <!-- iOS 245a5d2: Your Addresses, Hide All -->
     <string name="hide_all">پنهان کردن همه</string>
     <string name="hide_all_addresses_title">همه آدرس‌ها پنهان شوند؟</string>
@@ -1414,4 +1401,8 @@
     <string name="wallet_title">کیف پول</string>
     <string name="connection_tab_push">اعلان‌ها</string>
     <string name="ab_add_address_sub">یک آدرس کسپا را با نامی که می‌شناسید ذخیره کنید.</string>
+    <string name="all_nodes">همه گره‌ها</string>
+    <string name="no_active_nodes">هیچ گره فعالی وجود ندارد</string>
+    <string name="no_nodes_discovered">هیچ گره‌ای کشف نشد</string>
+    <string name="kaspa_node_settings_footer">اسکن خودکار بهترین گره‌های موجود را پیدا کرده و به آن‌ها وصل می‌شود. انتخاب یک گره مشخص فقط به همان وصل می‌شود و به گره دیگری نمی‌رود. روی نمایه‌سازها، دامنه‌ها یا کاوشگر در زبانه‌های دیگر اثری ندارد. برای انتخاب در اینجا، آدرس‌های خود را به دفترچه آدرس IP زیر اضافه کنید.</string>
 </resources>

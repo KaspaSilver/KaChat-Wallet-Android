@@ -116,7 +116,6 @@
     <string name="notifications">Pemberitahuan</string>
     <string name="ok">OK</string>
     <string name="open_settings">Buka Pengaturan</string>
-    <string name="other_nodes">Node Lainnya</string>
     <string name="paste_from_clipboard">Tempel dari Papan Klip</string>
     <string name="paste_kpub">Tempel kpub</string>
     <string name="payment">Pembayaran</string>
@@ -255,7 +254,6 @@
     <string name="select_the_currency_youd_like_prices">Pilih mata uang yang ingin ditampilkan.</string>
     <string name="i_have_written_down_my_seed_phrase">Saya telah mencatat frasa pemulihan saya dan menyimpannya dengan aman</string>
     <string name="i_already_have_a_domain_somewhere">Saya sudah memiliki domain di tempat lain</string>
-    <string name="transfer_your_domain_to_this_address">Transfer domain Anda ke alamat ini agar identitas Anda terhubung ke KaChat.</string>
     <string name="default_label">Default</string>
     <string name="continue_label">Lanjutkan</string>
     <string name="user_info">Info Pengguna</string>
@@ -284,7 +282,6 @@
     <string name="could_not_reach_service">Tidak dapat menjangkau %1$s. Tarik ke bawah untuk mencoba lagi.</string>
     <string name="no_names_yet">Belum ada nama %1$s.</string>
     <string name="kachat_names_are_coming">Nama .kachat segera hadir</string>
-    <string name="kachat_names_coming_body">Nama milik KaChat akan ada di sini: klaim satu, jadikan namamu di obrolan, dan bagikan sebagai tautan profilmu.</string>
     <!-- 5.2 name lookups (iOS a0dbc15, 79b6ac8, 9858bd1) -->
     <string name="no_domain_found">Domain tidak ditemukan</string>
     <string name="no_tld_domain_found">Domain %1$s tidak ditemukan</string>
@@ -371,7 +368,6 @@
     <string name="ks_try_again">Coba Lagi</string>
     <!-- .kachat setup guide (iOS b000310, 66b152f) -->
     <string name="kg_claim_title">Klaim nama .kachat-mu</string>
-    <string name="kg_claim_body">Ini nama yang dilihat orang di seluruh KaChat - di obrolan, di postingan, dan di tautan profilmu. Tanpanya, orang melihat alamatmu.</string>
     <string name="kg_welcome_body">Tur awal lengkap: dompet, obrolan, pembayaran, dan lainnya.</string>
     <string name="kg_previous">Sebelumnya</string>
     <string name="kg_setup_guide">Panduan Penyiapan</string>
@@ -703,7 +699,6 @@
     <string name="chats_new_public_subtitle">Bergabung ke ruang publik, atau buat sendiri.</string>
     <string name="chats_fund_subtitle">Menampilkan kode QR untuk menambah Kaspa guna mengirim pesan.</string>
     <string name="chats_receive_subtitle">Menampilkan alamat baru untuk menerima pembayaran.</string>
-    <string name="qr_receive_address_subtitle">Alamat baru yang belum pernah dipakai. Kaspa yang dikirim ke sini masuk ke akun ini dan tampil di saldo belanja Anda. Gunakan alamat ini untuk semua hal yang tidak terkait obrolan atau domain.</string>
     <string name="qr_chatting_address_subtitle">Alamat ini hanya untuk obrolan dan domain. 1 Kaspa cukup untuk sekitar 500 interaksi di aplikasi. Harga domain berkisar 35 hingga 4.000 Kaspa, tergantung namanya.</string>
     <!-- Send Kaspa screens: shared pieces (iOS 4d0324f) -->
     <string name="coin_control">Kontrol koin</string>
@@ -1093,12 +1088,9 @@
     <!-- Payment requests (iOS c6851d6, 7c71a98, 1fe8388, 6594936) -->
     <string name="pr_request_payment">Minta Pembayaran</string>
     <string name="pr_request_payment_hint">Tautan yang meminta jumlah pasti, beserta keperluannya.</string>
-    <string name="pr_chatting_footer">Pembayaran masuk ke obrolan Anda dengan pembayar, beserta catatannya.</string>
     <string name="pr_memo_placeholder">Untuk apa (opsional)</string>
     <string name="pr_copy">Salin Permintaan Pembayaran</string>
     <string name="pr_requested">Diminta</string>
-    <string name="pr_paid_as_chat_payment">Dibayar sebagai pembayaran obrolan: muncul di obrolan Anda dengan mereka.</string>
-    <string name="pr_paid_to_their_spending">Dibayar ke alamat belanja mereka.</string>
     <string name="pr_payment_request">Permintaan Pembayaran</string>
     <string name="pr_preview">Permintaan pembayaran: %1$s KAS</string>
     <string name="pr_tap_to_pay">Ketuk untuk membayar.</string>
@@ -1108,8 +1100,6 @@
     <string name="pr_not_signed">Tidak ditandatangani: pembuat permintaan ini tidak bisa dipastikan.</string>
     <string name="pr_your_payment_request">Permintaan Pembayaran Anda</string>
     <string name="pr_your_request_tap_to_view">Permintaan pembayaran Anda. Ketuk untuk melihat.</string>
-    <string name="pr_paid_to_your_chatting">Dibayar ke alamat obrolan Anda</string>
-    <string name="pr_paid_to_your_spending">Dibayar ke alamat belanja Anda</string>
     <string name="pr_ask_contact_hint">Minta kontak ini jumlah pasti, beserta keperluannya.</string>
     <string name="pr_send_request">Kirim Permintaan Pembayaran</string>
     <!-- Chat list: delete one chat (iOS ChatListView rowDeleteContact) -->
@@ -1133,7 +1123,6 @@
     <string name="pr_used">Terpakai</string>
     <string name="pr_unused">Belum dipakai</string>
     <string name="pr_checking">Memeriksa</string>
-    <string name="pr_spending_footer_new">Dibayar ke alamat Anda yang benar-benar baru, hanya untuk permintaan ini. Catatan terlihat oleh pembayar, tetapi tidak ikut terkirim bersama pembayaran.</string>
     <!-- iOS 245a5d2: Your Addresses, Hide All -->
     <string name="hide_all">Sembunyikan Semua</string>
     <string name="hide_all_addresses_title">Sembunyikan semua alamat?</string>
@@ -1259,4 +1248,9 @@
     <string name="connection_tab_push">Push</string>
     <string name="ab_add_address_sub">Simpan alamat Kaspa dengan nama yang Anda kenali.</string>
     <string name="scan_this_with_your_kassigner_device">Pindai ini di perangkat KasSigner Anda</string>
+    <string name="all_nodes">Semua Node</string>
+    <string name="no_active_nodes">Tidak ada node aktif</string>
+    <string name="no_nodes_discovered">Tidak ada node yang ditemukan</string>
+    <string name="kaspa_node_settings_footer">Pemindaian Otomatis menemukan dan terhubung ke node terbaik yang tersedia. Memilih node tertentu hanya terhubung ke node itu, tanpa beralih ke yang lain. Tidak memengaruhi pengindeks, domain, atau penjelajah di tab lain. Tambahkan alamatmu ke Buku Alamat IP di bawah untuk memilihnya di sini.</string>
+    <string name="fee_usd_optional">Biaya (opsional)</string>
 </resources>

@@ -83,7 +83,7 @@
     <string name="every_member_will_see_the_new">हर सदस्य नया नाम देखेगा।</string>
     <string name="failed_to_send">भेजना विफल</string>
     <string name="fee_kas">शुल्क (KAS)</string>
-    <string name="fee_usd_optional">शुल्क (USD, वैकल्पिक)</string>
+    <string name="fee_usd_optional">शुल्क (वैकल्पिक)</string>
     <string name="first_let_s_create_your_identity">पहले एक डोमेन नाम के साथ आपकी पहचान बनाते हैं</string>
     <string name="from">से</string>
     <string name="fund_your_chatting_address">अपना चैट पता फंड करें</string>
@@ -153,7 +153,6 @@
     <string name="ok">ठीक है</string>
     <string name="only_notify_if_i_m_mentioned">केवल तभी सूचित करें जब मेरा उल्लेख हो</string>
     <string name="open_settings">सेटिंग्स खोलें</string>
-    <string name="other_nodes">अन्य नोड</string>
     <string name="paste_from_clipboard">क्लिपबोर्ड से पेस्ट करें</string>
     <string name="paste_kpub">kpub पेस्ट करें</string>
     <string name="payment">भुगतान</string>
@@ -361,7 +360,6 @@
     <string name="select_the_currency_youd_like_prices">वह मुद्रा चुनें जिसमें आप कीमतें देखना चाहते हैं।</string>
     <string name="i_have_written_down_my_seed_phrase">मैंने अपना सीड फ्रेज लिख लिया है और इसे सुरक्षित रूप से रख लिया है</string>
     <string name="i_already_have_a_domain_somewhere">मेरे पास पहले से ही कहीं और एक डोमेन है</string>
-    <string name="transfer_your_domain_to_this_address">अपनी पहचान को KaChat से जोड़ने के लिए अपना डोमेन इस पते पर ट्रांसफर करें।</string>
     <string name="user_info">उपयोगकर्ता जानकारी</string>
     <!-- Message actions: translation, share, read state (iOS 3eee9e4) -->
     <string name="share">शेयर करें</string>
@@ -388,7 +386,6 @@
     <string name="could_not_reach_service">%1$s तक नहीं पहुँच सके। फिर से कोशिश करने के लिए नीचे खींचें।</string>
     <string name="no_names_yet">अभी कोई %1$s नाम नहीं।</string>
     <string name="kachat_names_are_coming">.kachat नाम जल्द आ रहे हैं</string>
-    <string name="kachat_names_coming_body">KaChat के अपने नाम यहाँ होंगे: एक लें, चैट में उसे अपना नाम बनाएँ और प्रोफ़ाइल लिंक के रूप में साझा करें।</string>
     <!-- 5.2 name lookups (iOS a0dbc15, 79b6ac8, 9858bd1) -->
     <string name="no_domain_found">कोई डोमेन नहीं मिला</string>
     <string name="no_tld_domain_found">%1$s डोमेन नहीं मिला</string>
@@ -475,7 +472,6 @@
     <string name="ks_try_again">फिर कोशिश करें</string>
     <!-- .kachat setup guide (iOS b000310, 66b152f) -->
     <string name="kg_claim_title">अपना .kachat नाम लें</string>
-    <string name="kg_claim_body">यह वह नाम है जिससे लोग आपको पूरे KaChat में देखते हैं - चैट में, पोस्ट पर और आपके प्रोफ़ाइल लिंक में। इसके बिना लोग आपका पता देखते हैं।</string>
     <string name="kg_welcome_body">शुरुआत का पूरा परिचय: वॉलेट, चैट, भुगतान और बहुत कुछ।</string>
     <string name="kg_previous">पिछला</string>
     <string name="kg_setup_guide">सेटअप गाइड</string>
@@ -820,7 +816,6 @@
     <string name="chats_new_public_subtitle">किसी सार्वजनिक रूम से जुड़ें या नया बनाएँ।</string>
     <string name="chats_fund_subtitle">मैसेज भेजने के लिए Kaspa जोड़ने का QR कोड दिखाता है।</string>
     <string name="chats_receive_subtitle">भुगतान पाने के लिए नया पता दिखाता है।</string>
-    <string name="qr_receive_address_subtitle">एक नया पता, जो पहले कभी इस्तेमाल नहीं हुआ। यहाँ भेजे गए Kaspa इस खाते में आते हैं और आपके खर्च बैलेंस में दिखते हैं। चैट या डोमेन से असंबंधित हर चीज़ के लिए यही पता इस्तेमाल करें।</string>
     <string name="qr_chatting_address_subtitle">यह पता केवल चैट और डोमेन के लिए है। 1 Kaspa ऐप में लगभग 500 इंटरैक्शन के लिए काफ़ी है। नाम के हिसाब से डोमेन की कीमत 35 से 4,000 Kaspa तक है।</string>
     <!-- Send Kaspa screens: shared pieces (iOS 4d0324f) -->
     <string name="coin_control">कॉइन कंट्रोल</string>
@@ -1220,12 +1215,9 @@
     <!-- Payment requests (iOS c6851d6, 7c71a98, 1fe8388, 6594936) -->
     <string name="pr_request_payment">भुगतान का अनुरोध</string>
     <string name="pr_request_payment_hint">एक लिंक जो सटीक राशि माँगता है, कारण के साथ।</string>
-    <string name="pr_chatting_footer">भुगतान, नोट के साथ, भुगतान करने वाले के साथ आपकी चैट में आएगा।</string>
     <string name="pr_memo_placeholder">किसलिए (वैकल्पिक)</string>
     <string name="pr_copy">भुगतान अनुरोध कॉपी करें</string>
     <string name="pr_requested">माँगा गया</string>
-    <string name="pr_paid_as_chat_payment">चैट भुगतान के रूप में: उनके साथ आपकी चैट में दिखेगा।</string>
-    <string name="pr_paid_to_their_spending">उनके खर्च वाले पते पर भुगतान।</string>
     <string name="pr_payment_request">भुगतान अनुरोध</string>
     <string name="pr_preview">भुगतान अनुरोध: %1$s KAS</string>
     <string name="pr_tap_to_pay">भुगतान के लिए टैप करें।</string>
@@ -1235,8 +1227,6 @@
     <string name="pr_not_signed">हस्ताक्षरित नहीं: यह अनुरोध किसने बनाया, इसकी पुष्टि नहीं हो सकती।</string>
     <string name="pr_your_payment_request">आपका भुगतान अनुरोध</string>
     <string name="pr_your_request_tap_to_view">आपका भुगतान अनुरोध। देखने के लिए टैप करें।</string>
-    <string name="pr_paid_to_your_chatting">आपके चैटिंग पते पर भुगतान</string>
-    <string name="pr_paid_to_your_spending">आपके खर्च वाले पते पर भुगतान</string>
     <string name="pr_ask_contact_hint">इस संपर्क से कारण के साथ सटीक राशि माँगें।</string>
     <string name="pr_send_request">भुगतान अनुरोध भेजें</string>
     <!-- Chat list: delete one chat (iOS ChatListView rowDeleteContact) -->
@@ -1260,7 +1250,6 @@
     <string name="pr_used">इस्तेमाल हुआ</string>
     <string name="pr_unused">इस्तेमाल नहीं हुआ</string>
     <string name="pr_checking">जाँच हो रही है</string>
-    <string name="pr_spending_footer_new">आपके बिल्कुल नए पते पर भुगतान होगा, केवल इसी अनुरोध के लिए। नोट भुगतान करने वाले को दिखेगा, पर भुगतान के साथ नहीं जाएगा।</string>
     <!-- iOS 245a5d2: Your Addresses, Hide All -->
     <string name="hide_all">सब छिपाएँ</string>
     <string name="hide_all_addresses_title">सभी पते छिपाएँ?</string>
@@ -1385,4 +1374,8 @@
     <string name="connection_tab_push">पुश</string>
     <string name="ab_add_address_sub">किसी Kaspa पते को ऐसे नाम से सहेजें जिसे आप पहचानते हों।</string>
     <string name="something_went_wrong">कुछ गलत हो गया</string>
+    <string name="all_nodes">सभी नोड</string>
+    <string name="no_active_nodes">कोई सक्रिय नोड नहीं</string>
+    <string name="no_nodes_discovered">कोई नोड नहीं मिला</string>
+    <string name="kaspa_node_settings_footer">स्वचालित स्कैन सबसे अच्छे उपलब्ध नोड खोजकर उनसे जुड़ता है। कोई विशेष नोड चुनने पर केवल उसी से जुड़ता है, दूसरों पर नहीं जाता। अन्य टैब के इंडेक्सर, डोमेन या एक्सप्लोरर पर असर नहीं पड़ता। यहाँ चुनने के लिए नीचे IP पता पुस्तिका में अपने पते जोड़ें।</string>
 </resources>

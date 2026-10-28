@@ -653,6 +653,11 @@ class ColdStorageViewModel @Inject constructor(
     private val _isLoadingTxHistory = MutableStateFlow(false)
     val isLoadingTxHistory: StateFlow<Boolean> = _isLoadingTxHistory.asStateFlow()
 
+    /** iOS ColdStorageView `historyIncomplete`: the last fetch did not get every page (or none),
+     *  so an empty list is "Could not load transactions." rather than "No transactions yet.". */
+    private val _txHistoryIncomplete = MutableStateFlow(false)
+    val txHistoryIncomplete: StateFlow<Boolean> = _txHistoryIncomplete.asStateFlow()
+
     // In-memory, per-address caches so re-visiting the same address's tx-history screen shows
     // what was already fetched instantly instead of a blank blocking spinner every single time -
     // the real gap this screen had vs. Kaspium's persistent-cache approach (a full local DB is
@@ -670,9 +675,13 @@ class ColdStorageViewModel @Inject constructor(
         viewModelScope.launch {
             if (cached == null) _isLoadingTxHistory.value = true
             try {
-                val fresh = addressDiscovery.getTransactionHistory(address)
-                txHistoryCache[address] = fresh
-                _txHistory.value = fresh
+                val result = addressDiscovery.getTransactionHistoryResult(address)
+                _txHistoryIncomplete.value = !result.complete
+                // A fetch that got nothing at all leaves what was already shown.
+                if (result.complete || result.transactions.isNotEmpty() || cached == null) {
+                    txHistoryCache[address] = result.transactions
+                    _txHistory.value = result.transactions
+                }
             } finally {
                 _isLoadingTxHistory.value = false
             }

@@ -64,6 +64,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -1986,6 +1987,7 @@ fun ColdStorageTxHistoryScreen(
 ) {
     val txHistory by viewModel.txHistory.collectAsState()
     val isLoading by viewModel.isLoadingTxHistory.collectAsState()
+    val historyIncomplete by viewModel.txHistoryIncomplete.collectAsState()
     val utxos by viewModel.utxos.collectAsState()
     val isLoadingUtxos by viewModel.isLoadingUtxos.collectAsState()
     val utxosLoadError by viewModel.utxosLoadError.collectAsState()
@@ -2205,17 +2207,53 @@ fun ColdStorageTxHistoryScreen(
                             com.kachat.app.ui.theme.IosActivityIndicator(color = KaspaTeal)
                         }
                     }
+                    // A failed fetch is not an empty history (iOS ColdStorageView
+                    // `historyIncomplete`): say so, with Try Again.
+                    txHistory.isEmpty() && historyIncomplete -> {
+                        Box(modifier = Modifier.fillMaxSize().padding(bottom = barInset).padding(32.dp), contentAlignment = Alignment.Center) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text("Could not load transactions.", color = LocalAppColors.current.textSecondary, textAlign = TextAlign.Center)
+                                Text(
+                                    stringResource(R.string.try_again),
+                                    color = KaspaTeal,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier.clickable { viewModel.loadTxHistory(address) },
+                                )
+                            }
+                        }
+                    }
                     txHistory.isEmpty() -> {
                         Box(modifier = Modifier.fillMaxSize().padding(bottom = barInset).padding(32.dp), contentAlignment = Alignment.Center) {
                             Text(stringResource(R.string.no_transactions_yet), color = LocalAppColors.current.textSecondary, textAlign = TextAlign.Center)
                         }
                     }
                     else -> {
+                        // iOS's `.refreshable`: pull the list down to load the history again.
+                        val historyPullState = rememberPullToRefreshState()
+                        LaunchedEffect(historyPullState.isRefreshing) {
+                            if (historyPullState.isRefreshing) {
+                                viewModel.loadTxHistory(address)
+                                historyPullState.endRefresh()
+                            }
+                        }
+                        Box(Modifier.fillMaxSize().clipToBounds().nestedScroll(historyPullState.nestedScrollConnection)) {
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp + barInset),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
+                            // Some pages landed, some did not: say so rather than letting a
+                            // truncated list read as the whole history.
+                            if (historyIncomplete) {
+                                item(key = "incomplete") {
+                                    Text(
+                                        "Some transactions could not be loaded. Pull to refresh to try again.",
+                                        color = LocalAppColors.current.warning,
+                                        fontSize = 12.sp,
+                                    )
+                                }
+                            }
                             items(txHistory, key = { it.txId }) { tx ->
                                 ColdTxHistoryRow(
                                     tx = tx,
@@ -2225,6 +2263,10 @@ fun ColdStorageTxHistoryScreen(
                                     onClick = { transactionActionTarget = tx }
                                 )
                             }
+                        }
+                        if (historyPullState.verticalOffset > 0f || historyPullState.isRefreshing) {
+                            PullToRefreshContainer(state = historyPullState, modifier = Modifier.align(Alignment.TopCenter))
+                        }
                         }
                     }
                 }

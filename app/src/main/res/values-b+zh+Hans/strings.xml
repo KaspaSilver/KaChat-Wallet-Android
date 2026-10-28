@@ -83,7 +83,7 @@
     <string name="every_member_will_see_the_new">每个成员都会看到新名称。</string>
     <string name="failed_to_send">发送失败</string>
     <string name="fee_kas">手续费 (KAS)</string>
-    <string name="fee_usd_optional">手续费(美元,可选)</string>
+    <string name="fee_usd_optional">手续费(可选)</string>
     <string name="first_let_s_create_your_identity">我们先用一个域名来创建您的身份</string>
     <string name="from">发件人</string>
     <string name="fund_your_chatting_address">为您的聊天地址充值</string>
@@ -153,7 +153,6 @@
     <string name="ok">确定</string>
     <string name="only_notify_if_i_m_mentioned">仅在我被提及时通知</string>
     <string name="open_settings">打开设置</string>
-    <string name="other_nodes">其他节点</string>
     <string name="paste_from_clipboard">从剪贴板粘贴</string>
     <string name="paste_kpub">粘贴 kpub</string>
     <string name="payment">付款</string>
@@ -361,7 +360,6 @@
     <string name="select_the_currency_youd_like_prices">选择您希望以哪种货币显示价格。</string>
     <string name="i_have_written_down_my_seed_phrase">我已经写下我的助记词并妥善保存</string>
     <string name="i_already_have_a_domain_somewhere">我已经在其他地方拥有域名</string>
-    <string name="transfer_your_domain_to_this_address">将您的域名转移到此地址，以便将您的身份与 KaChat 关联。</string>
     <string name="user_info">用户信息</string>
     <!-- Message actions: translation, share, read state (iOS 3eee9e4) -->
     <string name="share">分享</string>
@@ -388,7 +386,6 @@
     <string name="could_not_reach_service">无法连接 %1$s。下拉重试。</string>
     <string name="no_names_yet">还没有 %1$s 名称。</string>
     <string name="kachat_names_are_coming">.kachat 名称即将推出</string>
-    <string name="kachat_names_coming_body">KaChat 自己的名称将在这里：领取一个，作为你在聊天中的名字，并作为你的资料链接分享。</string>
     <!-- 5.2 name lookups (iOS a0dbc15, 79b6ac8, 9858bd1) -->
     <string name="no_domain_found">未找到域名</string>
     <string name="no_tld_domain_found">未找到 %1$s 域名</string>
@@ -475,7 +472,6 @@
     <string name="ks_try_again">重试</string>
     <!-- .kachat setup guide (iOS b000310, 66b152f) -->
     <string name="kg_claim_title">领取你的 .kachat 名称</string>
-    <string name="kg_claim_body">这是你在 KaChat 各处显示的名字——聊天、帖子和个人资料链接中都会用到。没有名称时，别人看到的是你的地址。</string>
     <string name="kg_welcome_body">完整的新手导览：钱包、聊天、付款等。</string>
     <string name="kg_previous">上一步</string>
     <string name="kg_setup_guide">设置指南</string>
@@ -820,7 +816,6 @@
     <string name="chats_new_public_subtitle">加入公共聊天室，或创建一个。</string>
     <string name="chats_fund_subtitle">显示二维码，添加用于发送消息的 Kaspa。</string>
     <string name="chats_receive_subtitle">显示一个新地址用于收款。</string>
-    <string name="qr_receive_address_subtitle">一个从未使用过的新地址。发送到这里的 Kaspa 会进入此账户，并计入你的可用余额。与聊天或域名无关的一切都应使用此地址。</string>
     <string name="qr_chatting_address_subtitle">此地址仅用于聊天和域名。1 Kaspa 足够在应用内进行约 500 次操作。域名价格为 35 至 4,000 Kaspa，取决于名称。</string>
     <!-- Send Kaspa screens: shared pieces (iOS 4d0324f) -->
     <string name="coin_control">币控</string>
@@ -1220,12 +1215,9 @@
     <!-- Payment requests (iOS c6851d6, 7c71a98, 1fe8388, 6594936) -->
     <string name="pr_request_payment">请求付款</string>
     <string name="pr_request_payment_hint">一个按确切金额请求付款的链接，并注明用途。</string>
-    <string name="pr_chatting_footer">付款会附带备注，出现在你与付款人的聊天中。</string>
     <string name="pr_memo_placeholder">用途（可选）</string>
     <string name="pr_copy">复制付款请求</string>
     <string name="pr_requested">请求金额</string>
-    <string name="pr_paid_as_chat_payment">以聊天付款方式支付：会显示在你与对方的聊天中。</string>
-    <string name="pr_paid_to_their_spending">付到对方的支出地址。</string>
     <string name="pr_payment_request">付款请求</string>
     <string name="pr_preview">付款请求：%1$s KAS</string>
     <string name="pr_tap_to_pay">点按付款。</string>
@@ -1235,8 +1227,6 @@
     <string name="pr_not_signed">未签名：无法确认是谁创建了此请求。</string>
     <string name="pr_your_payment_request">你的付款请求</string>
     <string name="pr_your_request_tap_to_view">你的付款请求。点按查看。</string>
-    <string name="pr_paid_to_your_chatting">付到你的聊天地址</string>
-    <string name="pr_paid_to_your_spending">付到你的支出地址</string>
     <string name="pr_ask_contact_hint">向此联系人请求确切金额，并注明用途。</string>
     <string name="pr_send_request">发送付款请求</string>
     <!-- Chat list: delete one chat (iOS ChatListView rowDeleteContact) -->
@@ -1260,7 +1250,6 @@
     <string name="pr_used">已使用</string>
     <string name="pr_unused">未使用</string>
     <string name="pr_checking">正在检查</string>
-    <string name="pr_spending_footer_new">付到你的一个全新地址，仅用于此请求。付款人能看到备注，但备注不会随付款发送。</string>
     <!-- iOS 245a5d2: Your Addresses, Hide All -->
     <string name="hide_all">全部隐藏</string>
     <string name="hide_all_addresses_title">隐藏所有地址？</string>
@@ -1385,4 +1374,8 @@
     <string name="connection_tab_push">推送</string>
     <string name="ab_add_address_sub">用你认得出的名字保存一个 Kaspa 地址。</string>
     <string name="something_went_wrong">出错了</string>
+    <string name="all_nodes">全部节点</string>
+    <string name="no_active_nodes">没有活跃节点</string>
+    <string name="no_nodes_discovered">未发现节点</string>
+    <string name="kaspa_node_settings_footer">自动扫描会找到并连接最佳可用节点。选择特定节点只会连接该节点，不会切换到其他节点。不影响其他标签页中的索引器、域名或浏览器。将你的地址添加到下方的 IP 地址簿后即可在此选择。</string>
 </resources>

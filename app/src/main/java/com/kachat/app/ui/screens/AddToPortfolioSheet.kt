@@ -149,12 +149,8 @@ fun AddToPortfolioSheet(
                 ) {
                     if (selectedId == null) {
                         Text("Add to Portfolio", color = colors.textPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        Text(
-                            "${if (tx.sent) "Sent" else "Received"} ${formatKasAmount(amountKas)} on " +
-                                SimpleDateFormat("MMM d, yyyy, h:mm a", Locale.US).format(Date(timestamp)),
-                            color = colors.textSecondary,
-                            fontSize = 13.sp
-                        )
+                        // iOS's list section header over the portfolios.
+                        Text("Which portfolio?", color = colors.textSecondary, fontSize = 13.sp)
                         // Which portfolios already hold this transaction, so the duplicate is visible
                         // while the choice is being made rather than only after it - same as iOS, and the
                         // same question the swap chooser asks.
@@ -194,14 +190,23 @@ fun AddToPortfolioSheet(
                                 Icon(Icons.Default.KeyboardArrowRight, null, tint = colors.textSecondary)
                             }
                         }
+                        // iOS's section footer: what is about to be recorded, so the choice is
+                        // made with the transaction in view.
+                        Text(
+                            "${if (tx.sent) "Sent" else "Received"} ${formatKasAmount(amountKas)} on " +
+                                SimpleDateFormat("MMM d, yyyy, h:mm a", Locale.US).format(Date(timestamp)),
+                            color = colors.textSecondary,
+                            fontSize = 13.sp
+                        )
                     } else {
                         // Back / title / Confirm on one row, the way iOS's navigation bar carries them -
                         // rather than a full-width button the form has to be scrolled past to reach.
                         // iOS 26: Back and Confirm (semibold) on glass capsules, the title in headline.
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             SheetBarButton(stringResource(com.kachat.app.R.string.back), onClick = { selectedId = null })
+                            // iOS's step-2 title (navigationTitle "Transaction Details").
                             Text(
-                                selectedName,
+                                "Transaction Details",
                                 color = colors.textPrimary,
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 17.sp,
@@ -251,6 +256,7 @@ fun AddToPortfolioSheet(
                             }
                         }
 
+                        Text("Type", color = colors.textSecondary, fontSize = 12.sp)
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             listOf("buy" to "Buy", "sell" to "Sell", "transfer" to stringResource(com.kachat.app.R.string.portfolio_type_transfer)).forEach { (value, label) ->
                                 val active = type == value
@@ -270,6 +276,8 @@ fun AddToPortfolioSheet(
                             }
                         }
 
+                        // iOS's Section("Amount and price") over Amount, Price per KAS and Total.
+                        Text("Amount and price", color = colors.textSecondary, fontSize = 12.sp)
                         com.kachat.app.ui.theme.IosTextField(
                             value = amountText,
                             // Thousands commas while shown, stored plain (iOS 40c5258).

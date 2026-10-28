@@ -183,7 +183,7 @@
     <string name="exchange_id_copied">Exchange ID copied</string>
     <string name="failed_to_send">Failed to send</string>
     <string name="fee_kas">Fee (KAS)</string>
-    <string name="fee_usd_optional">Fee (USD, optional)</string>
+    <string name="fee_usd_optional">Fee (optional)</string>
     <string name="first_let_s_create_your_identity">First let\'s create your identity with a domain name</string>
     <string name="from">From</string>
     <string name="fund_your_chatting_address">Fund Your Chatting Address</string>
@@ -268,7 +268,9 @@
     <string name="open_settings">Open Settings</string>
     <string name="original_message_not_available">Original message not available.</string>
     <string name="original_message_fetching">Original message isn\'t on this device yet - fetching it.</string>
-    <string name="other_nodes">Other Nodes</string>
+    <string name="all_nodes">All Nodes</string>
+    <string name="no_active_nodes">No active nodes</string>
+    <string name="no_nodes_discovered">No nodes discovered</string>
     <string name="paste_from_clipboard">Paste from Clipboard</string>
     <string name="paste_kpub">Paste kpub</string>
     <string name="paste_the_kpub_exported_from_your">Paste the kpub exported from your KasSigner device. It contains no private key material.</string>
@@ -281,7 +283,7 @@
     <string name="pool_health">Pool Health</string>
     <string name="portfolio">Portfolio</string>
     <string name="powered_by_changenow">Powered by ChangeNOW</string>
-    <string name="price_needed">Price needed — tap to set</string>
+    <string name="price_needed">Price still loading, tap to set manually</string>
     <string name="price_per_coin">Price Per Coin</string>
     <string name="promote_pawn_to">Promote pawn to:</string>
     <string name="qr_code">QR Code</string>
@@ -424,8 +426,8 @@
     <string name="kaspa_node">Kaspa Node</string>
     <string name="default_recommended">Default (Recommended)</string>
     <string name="automatic_scan">Automatic Scan</string>
-    <string name="kaspa_node_quick_access_footer">Automatic Scan discovers and connects to the best available nodes. Choosing a specific node connects only to it, without falling back to others. Manage saved addresses in Connection Settings &gt; IP Address Book.</string>
-    <string name="node_connections_blocked">Node connections appear blocked on this network. Receiving messages still works over the indexer and plain payments still go through the REST API, but sending chat messages needs a node connection.</string>
+    <string name="kaspa_node_quick_access_footer">Automatic Scan discovers and connects to the best available nodes. Choosing a specific node connects only to it, without falling back to others. Manage saved addresses in Settings > Connection Settings > IP Address Book.</string>
+    <string name="node_connections_blocked">Node connections appear blocked on this network. Balances and history still load through the Kaspa REST API, but sending needs a node connection.</string>
     <string name="last_sync">Last Sync</string>
     <string name="latency">Latency</string>
     <string name="message_indexer_service_for_chat_functionality">Message indexer service for chat functionality</string>
@@ -496,7 +498,7 @@
     <string name="select_the_currency_youd_like_prices">Select the currency you\'d like prices displayed in.</string>
     <string name="i_have_written_down_my_seed_phrase">I have written down my seed phrase and stored it securely</string>
     <string name="i_already_have_a_domain_somewhere">I already have a domain somewhere else</string>
-    <string name="transfer_your_domain_to_this_address">Transfer your domain to this address so that your identity is connected to KaChat.</string>
+    <string name="transfer_your_domain_to_this_address">Transfer your domain to this address so your identity is connected to KaChat.</string>
 
     <!-- Import source-wallet chooser -->
     <string name="where_is_this_seed_phrase_from">Where is this seed phrase from?</string>
@@ -560,7 +562,7 @@
     <string name="could_not_reach_service">Couldn\'t reach %1$s. Pull down to try again.</string>
     <string name="no_names_yet">No %1$s names yet.</string>
     <string name="kachat_names_are_coming">.kachat names are coming</string>
-    <string name="kachat_names_coming_body">KaChat\'s own names will live here: claim one, set it as your name in chats, and share it as your profile link.</string>
+    <string name="kachat_names_coming_body">KaChat\'s own names will live here: claim one, make it your name, and share it as your profile link.</string>
     <!-- 5.2 name lookups (iOS a0dbc15, 79b6ac8, 9858bd1) -->
     <string name="no_domain_found">No domain found</string>
     <string name="no_tld_domain_found">No %1$s domain found</string>
@@ -650,7 +652,7 @@
     <string name="ks_try_again">Try Again</string>
     <!-- .kachat setup guide (iOS b000310, 66b152f) -->
     <string name="kg_claim_title">Claim your .kachat name</string>
-    <string name="kg_claim_body">It\'s the name people see you as across KaChat - in chats, on posts and on your profile link. Without one, people see your address.</string>
+    <string name="kg_claim_body">It\'s the name people see you as across KaChat and on your profile link. Without one, people see your address.</string>
     <string name="kg_welcome_body">The full first-run tour: wallet, chats, payments and more.</string>
     <string name="kg_previous">Previous</string>
     <string name="kg_setup_guide">Setup Guide</string>
@@ -995,7 +997,7 @@
     <string name="chats_new_public_subtitle">Join a public room, or create one.</string>
     <string name="chats_fund_subtitle">Show the QR code to add Kaspa for sending messages.</string>
     <string name="chats_receive_subtitle">Show a fresh address to get paid.</string>
-    <string name="qr_receive_address_subtitle">A fresh address, never used before. Kaspa sent here lands in this account and shows in your spending total. This address should be used for everything not related to chatting or domains.</string>
+    <string name="qr_receive_address_subtitle">A fresh address, never used before. Kaspa sent here lands in this account and shows in your spending total. Use it for everything except .kachat names.</string>
     <string name="qr_chatting_address_subtitle">This address should be for chatting and domains only. 1 Kaspa is enough for about 500 interactions in the app. Domains cost from 35 to 4,000 Kaspa, depending on the name.</string>
     <!-- Send Kaspa screens: shared pieces (iOS 4d0324f) -->
     <string name="fee_tier_normal">Normal</string>
@@ -1425,13 +1427,10 @@
     <!-- Payment requests (iOS c6851d6, 7c71a98, 1fe8388, 6594936) -->
     <string name="pr_request_payment">Request Payment</string>
     <string name="pr_request_payment_hint">A link asking for an exact amount, with what it\'s for.</string>
-    <string name="pr_chatting_footer">The payment lands in your chat with whoever pays, with the memo.</string>
     <string name="pr_memo_placeholder">What it\'s for (optional)</string>
     <string name="pr_copy">Copy Payment Request</string>
     <string name="pr_anyone_note">Anyone who opens it in KaPay or KaChat gets Send Kaspa with this filled in, and sees it was made by your chatting address (signed with its key).</string>
     <string name="pr_requested">Requested</string>
-    <string name="pr_paid_as_chat_payment">Paid as a chat payment: it shows in your chat with them.</string>
-    <string name="pr_paid_to_their_spending">Paid to their spending address.</string>
     <string name="pr_payment_request">Payment Request</string>
     <string name="pr_preview">Payment request: %1$s KAS</string>
     <string name="pr_tap_to_pay">Tap to pay.</string>
@@ -1441,8 +1440,6 @@
     <string name="pr_not_signed">Not signed: who made this request can\'t be confirmed.</string>
     <string name="pr_your_payment_request">Your Payment Request</string>
     <string name="pr_your_request_tap_to_view">Your payment request. Tap to view.</string>
-    <string name="pr_paid_to_your_chatting">Paid to your chatting address</string>
-    <string name="pr_paid_to_your_spending">Paid to your spending address</string>
     <string name="pr_ask_contact_hint">Ask this contact for an exact amount, with what it\'s for.</string>
     <string name="pr_send_request">Send Payment Request</string>
     <!-- Chat list: delete one chat (iOS ChatListView rowDeleteContact) -->
@@ -1466,7 +1463,6 @@
     <string name="pr_used">Used</string>
     <string name="pr_unused">Unused</string>
     <string name="pr_checking">Checking</string>
-    <string name="pr_spending_footer_new">Paid to a brand-new address of yours, used for this request only. The memo shows to whoever pays, but doesn\'t travel with the payment.</string>
     <!-- iOS 245a5d2: Your Addresses, Hide All -->
     <string name="hide_all">Hide All</string>
     <string name="hide_all_addresses_title">Hide All Addresses?</string>
@@ -1715,4 +1711,6 @@
     <!-- Settings > Storage hub, the Nextcloud row's footer (iOS wallet 59593af), for Screens.kt -->
     <string name="storage_nextcloud_footer">Back up your Address Book and Portfolio to the KaChat folder on your own Nextcloud server. Nothing is stored with Google or Apple.</string>
     <string name="cold_name_this_account">Name This Account</string>
+    <string name="kaspa_node_settings_footer">Automatic Scan discovers and connects to the best available nodes. Choosing a specific node connects only to it, without falling back to others. Doesn\'t affect the indexers, domains or explorer on the other tabs. Add custom addresses to the IP Address Book below to select them here.</string>
+    <string name="compound_utxos_spending_description">Combines this address\'s UTXOs to reduce the inputs a future send needs. A single transaction can only merge so many at once, so if this address has a very large number, tap Compound again after it confirms to keep reducing.</string>
 </resources>

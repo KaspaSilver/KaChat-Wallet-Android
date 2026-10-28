@@ -580,29 +580,36 @@ private fun KnsDomainCreationStep(
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
-                Spacer(Modifier.height(12.dp))
-                domainPreview?.let { preview ->
+                // iOS KNSCreateProfileFlowView: under the field, the full name it makes, or the
+                // rule while there is none; a typed label that breaks it says so in red.
+                val normalizedLabel = com.kachat.app.services.KnsService.normalizeDomainLabel(domainLabelInput)
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    normalizedLabel?.let { "$it.kas" } ?: "Use lowercase letters, numbers, and hyphen.",
+                    color = LocalAppColors.current.textSecondary,
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Spacer(Modifier.height(8.dp))
+                if (normalizedLabel == null && domainLabelInput.isNotBlank()) {
+                    Text("Use lowercase letters, numbers, and hyphen.", color = LocalAppColors.current.danger, style = MaterialTheme.typography.bodySmall)
+                }
+                domainPreview?.takeIf { normalizedLabel != null }?.let { preview ->
                     when {
                         preview.checking -> Text(stringResource(R.string.checking_availability), color = LocalAppColors.current.textSecondary)
-                        preview.errorMessage != null -> Text(preview.errorMessage, color = LocalAppColors.current.danger)
-                        preview.available == false -> Text("${preview.label}.kas is not available", color = LocalAppColors.current.danger)
-                        preview.available == true && preview.isReserved -> {
-                            Text("${preview.label}.kas is available", color = LocalAppColors.current.success, fontWeight = FontWeight.Bold)
-                            Text(
-                                stringResource(R.string.reserved_domain_no_registration_fee_only),
-                                color = LocalAppColors.current.textSecondary,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
+                        preview.errorMessage != null -> Text(preview.errorMessage, color = LocalAppColors.current.danger, style = MaterialTheme.typography.bodySmall)
+                        preview.available == false -> Text("This domain is not available.", color = LocalAppColors.current.danger, style = MaterialTheme.typography.bodySmall)
                         preview.available == true -> {
-                            Text("${preview.label}.kas is available", color = LocalAppColors.current.success, fontWeight = FontWeight.Bold)
-                            Spacer(Modifier.height(8.dp))
-                            val revealKas = preview.revealKas ?: 0.0
-                            Text(
-                                "Registration fee: ${"%.2f".format(revealKas)} ${KaspaUnit.symbol}",
-                                color = LocalAppColors.current.textPrimary,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Text("${preview.label}.kas can be inscribed.", color = LocalAppColors.current.success, style = MaterialTheme.typography.bodySmall)
+                            Spacer(Modifier.height(12.dp))
+                            // iOS's "Service fee" row: the tier's fee, 0 for a reserved name.
+                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                Text("Service fee", color = LocalAppColors.current.textPrimary)
+                                Spacer(Modifier.weight(1f))
+                                Text(
+                                    "${com.kachat.app.services.AddressActivityNotifier.formatKas(((preview.revealKas ?: 0.0) * 100_000_000).toLong())} ${KaspaUnit.symbol}",
+                                    color = LocalAppColors.current.textSecondary
+                                )
+                            }
                         }
                     }
                 }
@@ -624,9 +631,11 @@ private fun KnsDomainCreationStep(
             }
             WalletViewModel.KnsInscribeUiStatus.CHECKING_AVAILABILITY -> KnsInscribeProgressRow(stringResource(R.string.checking_availability))
             WalletViewModel.KnsInscribeUiStatus.FETCHING_FEE -> KnsInscribeProgressRow(stringResource(R.string.calculating_fee))
-            WalletViewModel.KnsInscribeUiStatus.SUBMITTING_COMMIT -> KnsInscribeProgressRow(stringResource(R.string.submitting_commit_transaction_this_could_take))
-            WalletViewModel.KnsInscribeUiStatus.SUBMITTING_REVEAL -> KnsInscribeProgressRow(stringResource(R.string.submitting_reveal_transaction_this_could_take))
-            WalletViewModel.KnsInscribeUiStatus.VERIFYING -> KnsInscribeProgressRow(stringResource(R.string.verifying_on_chain_this_could_take))
+            // iOS shows one line for the whole submit: commit, reveal and the on-chain check.
+            WalletViewModel.KnsInscribeUiStatus.SUBMITTING_COMMIT,
+            WalletViewModel.KnsInscribeUiStatus.SUBMITTING_REVEAL,
+            WalletViewModel.KnsInscribeUiStatus.VERIFYING ->
+                KnsInscribeProgressRow("Submitting inscription... this could take a few minutes while it confirms on-chain.")
             WalletViewModel.KnsInscribeUiStatus.FAILED -> {
                 Text(knsInscribeState.errorMessage ?: "Something went wrong", color = LocalAppColors.current.danger)
                 Spacer(Modifier.height(16.dp))
@@ -854,7 +863,20 @@ private fun KnsDetailsStep(
 
         if (editProfileState.step == WalletViewModel.EditProfileStep.FAILED) {
             Spacer(Modifier.height(8.dp))
-            Text(editProfileState.errorMessage ?: "Something went wrong", color = LocalAppColors.current.danger)
+            // iOS: "Failed to inscribe <field>: <why>", naming the field as iOS's
+            // KNSProfileFieldKey.displayName does.
+            val failure = editProfileState.fieldResults.firstOrNull { !it.success }
+            val fieldName = when (failure?.fieldKey) {
+                "redirectUrl" -> "Redirect"; "avatarUrl" -> "Avatar"; "bannerUrl" -> "Banner"
+                "bio" -> "Bio"; "x" -> "X"; "website" -> "Website"; "telegram" -> "Telegram"
+                "discord" -> "Discord"; "contactEmail" -> "Email"; "github" -> "GitHub"
+                else -> failure?.fieldKey
+            }
+            Text(
+                if (fieldName != null) "Failed to inscribe $fieldName: ${failure?.errorMessage ?: "Something went wrong"}"
+                else editProfileState.errorMessage ?: "Something went wrong",
+                color = LocalAppColors.current.danger
+            )
         }
 
         if (isSubmitting) {

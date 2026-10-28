@@ -83,7 +83,7 @@
     <string name="every_member_will_see_the_new">Mọi thành viên sẽ thấy tên mới.</string>
     <string name="failed_to_send">Gửi không thành công</string>
     <string name="fee_kas">Phí (KAS)</string>
-    <string name="fee_usd_optional">Phí (USD, tùy chọn)</string>
+    <string name="fee_usd_optional">Phí (tùy chọn)</string>
     <string name="first_let_s_create_your_identity">Trước tiên hãy tạo danh tính của bạn với một tên miền</string>
     <string name="from">Từ</string>
     <string name="fund_your_chatting_address">Nạp tiền cho địa chỉ trò chuyện của bạn</string>
@@ -153,7 +153,6 @@
     <string name="ok">OK</string>
     <string name="only_notify_if_i_m_mentioned">Chỉ thông báo nếu tôi được nhắc đến</string>
     <string name="open_settings">Mở Cài đặt</string>
-    <string name="other_nodes">Nút khác</string>
     <string name="paste_from_clipboard">Dán từ bộ nhớ tạm</string>
     <string name="paste_kpub">Dán kpub</string>
     <string name="payment">Thanh toán</string>
@@ -361,7 +360,6 @@
     <string name="select_the_currency_youd_like_prices">Chon loai tien te ban muon hien thi gia.</string>
     <string name="i_have_written_down_my_seed_phrase">Toi da ghi lai cum tu khoi phuc va cat giu no an toan</string>
     <string name="i_already_have_a_domain_somewhere">Toi da co ten mien o noi khac</string>
-    <string name="transfer_your_domain_to_this_address">Chuyen ten mien cua ban den dia chi nay de danh tinh cua ban duoc ket noi voi KaChat.</string>
     <string name="user_info">Thông tin người dùng</string>
     <!-- Message actions: translation, share, read state (iOS 3eee9e4) -->
     <string name="share">Chia sẻ</string>
@@ -388,7 +386,6 @@
     <string name="could_not_reach_service">Không thể kết nối %1$s. Kéo xuống để thử lại.</string>
     <string name="no_names_yet">Chưa có tên %1$s.</string>
     <string name="kachat_names_are_coming">Tên .kachat sắp ra mắt</string>
-    <string name="kachat_names_coming_body">Tên riêng của KaChat sẽ ở đây: nhận một tên, dùng làm tên của bạn trong trò chuyện và chia sẻ làm liên kết hồ sơ.</string>
     <!-- 5.2 name lookups (iOS a0dbc15, 79b6ac8, 9858bd1) -->
     <string name="no_domain_found">Không tìm thấy tên miền</string>
     <string name="no_tld_domain_found">Không tìm thấy tên miền %1$s</string>
@@ -475,7 +472,6 @@
     <string name="ks_try_again">Thử lại</string>
     <!-- .kachat setup guide (iOS b000310, 66b152f) -->
     <string name="kg_claim_title">Nhận tên .kachat của bạn</string>
-    <string name="kg_claim_body">Đây là tên mọi người thấy bạn trên khắp KaChat - trong trò chuyện, trên bài đăng và qua liên kết hồ sơ. Nếu không có, mọi người thấy địa chỉ của bạn.</string>
     <string name="kg_welcome_body">Hướng dẫn đầy đủ khi bắt đầu: ví, trò chuyện, thanh toán và hơn thế.</string>
     <string name="kg_previous">Trước</string>
     <string name="kg_setup_guide">Hướng dẫn thiết lập</string>
@@ -820,7 +816,6 @@
     <string name="chats_new_public_subtitle">Tham gia một phòng công khai, hoặc tạo phòng mới.</string>
     <string name="chats_fund_subtitle">Hiện mã QR để nạp Kaspa dùng cho việc gửi tin nhắn.</string>
     <string name="chats_receive_subtitle">Hiện một địa chỉ mới để nhận thanh toán.</string>
-    <string name="qr_receive_address_subtitle">Một địa chỉ mới, chưa từng dùng. Kaspa gửi đến đây sẽ vào tài khoản này và hiện trong số dư chi tiêu của bạn. Hãy dùng địa chỉ này cho mọi việc không liên quan đến trò chuyện hoặc tên miền.</string>
     <string name="qr_chatting_address_subtitle">Địa chỉ này chỉ dành cho trò chuyện và tên miền. 1 Kaspa đủ cho khoảng 500 lượt tương tác trong ứng dụng. Tên miền có giá từ 35 đến 4.000 Kaspa tùy theo tên.</string>
     <!-- Send Kaspa screens: shared pieces (iOS 4d0324f) -->
     <string name="coin_control">Kiểm soát coin</string>
@@ -1220,12 +1215,9 @@
     <!-- Payment requests (iOS c6851d6, 7c71a98, 1fe8388, 6594936) -->
     <string name="pr_request_payment">Yêu cầu thanh toán</string>
     <string name="pr_request_payment_hint">Một liên kết yêu cầu số tiền chính xác, kèm mục đích.</string>
-    <string name="pr_chatting_footer">Khoản thanh toán kèm ghi chú sẽ vào cuộc trò chuyện của bạn với người trả.</string>
     <string name="pr_memo_placeholder">Để làm gì (tùy chọn)</string>
     <string name="pr_copy">Sao chép yêu cầu thanh toán</string>
     <string name="pr_requested">Yêu cầu</string>
-    <string name="pr_paid_as_chat_payment">Trả dưới dạng thanh toán trong trò chuyện: hiện trong cuộc trò chuyện của bạn với họ.</string>
-    <string name="pr_paid_to_their_spending">Trả vào địa chỉ chi tiêu của họ.</string>
     <string name="pr_payment_request">Yêu cầu thanh toán</string>
     <string name="pr_preview">Yêu cầu thanh toán: %1$s KAS</string>
     <string name="pr_tap_to_pay">Nhấn để thanh toán.</string>
@@ -1235,8 +1227,6 @@
     <string name="pr_not_signed">Chưa ký: không thể xác nhận ai đã tạo yêu cầu này.</string>
     <string name="pr_your_payment_request">Yêu cầu thanh toán của bạn</string>
     <string name="pr_your_request_tap_to_view">Yêu cầu thanh toán của bạn. Nhấn để xem.</string>
-    <string name="pr_paid_to_your_chatting">Trả vào địa chỉ trò chuyện của bạn</string>
-    <string name="pr_paid_to_your_spending">Trả vào địa chỉ chi tiêu của bạn</string>
     <string name="pr_ask_contact_hint">Yêu cầu người này một số tiền chính xác, kèm mục đích.</string>
     <string name="pr_send_request">Gửi yêu cầu thanh toán</string>
     <!-- Chat list: delete one chat (iOS ChatListView rowDeleteContact) -->
@@ -1260,7 +1250,6 @@
     <string name="pr_used">Đã dùng</string>
     <string name="pr_unused">Chưa dùng</string>
     <string name="pr_checking">Đang kiểm tra</string>
-    <string name="pr_spending_footer_new">Trả vào một địa chỉ hoàn toàn mới của bạn, chỉ dùng cho yêu cầu này. Người trả thấy ghi chú, nhưng ghi chú không đi kèm khoản thanh toán.</string>
     <!-- iOS 245a5d2: Your Addresses, Hide All -->
     <string name="hide_all">Ẩn tất cả</string>
     <string name="hide_all_addresses_title">Ẩn tất cả địa chỉ?</string>
@@ -1385,4 +1374,8 @@
     <string name="connection_tab_push">Thông báo</string>
     <string name="ab_add_address_sub">Lưu một địa chỉ Kaspa với tên bạn dễ nhận ra.</string>
     <string name="something_went_wrong">Đã xảy ra lỗi</string>
+    <string name="all_nodes">Tất cả nút</string>
+    <string name="no_active_nodes">Không có nút đang hoạt động</string>
+    <string name="no_nodes_discovered">Không phát hiện được nút nào</string>
+    <string name="kaspa_node_settings_footer">Quét tự động tìm và kết nối với các node tốt nhất. Chọn một node cụ thể chỉ kết nối với node đó, không chuyển sang node khác. Không ảnh hưởng đến trình lập chỉ mục, tên miền hay trình khám phá ở các tab khác. Thêm địa chỉ của bạn vào Sổ địa chỉ IP bên dưới để chọn ở đây.</string>
 </resources>

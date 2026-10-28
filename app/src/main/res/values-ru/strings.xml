@@ -83,7 +83,7 @@
     <string name="every_member_will_see_the_new">Все участники увидят новое имя.</string>
     <string name="failed_to_send">Ошибка отправки</string>
     <string name="fee_kas">Комиссия (KAS)</string>
-    <string name="fee_usd_optional">Комиссия (USD, необязательно)</string>
+    <string name="fee_usd_optional">Комиссия (необязательно)</string>
     <string name="first_let_s_create_your_identity">Сначала создадим вашу личность с доменным именем</string>
     <string name="from">От</string>
     <string name="fund_your_chatting_address">Пополните ваш адрес для чата</string>
@@ -153,7 +153,6 @@
     <string name="ok">ОК</string>
     <string name="only_notify_if_i_m_mentioned">Уведомлять, только если меня упомянули</string>
     <string name="open_settings">Открыть настройки</string>
-    <string name="other_nodes">Другие узлы</string>
     <string name="paste_from_clipboard">Вставить из буфера обмена</string>
     <string name="paste_kpub">Вставить kpub</string>
     <string name="payment">Платёж</string>
@@ -361,7 +360,6 @@
     <string name="select_the_currency_youd_like_prices">Выберите валюту, в которой хотите видеть цены.</string>
     <string name="i_have_written_down_my_seed_phrase">Я записал свою секретную фразу и надежно её сохранил</string>
     <string name="i_already_have_a_domain_somewhere">У меня уже есть домен в другом месте</string>
-    <string name="transfer_your_domain_to_this_address">Перенесите свой домен на этот адрес, чтобы ваша личность была связана с KaChat.</string>
     <string name="user_info">Информация о пользователе</string>
     <!-- Message actions: translation, share, read state (iOS 3eee9e4) -->
     <string name="share">Поделиться</string>
@@ -388,7 +386,6 @@
     <string name="could_not_reach_service">Не удалось связаться с %1$s. Потяните вниз, чтобы повторить.</string>
     <string name="no_names_yet">Пока нет имён %1$s.</string>
     <string name="kachat_names_are_coming">Имена .kachat скоро появятся</string>
-    <string name="kachat_names_coming_body">Здесь будут собственные имена KaChat: получите имя, используйте его в чатах и делитесь им как ссылкой на профиль.</string>
     <!-- 5.2 name lookups (iOS a0dbc15, 79b6ac8, 9858bd1) -->
     <string name="no_domain_found">Домен не найден</string>
     <string name="no_tld_domain_found">Домен %1$s не найден</string>
@@ -475,7 +472,6 @@
     <string name="ks_try_again">Повторить</string>
     <!-- .kachat setup guide (iOS b000310, 66b152f) -->
     <string name="kg_claim_title">Получите имя .kachat</string>
-    <string name="kg_claim_body">Под этим именем вас видят во всём KaChat — в чатах, в постах и по ссылке на профиль. Без него видят ваш адрес.</string>
     <string name="kg_welcome_body">Полный вводный тур: кошелёк, чаты, платежи и другое.</string>
     <string name="kg_previous">Назад</string>
     <string name="kg_setup_guide">Руководство по настройке</string>
@@ -820,7 +816,6 @@
     <string name="chats_new_public_subtitle">Войдите в публичную комнату или создайте свою.</string>
     <string name="chats_fund_subtitle">Показывает QR-код, чтобы добавить Kaspa для отправки сообщений.</string>
     <string name="chats_receive_subtitle">Показывает новый адрес для получения оплаты.</string>
-    <string name="qr_receive_address_subtitle">Новый, ещё не использованный адрес. Kaspa, отправленные сюда, поступают на этот аккаунт и отображаются в балансе для трат. Используйте этот адрес для всего, что не связано с чатами или доменами.</string>
     <string name="qr_chatting_address_subtitle">Этот адрес только для чатов и доменов. 1 Kaspa хватает примерно на 500 действий в приложении. Домены стоят от 35 до 4000 Kaspa в зависимости от имени.</string>
     <!-- Send Kaspa screens: shared pieces (iOS 4d0324f) -->
     <string name="coin_control">Выбор монет</string>
@@ -1220,12 +1215,9 @@
     <!-- Payment requests (iOS c6851d6, 7c71a98, 1fe8388, 6594936) -->
     <string name="pr_request_payment">Запросить оплату</string>
     <string name="pr_request_payment_hint">Ссылка с запросом точной суммы и назначением.</string>
-    <string name="pr_chatting_footer">Платёж с заметкой придёт в ваш чат с плательщиком.</string>
     <string name="pr_memo_placeholder">За что (необязательно)</string>
     <string name="pr_copy">Скопировать запрос на оплату</string>
     <string name="pr_requested">Запрошено</string>
-    <string name="pr_paid_as_chat_payment">Оплачивается как платёж в чате: появится в вашем чате с ним.</string>
-    <string name="pr_paid_to_their_spending">Оплачивается на его адрес для расходов.</string>
     <string name="pr_payment_request">Запрос на оплату</string>
     <string name="pr_preview">Запрос на оплату: %1$s KAS</string>
     <string name="pr_tap_to_pay">Нажмите, чтобы оплатить.</string>
@@ -1235,8 +1227,6 @@
     <string name="pr_not_signed">Без подписи: нельзя подтвердить, кто создал этот запрос.</string>
     <string name="pr_your_payment_request">Ваш запрос на оплату</string>
     <string name="pr_your_request_tap_to_view">Ваш запрос на оплату. Нажмите, чтобы открыть.</string>
-    <string name="pr_paid_to_your_chatting">Оплата на ваш адрес для чатов</string>
-    <string name="pr_paid_to_your_spending">Оплата на ваш адрес для расходов</string>
     <string name="pr_ask_contact_hint">Попросите у этого контакта точную сумму с назначением.</string>
     <string name="pr_send_request">Отправить запрос на оплату</string>
     <!-- Chat list: delete one chat (iOS ChatListView rowDeleteContact) -->
@@ -1260,7 +1250,6 @@
     <string name="pr_used">Использован</string>
     <string name="pr_unused">Не использован</string>
     <string name="pr_checking">Проверка</string>
-    <string name="pr_spending_footer_new">Оплата на совершенно новый ваш адрес, только для этого запроса. Заметку увидит плательщик, но с платежом она не отправится.</string>
     <!-- iOS 245a5d2: Your Addresses, Hide All -->
     <string name="hide_all">Скрыть все</string>
     <string name="hide_all_addresses_title">Скрыть все адреса?</string>
@@ -1385,4 +1374,8 @@
     <string name="connection_tab_push">Пуш</string>
     <string name="ab_add_address_sub">Сохраните адрес Kaspa под понятным вам именем.</string>
     <string name="something_went_wrong">Что-то пошло не так</string>
+    <string name="all_nodes">Все узлы</string>
+    <string name="no_active_nodes">Нет активных узлов</string>
+    <string name="no_nodes_discovered">Узлы не обнаружены</string>
+    <string name="kaspa_node_settings_footer">Автопоиск находит лучшие доступные узлы и подключается к ним. Выбор конкретного узла подключает только к нему, без перехода на другие. Не влияет на индексаторы, домены и обозреватель на других вкладках. Добавьте свои адреса в адресную книгу IP ниже, чтобы выбрать их здесь.</string>
 </resources>

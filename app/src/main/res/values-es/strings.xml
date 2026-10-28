@@ -83,7 +83,7 @@
     <string name="every_member_will_see_the_new">Todos los miembros veran el nuevo nombre.</string>
     <string name="failed_to_send">Error al enviar</string>
     <string name="fee_kas">Comision (KAS)</string>
-    <string name="fee_usd_optional">Comision (USD, opcional)</string>
+    <string name="fee_usd_optional">Comision (opcional)</string>
     <string name="first_let_s_create_your_identity">Primero creemos tu identidad con un nombre de dominio</string>
     <string name="from">Desde</string>
     <string name="fund_your_chatting_address">Financia tu direccion de chat</string>
@@ -153,7 +153,6 @@
     <string name="ok">OK</string>
     <string name="only_notify_if_i_m_mentioned">Notificar solo si me mencionan</string>
     <string name="open_settings">Abrir ajustes</string>
-    <string name="other_nodes">Otros nodos</string>
     <string name="paste_from_clipboard">Pegar desde portapapeles</string>
     <string name="paste_kpub">Pegar kpub</string>
     <string name="payment">Pago</string>
@@ -361,7 +360,6 @@
     <string name="select_the_currency_youd_like_prices">Selecciona la moneda en la que te gustaria ver los precios.</string>
     <string name="i_have_written_down_my_seed_phrase">He anotado mi frase semilla y la he guardado de forma segura</string>
     <string name="i_already_have_a_domain_somewhere">Ya tengo un dominio en otro lugar</string>
-    <string name="transfer_your_domain_to_this_address">Transfiere tu dominio a esta direccion para que tu identidad quede conectada a KaChat.</string>
     <string name="user_info">Info del usuario</string>
     <!-- Message actions: translation, share, read state (iOS 3eee9e4) -->
     <string name="share">Compartir</string>
@@ -388,7 +386,6 @@
     <string name="could_not_reach_service">No se pudo contactar con %1$s. Desliza hacia abajo para reintentar.</string>
     <string name="no_names_yet">Aún no hay nombres %1$s.</string>
     <string name="kachat_names_are_coming">Los nombres .kachat llegarán pronto</string>
-    <string name="kachat_names_coming_body">Aquí vivirán los nombres propios de KaChat: reclama uno, úsalo como tu nombre en los chats y compártelo como enlace de tu perfil.</string>
     <!-- 5.2 name lookups (iOS a0dbc15, 79b6ac8, 9858bd1) -->
     <string name="no_domain_found">No se encontró ningún dominio</string>
     <string name="no_tld_domain_found">No se encontró un dominio %1$s</string>
@@ -475,7 +472,6 @@
     <string name="ks_try_again">Intentar de nuevo</string>
     <!-- .kachat setup guide (iOS b000310, 66b152f) -->
     <string name="kg_claim_title">Reclama tu nombre .kachat</string>
-    <string name="kg_claim_body">Es el nombre con el que te ven en todo KaChat: en los chats, en las publicaciones y en el enlace de tu perfil. Sin él, ven tu dirección.</string>
     <string name="kg_welcome_body">El recorrido inicial completo: billetera, chats, pagos y más.</string>
     <string name="kg_previous">Anterior</string>
     <string name="kg_setup_guide">Guia de configuracion</string>
@@ -820,7 +816,6 @@
     <string name="chats_new_public_subtitle">Únete a una sala pública o crea una.</string>
     <string name="chats_fund_subtitle">Muestra el código QR para añadir Kaspa y enviar mensajes.</string>
     <string name="chats_receive_subtitle">Muestra una dirección nueva para recibir pagos.</string>
-    <string name="qr_receive_address_subtitle">Una dirección nueva, nunca usada. Los Kaspa enviados aquí llegan a esta cuenta y aparecen en tu saldo para gastar. Usa esta dirección para todo lo que no tenga que ver con chats o dominios.</string>
     <string name="qr_chatting_address_subtitle">Esta dirección debe usarse solo para chats y dominios. 1 Kaspa alcanza para unas 500 interacciones en la app. Los dominios cuestan de 35 a 4.000 Kaspa, según el nombre.</string>
     <!-- Send Kaspa screens: shared pieces (iOS 4d0324f) -->
     <string name="coin_control">Control de monedas</string>
@@ -1220,12 +1215,9 @@
     <!-- Payment requests (iOS c6851d6, 7c71a98, 1fe8388, 6594936) -->
     <string name="pr_request_payment">Solicitar pago</string>
     <string name="pr_request_payment_hint">Un enlace que pide una cantidad exacta, con el motivo.</string>
-    <string name="pr_chatting_footer">El pago llega a tu chat con quien paga, con la nota.</string>
     <string name="pr_memo_placeholder">Para qué es (opcional)</string>
     <string name="pr_copy">Copiar solicitud de pago</string>
     <string name="pr_requested">Solicitado</string>
-    <string name="pr_paid_as_chat_payment">Se paga como pago en el chat: aparece en tu chat con esa persona.</string>
-    <string name="pr_paid_to_their_spending">Se paga a su dirección de gasto.</string>
     <string name="pr_payment_request">Solicitud de pago</string>
     <string name="pr_preview">Solicitud de pago: %1$s KAS</string>
     <string name="pr_tap_to_pay">Toca para pagar.</string>
@@ -1235,8 +1227,6 @@
     <string name="pr_not_signed">Sin firma: no se puede confirmar quién creó esta solicitud.</string>
     <string name="pr_your_payment_request">Tu solicitud de pago</string>
     <string name="pr_your_request_tap_to_view">Tu solicitud de pago. Toca para verla.</string>
-    <string name="pr_paid_to_your_chatting">Se paga a tu dirección de chat</string>
-    <string name="pr_paid_to_your_spending">Se paga a tu dirección de gasto</string>
     <string name="pr_ask_contact_hint">Pide a este contacto una cantidad exacta, con el motivo.</string>
     <string name="pr_send_request">Enviar solicitud de pago</string>
     <!-- Chat list: delete one chat (iOS ChatListView rowDeleteContact) -->
@@ -1260,7 +1250,6 @@
     <string name="pr_used">Usada</string>
     <string name="pr_unused">Sin usar</string>
     <string name="pr_checking">Comprobando</string>
-    <string name="pr_spending_footer_new">Se paga a una dirección tuya completamente nueva, solo para esta solicitud. Quien paga ve la nota, pero no viaja con el pago.</string>
     <!-- iOS 245a5d2: Your Addresses, Hide All -->
     <string name="hide_all">Ocultar todas</string>
     <string name="hide_all_addresses_title">¿Ocultar todas las direcciones?</string>
@@ -1385,4 +1374,8 @@
     <string name="connection_tab_push">Push</string>
     <string name="ab_add_address_sub">Guarda una dirección de Kaspa con un nombre que reconozcas.</string>
     <string name="something_went_wrong">Algo salio mal</string>
+    <string name="all_nodes">Todos los nodos</string>
+    <string name="no_active_nodes">Sin nodos activos</string>
+    <string name="no_nodes_discovered">No se descubrieron nodos</string>
+    <string name="kaspa_node_settings_footer">La búsqueda automática encuentra y se conecta a los mejores nodos disponibles. Elegir un nodo concreto conecta solo a él, sin recurrir a otros. No afecta a los indexadores, dominios ni al explorador de las otras pestañas. Añade direcciones propias a la Libreta de IPs de abajo para elegirlas aquí.</string>
 </resources>

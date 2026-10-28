@@ -1794,6 +1794,12 @@ fun KnsDomainSendScreen(
                             }
                         }
                     }
+                    // iOS KNSDomainSendView's Fee section footer.
+                    Text(
+                        "If the network is busy, Fast or Priority pays a higher fee to help your transfer confirm sooner. Tap the fee amount to set a custom fee.",
+                        color = LocalAppColors.current.textSecondary,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
                 }
             }
 
@@ -2086,7 +2092,7 @@ fun ManageAddressesScreen(
                         Icon(Icons.Default.CreditCard, null, tint = LocalAppColors.current.textSecondary, modifier = Modifier.size(40.dp))
                         Text("No Spending Addresses", color = LocalAppColors.current.textPrimary, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
                         Text(
-                            "Generate one below to start sending payments from a separate address than the one you chat from.",
+                            "Generate one below to send payments from a separate address than your main one.",
                             color = LocalAppColors.current.textSecondary,
                             fontSize = 15.sp,
                             textAlign = TextAlign.Center,
@@ -2172,12 +2178,13 @@ private fun RenameAddressDialog(
         title = { Text(stringResource(R.string.rename_address), color = LocalAppColors.current.textPrimary) },
         text = {
             Column {
-                Text(com.kachat.app.services.WalletManager.spendingAddressTitle(index), color = LocalAppColors.current.textSecondary, style = MaterialTheme.typography.bodySmall)
+                // iOS's alert message (ManageAddressesView "Rename Address"), and its "Label" field.
+                Text("Give this address a label to help you recognize it.", color = LocalAppColors.current.textSecondary, style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.height(12.dp))
                 com.kachat.app.ui.theme.IosTextField(
                     value = nameInput,
                     onValueChange = onNameChange,
-                    label = { Text(stringResource(R.string.name)) },
+                    label = { Text("Label") },
                     placeholder = { Text(com.kachat.app.services.WalletManager.spendingAddressTitle(index)) },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
@@ -3438,6 +3445,8 @@ fun SpendingAddressTxHistoryScreen(
                     labels = utxoLabels,
                     onRetry = { utxoListAddress?.let { viewModel.loadSpendingAddressUtxos(it) } },
                     onCompound = { showCompoundFlow = true },
+                    // iOS SpendingAddressTransactionHistoryView's own footer.
+                    compoundFooter = stringResource(R.string.compound_utxos_spending_description),
                     onRename = { key ->
                         labelingUtxoKey = key
                         labelInput = utxoLabels[key] ?: ""
@@ -4377,6 +4386,7 @@ private fun AddressPageBalanceHeader(balanceSompi: Long) {
  * transactions, or the spinner, "Could not load transactions." with Try Again, or "No
  * transactions yet." as the list's only row.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddressHistoryList(
     txHistory: List<ColdStorageAddressDiscovery.AddressTransaction>,
@@ -4411,20 +4421,47 @@ private fun AddressHistoryList(
         txHistory.isEmpty() -> InsetGroupedSingleRowList {
             Text(stringResource(R.string.no_transactions_yet), color = colors.textSecondary, fontSize = 17.sp)
         }
-        else -> LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(top = InsetGroupedTopGap, bottom = 16.dp + bottomPadding),
-        ) {
-            itemsIndexed(txHistory, key = { _, tx -> tx.txId }) { i, tx ->
-                SpendingAddressTxHistoryRow(
-                    tx = tx,
-                    // Tapping a transaction asks what to do with it. It used to open the
-                    // explorer outright, which left "Add to Portfolio" on a button most people
-                    // never looked for.
-                    onClick = { onTransactionClick(tx) },
-                    // The separator starts under the text, past the 26 icon and its 12 gap.
-                    modifier = Modifier.insetGroupedCell(i, txHistory.size, separatorStart = 54.dp),
-                )
+        else -> {
+            // iOS's `.refreshable`: pull the list down to load the history again.
+            val pullState = rememberPullToRefreshState()
+            LaunchedEffect(pullState.isRefreshing) {
+                if (pullState.isRefreshing) {
+                    onRetry()
+                    pullState.endRefresh()
+                }
+            }
+            Box(Modifier.fillMaxSize().clipToBounds().nestedScroll(pullState.nestedScrollConnection)) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(top = InsetGroupedTopGap, bottom = 16.dp + bottomPadding),
+                ) {
+                    // Some pages landed, some did not (iOS `historyIncomplete`): say so rather
+                    // than letting a truncated list read as the whole history.
+                    if (failed) {
+                        item(key = "incomplete") {
+                            Text(
+                                "Some transactions could not be loaded. Pull to refresh to try again.",
+                                color = colors.warning,
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(start = 32.dp, end = 32.dp, bottom = 8.dp),
+                            )
+                        }
+                    }
+                    itemsIndexed(txHistory, key = { _, tx -> tx.txId }) { i, tx ->
+                        SpendingAddressTxHistoryRow(
+                            tx = tx,
+                            // Tapping a transaction asks what to do with it. It used to open the
+                            // explorer outright, which left "Add to Portfolio" on a button most people
+                            // never looked for.
+                            onClick = { onTransactionClick(tx) },
+                            // The separator starts under the text, past the 26 icon and its 12 gap.
+                            modifier = Modifier.insetGroupedCell(i, txHistory.size, separatorStart = 54.dp),
+                        )
+                    }
+                }
+                if (pullState.verticalOffset > 0f || pullState.isRefreshing) {
+                    PullToRefreshContainer(state = pullState, modifier = Modifier.align(Alignment.TopCenter))
+                }
             }
         }
     }
@@ -4444,6 +4481,9 @@ private fun AddressUtxoList(
     onRetry: () -> Unit,
     onCompound: () -> Unit,
     onRename: (String) -> Unit,
+    /** The Compound section's footer: iOS words it differently per page (spending addresses
+     *  mention repeating it; the chatting address keeps the original line). */
+    compoundFooter: String = stringResource(R.string.compound_utxos_description),
     /** Extra room at the list's end for what floats over the page's foot (Receive / Send, the dock). */
     bottomPadding: Dp = 0.dp,
 ) {
@@ -4473,7 +4513,7 @@ private fun AddressUtxoList(
                     }
                     // The section footer.
                     Text(
-                        stringResource(R.string.compound_utxos_description),
+                        compoundFooter,
                         color = colors.textSecondary,
                         fontSize = 13.sp,
                         modifier = Modifier.padding(start = 32.dp, end = 32.dp, top = 7.dp, bottom = 24.dp)
@@ -5161,7 +5201,10 @@ fun EditKnsProfileScreen(
                                 },
                                 enabled = !inFlight
                             ) {
-                                Text(stringResource(R.string.remove), color = LocalAppColors.current.danger)
+                                // iOS KNSProfileEditorSheet: Label("Remove Avatar", systemImage: "trash").
+                                Icon(Icons.Default.Delete, contentDescription = null, tint = LocalAppColors.current.danger, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Remove Avatar", color = LocalAppColors.current.danger)
                             }
                         }
                     }
@@ -5195,7 +5238,10 @@ fun EditKnsProfileScreen(
                                 },
                                 enabled = !inFlight
                             ) {
-                                Text(stringResource(R.string.remove), color = LocalAppColors.current.danger)
+                                // iOS KNSProfileEditorSheet: Label("Remove Banner", systemImage: "trash").
+                                Icon(Icons.Default.Delete, contentDescription = null, tint = LocalAppColors.current.danger, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Remove Banner", color = LocalAppColors.current.danger)
                             }
                         }
                     }
@@ -5610,6 +5656,7 @@ fun SettingsScreen(
                 ) == PackageManager.PERMISSION_GRANTED
         )
     }
+    var notificationPermissionDenied by remember { mutableStateOf(false) }
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -5617,6 +5664,8 @@ fun SettingsScreen(
         // Only flip the setting on when Android actually agreed - otherwise the switch would
         // sit on with nothing behind it.
         if (granted) settingsViewModel.setNotificationsEnabled(true)
+        // iOS: a refused permission says where to turn it on (the "Notifications Disabled" alert).
+        else notificationPermissionDenied = true
     }
     val requestNotificationPermission: () -> Unit = {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -5627,6 +5676,27 @@ fun SettingsScreen(
                     .putExtra(Settings.EXTRA_APP_PACKAGE, notificationSettingsContext.packageName)
             )
         }
+    }
+    if (notificationPermissionDenied) {
+        com.kachat.app.ui.theme.IosAlertDialog(
+            onDismissRequest = { notificationPermissionDenied = false },
+            title = { Text("Notifications Disabled", color = LocalAppColors.current.textPrimary) },
+            text = { Text("To receive notifications, please enable them in Settings.", color = LocalAppColors.current.textPrimary) },
+            confirmButton = {
+                TextButton(onClick = {
+                    notificationPermissionDenied = false
+                    notificationSettingsContext.startActivity(
+                        Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                            .putExtra(Settings.EXTRA_APP_PACKAGE, notificationSettingsContext.packageName)
+                    )
+                }) { Text("Open Settings", color = KaspaTeal, fontWeight = FontWeight.SemiBold) }
+            },
+            dismissButton = {
+                TextButton(onClick = { notificationPermissionDenied = false }) {
+                    Text(stringResource(R.string.cancel), color = KaspaTeal)
+                }
+            },
+        )
     }
     val kaspaExplorer by settingsViewModel.kaspaExplorer.collectAsState()
     val scrollState = rememberScrollState()
@@ -6887,10 +6957,6 @@ fun ConnectionStatusScreen(onBack: () -> Unit, viewModel: ConnectionViewModel = 
     // a pinned user never sees them flash on screen entry.
     val nodeSelectionIsAutomatic by viewModel.nodeSelectionIsAutomatic.collectAsState()
     val showPoolSections = nodeSelectionIsAutomatic == true
-    // "Other Nodes" means genuinely other than what's already listed above under Active
-    // Nodes — allNodes includes every known node (active and not), so without this filter
-    // the same active nodes showed up twice, once in each section.
-    val otherNodes = remember(allNodes) { allNodes.filterNot { it.status == "Active" } }
     val status by viewModel.status.collectAsState()
     val dotColorHex by viewModel.dotColorHex.collectAsState()
     val lastSyncAt by viewModel.lastSyncAt.collectAsState()
@@ -7100,6 +7166,8 @@ fun ConnectionStatusScreen(onBack: () -> Unit, viewModel: ConnectionViewModel = 
                 Column(
                     modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(LocalAppColors.current.surface)
                 ) {
+                    // iOS: an empty Active Nodes section says so, in italic secondary text.
+                    if (activeNodes.isEmpty()) NodeListEmptyRow(stringResource(R.string.no_active_nodes))
                     activeNodes.forEachIndexed { index, node ->
                         Box(Modifier.clickable { copyNodeEndpoint(node) }) { ActiveNodeRow(node) }
                         if (index < activeNodes.size - 1) SettingsDivider()
@@ -7117,19 +7185,24 @@ fun ConnectionStatusScreen(onBack: () -> Unit, viewModel: ConnectionViewModel = 
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // iOS's All Nodes header: the server-rack glyph, then the count of every
+                    // known node - the active ones included, as iOS lists them again here.
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(modifier = Modifier.size(8.dp).background(LocalAppColors.current.textSecondary, CircleShape))
+                        Icon(Icons.Default.Dns, contentDescription = null, tint = LocalAppColors.current.textSecondary, modifier = Modifier.size(14.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text(text = stringResource(R.string.other_nodes), fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = LocalAppColors.current.textSecondary)
+                        Text(text = stringResource(R.string.all_nodes), fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = LocalAppColors.current.textSecondary)
                     }
-                    Text(text = otherNodes.size.toString(), color = LocalAppColors.current.textSecondary)
+                    Text(text = allNodes.size.toString(), color = LocalAppColors.current.textSecondary)
                 }
                 Column(
                     modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(LocalAppColors.current.surface)
                 ) {
-                    otherNodes.forEachIndexed { index, node ->
+                    // allNodes is already sorted by state, then latency (NodePoolManager.publish),
+                    // as iOS sorts its All Nodes list.
+                    if (allNodes.isEmpty()) NodeListEmptyRow(stringResource(R.string.no_nodes_discovered))
+                    allNodes.forEachIndexed { index, node ->
                         AllNodeRow(node)
-                        if (index < otherNodes.size - 1) SettingsDivider()
+                        if (index < allNodes.size - 1) SettingsDivider()
                     }
                 }
 
@@ -7145,6 +7218,18 @@ fun ConnectionStatusScreen(onBack: () -> Unit, viewModel: ConnectionViewModel = 
             Spacer(modifier = Modifier.height(100.dp))
         }
     }
+}
+
+/** The italic secondary line iOS's Active Nodes / All Nodes sections show while empty. */
+@Composable
+private fun NodeListEmptyRow(text: String) {
+    Text(
+        text,
+        color = LocalAppColors.current.textSecondary,
+        fontSize = 17.sp,
+        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).padding(horizontal = 16.dp, vertical = 14.dp)
+    )
 }
 
 /** A label/value row of iOS ConnectionStatusDetailView's first section: the label 17pt, the value
@@ -7303,7 +7388,7 @@ fun KaspaExplorerSettingsScreen(onBack: () -> Unit, settingsViewModel: SettingsV
  * labeling entries) - there's no free-text entry anymore, only this dropdown.
  */
 @Composable
-private fun KaspaNodeQuickAccessSection(viewModel: ConnectionViewModel) {
+private fun KaspaNodeQuickAccessSection(viewModel: ConnectionViewModel, inConnectionSettings: Boolean = false) {
     val trustedNodeAddress by viewModel.trustedNodeAddress.collectAsState()
     val savedNodeAddresses by viewModel.savedNodeAddresses.collectAsState()
     var expanded by remember { mutableStateOf(false) }
@@ -7395,8 +7480,10 @@ private fun KaspaNodeQuickAccessSection(viewModel: ConnectionViewModel) {
             }
         }
     }
+    // iOS words the footer per screen: Connection Settings (ConnectionSettingsView) points at
+    // the IP Address Book below it, Connection Status (KaspaNodeQuickAccessSections) at Settings.
     Text(
-        stringResource(R.string.kaspa_node_quick_access_footer),
+        stringResource(if (inConnectionSettings) R.string.kaspa_node_settings_footer else R.string.kaspa_node_quick_access_footer),
         fontSize = 13.sp,
         lineHeight = 18.sp,
         color = LocalAppColors.current.textSecondary,
@@ -7533,7 +7620,8 @@ private fun AddressBookSection(viewModel: ConnectionViewModel) {
                             )
                         )
                     }) {
-                        Icon(Icons.Default.Delete, null, tint = LocalAppColors.current.textSecondary)
+                        // iOS: a red trash glyph, read out as "Delete saved address".
+                        Icon(Icons.Default.Delete, contentDescription = "Delete saved address", tint = LocalAppColors.current.danger)
                     }
                 }
             }
@@ -7600,7 +7688,7 @@ fun ConnectionSettingsScreen(onBack: () -> Unit, viewModel: ConnectionViewModel 
             // Verbose API Logging lives in Settings > Diagnostics, as on iOS.
             }
             1 -> {
-            KaspaNodeQuickAccessSection(viewModel)
+            KaspaNodeQuickAccessSection(viewModel, inConnectionSettings = true)
             Spacer(Modifier.height(24.dp))
             AddressBookSection(viewModel)
             }

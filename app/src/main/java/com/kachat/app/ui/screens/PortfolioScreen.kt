@@ -2248,7 +2248,7 @@ fun PortfolioPriceChartScreen(
                     // iOS ChartPairSettingsButton: SF "gearshape" - the outlined gear - in the accent.
                     SheetBarIconButton(
                         Icons.Outlined.Settings,
-                        "Compare against",
+                        "Chart settings",
                         onClick = { showPairSheet = true },
                         modifier = Modifier.padding(end = 12.dp),
                         iconSize = 22.dp,
@@ -2454,7 +2454,7 @@ fun PortfolioValueChartScreen(
                     // iOS ChartPairSettingsButton: SF "gearshape" - the outlined gear - in the accent.
                     SheetBarIconButton(
                         Icons.Outlined.Settings,
-                        "Compare against",
+                        "Chart settings",
                         onClick = { showPairSheet = true },
                         modifier = Modifier.padding(end = 12.dp),
                         iconSize = 22.dp,

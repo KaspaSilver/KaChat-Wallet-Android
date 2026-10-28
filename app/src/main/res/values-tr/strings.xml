@@ -83,7 +83,7 @@
     <string name="every_member_will_see_the_new">Her uye yeni ismi gorecek.</string>
     <string name="failed_to_send">Gonderilemedi</string>
     <string name="fee_kas">Ucret (KAS)</string>
-    <string name="fee_usd_optional">Ucret (USD, istege bagli)</string>
+    <string name="fee_usd_optional">Ucret (istege bagli)</string>
     <string name="first_let_s_create_your_identity">Once bir alan adiyla kimliginizi olusturalim</string>
     <string name="from">Gonderen</string>
     <string name="fund_your_chatting_address">Sohbet Adresinizi Fonlayin</string>
@@ -153,7 +153,6 @@
     <string name="ok">Tamam</string>
     <string name="only_notify_if_i_m_mentioned">Yalnizca bahsedildigimde bildir</string>
     <string name="open_settings">Ayarları Aç</string>
-    <string name="other_nodes">Diğer Düğümler</string>
     <string name="paste_from_clipboard">Panodan Yapıştır</string>
     <string name="paste_kpub">kpub Yapistir</string>
     <string name="payment">Ödeme</string>
@@ -361,7 +360,6 @@
     <string name="select_the_currency_youd_like_prices">Fiyatlarin hangi para biriminde gosterilmesini istediginizi secin.</string>
     <string name="i_have_written_down_my_seed_phrase">Kurtarma kelimelerimi yazdim ve guvenli bir sekilde sakladim</string>
     <string name="i_already_have_a_domain_somewhere">Baska bir yerde zaten bir alan adim var</string>
-    <string name="transfer_your_domain_to_this_address">Kimliginizin KaChat\'e baglanmasi icin alan adinizi bu adrese transfer edin.</string>
     <string name="user_info">Kullanıcı Bilgisi</string>
     <!-- Message actions: translation, share, read state (iOS 3eee9e4) -->
     <string name="share">Paylaş</string>
@@ -388,7 +386,6 @@
     <string name="could_not_reach_service">%1$s ile bağlantı kurulamadı. Tekrar denemek için aşağı çek.</string>
     <string name="no_names_yet">Henüz %1$s adı yok.</string>
     <string name="kachat_names_are_coming">.kachat adları geliyor</string>
-    <string name="kachat_names_coming_body">KaChat\'in kendi adları burada olacak: bir tane al, sohbetlerde adın olarak kullan ve profil bağlantın olarak paylaş.</string>
     <!-- 5.2 name lookups (iOS a0dbc15, 79b6ac8, 9858bd1) -->
     <string name="no_domain_found">Alan adı bulunamadı</string>
     <string name="no_tld_domain_found">%1$s alan adı bulunamadı</string>
@@ -475,7 +472,6 @@
     <string name="ks_try_again">Tekrar Dene</string>
     <!-- .kachat setup guide (iOS b000310, 66b152f) -->
     <string name="kg_claim_title">.kachat adını al</string>
-    <string name="kg_claim_body">İnsanların seni KaChat\'in her yerinde gördüğü ad: sohbetlerde, gönderilerde ve profil bağlantında. Yoksa adresin görünür.</string>
     <string name="kg_welcome_body">Tam başlangıç turu: cüzdan, sohbetler, ödemeler ve daha fazlası.</string>
     <string name="kg_previous">Geri</string>
     <string name="kg_setup_guide">Kurulum Rehberi</string>
@@ -820,7 +816,6 @@
     <string name="chats_new_public_subtitle">Herkese açık bir odaya katıl veya bir tane oluştur.</string>
     <string name="chats_fund_subtitle">Mesaj göndermek için Kaspa eklemek üzere QR kodunu gösterir.</string>
     <string name="chats_receive_subtitle">Ödeme almak için yeni bir adres gösterir.</string>
-    <string name="qr_receive_address_subtitle">Daha önce hiç kullanılmamış yeni bir adres. Buraya gönderilen Kaspa bu hesaba gelir ve harcama bakiyende görünür. Bu adresi sohbet veya alan adlarıyla ilgili olmayan her şey için kullan.</string>
     <string name="qr_chatting_address_subtitle">Bu adres yalnızca sohbet ve alan adları için kullanılmalı. 1 Kaspa uygulamada yaklaşık 500 işlem için yeterli. Alan adları, ada göre 35 ile 4.000 Kaspa arasında.</string>
     <!-- Send Kaspa screens: shared pieces (iOS 4d0324f) -->
     <string name="coin_control">Coin kontrolü</string>
@@ -1220,12 +1215,9 @@
     <!-- Payment requests (iOS c6851d6, 7c71a98, 1fe8388, 6594936) -->
     <string name="pr_request_payment">Ödeme İste</string>
     <string name="pr_request_payment_hint">Tam bir tutarı, ne için olduğuyla isteyen bir bağlantı.</string>
-    <string name="pr_chatting_footer">Ödeme, notla birlikte ödeyen kişiyle sohbetinize düşer.</string>
     <string name="pr_memo_placeholder">Ne için (isteğe bağlı)</string>
     <string name="pr_copy">Ödeme İsteğini Kopyala</string>
     <string name="pr_requested">İstenen</string>
-    <string name="pr_paid_as_chat_payment">Sohbet ödemesi olarak ödenir: onunla sohbetinizde görünür.</string>
-    <string name="pr_paid_to_their_spending">Harcama adresine ödenir.</string>
     <string name="pr_payment_request">Ödeme İsteği</string>
     <string name="pr_preview">Ödeme isteği: %1$s KAS</string>
     <string name="pr_tap_to_pay">Ödemek için dokunun.</string>
@@ -1235,8 +1227,6 @@
     <string name="pr_not_signed">İmzasız: bu isteği kimin oluşturduğu doğrulanamaz.</string>
     <string name="pr_your_payment_request">Ödeme İsteğiniz</string>
     <string name="pr_your_request_tap_to_view">Ödeme isteğiniz. Görmek için dokunun.</string>
-    <string name="pr_paid_to_your_chatting">Sohbet adresinize ödenir</string>
-    <string name="pr_paid_to_your_spending">Harcama adresinize ödenir</string>
     <string name="pr_ask_contact_hint">Bu kişiden ne için olduğuyla birlikte tam bir tutar isteyin.</string>
     <string name="pr_send_request">Ödeme İsteği Gönder</string>
     <!-- Chat list: delete one chat (iOS ChatListView rowDeleteContact) -->
@@ -1260,7 +1250,6 @@
     <string name="pr_used">Kullanıldı</string>
     <string name="pr_unused">Kullanılmadı</string>
     <string name="pr_checking">Kontrol ediliyor</string>
-    <string name="pr_spending_footer_new">Yalnızca bu istek için kullanılan yepyeni bir adresinize ödenir. Notu ödeyen görür, ancak ödemeyle birlikte gitmez.</string>
     <!-- iOS 245a5d2: Your Addresses, Hide All -->
     <string name="hide_all">Tümünü Gizle</string>
     <string name="hide_all_addresses_title">Tüm adresler gizlensin mi?</string>
@@ -1385,4 +1374,8 @@
     <string name="connection_tab_push">Bildirim</string>
     <string name="ab_add_address_sub">Bir Kaspa adresini tanıyacağınız bir adla kaydedin.</string>
     <string name="something_went_wrong">Bir Seyler Ters Gitti</string>
+    <string name="all_nodes">Tüm Düğümler</string>
+    <string name="no_active_nodes">Aktif düğüm yok</string>
+    <string name="no_nodes_discovered">Düğüm keşfedilmedi</string>
+    <string name="kaspa_node_settings_footer">Otomatik Tarama en iyi düğümleri bulur ve bağlanır. Belirli bir düğüm seçmek yalnızca ona bağlanır, başkalarına geçmez. Diğer sekmelerdeki dizinleyicileri, alan adlarını veya gezgini etkilemez. Burada seçmek için kendi adreslerini aşağıdaki IP Adres Defteri\'ne ekle.</string>
 </resources>

@@ -83,7 +83,7 @@
     <string name="every_member_will_see_the_new">Jedes Mitglied sieht den neuen Namen.</string>
     <string name="failed_to_send">Senden fehlgeschlagen</string>
     <string name="fee_kas">Gebühr (KAS)</string>
-    <string name="fee_usd_optional">Gebühr (USD, optional)</string>
+    <string name="fee_usd_optional">Gebühr (optional)</string>
     <string name="first_let_s_create_your_identity">Lass uns zuerst deine Identität mit einem Domainnamen erstellen</string>
     <string name="from">Von</string>
     <string name="fund_your_chatting_address">Finanziere deine Chat-Adresse</string>
@@ -153,7 +153,6 @@
     <string name="ok">OK</string>
     <string name="only_notify_if_i_m_mentioned">Nur benachrichtigen, wenn ich erwähnt werde</string>
     <string name="open_settings">Einstellungen öffnen</string>
-    <string name="other_nodes">Andere Nodes</string>
     <string name="paste_from_clipboard">Aus Zwischenablage einfügen</string>
     <string name="paste_kpub">kpub einfügen</string>
     <string name="payment">Zahlung</string>
@@ -361,7 +360,6 @@
     <string name="select_the_currency_youd_like_prices">Wähle die Währung, in der Preise angezeigt werden sollen.</string>
     <string name="i_have_written_down_my_seed_phrase">Ich habe meine Seed-Phrase aufgeschrieben und sicher aufbewahrt</string>
     <string name="i_already_have_a_domain_somewhere">Ich habe bereits eine Domain woanders</string>
-    <string name="transfer_your_domain_to_this_address">Übertrage deine Domain an diese Adresse, damit deine Identität mit KaChat verbunden ist.</string>
     <string name="user_info">Benutzerinfo</string>
     <!-- Message actions: translation, share, read state (iOS 3eee9e4) -->
     <string name="share">Teilen</string>
@@ -388,7 +386,6 @@
     <string name="could_not_reach_service">%1$s nicht erreichbar. Zum Erneut-Versuchen nach unten ziehen.</string>
     <string name="no_names_yet">Noch keine %1$s-Namen.</string>
     <string name="kachat_names_are_coming">.kachat-Namen kommen bald</string>
-    <string name="kachat_names_coming_body">Hier werden KaChats eigene Namen zu finden sein: Sichere dir einen, nutze ihn als deinen Namen in Chats und teile ihn als Profil-Link.</string>
     <!-- 5.2 name lookups (iOS a0dbc15, 79b6ac8, 9858bd1) -->
     <string name="no_domain_found">Keine Domain gefunden</string>
     <string name="no_tld_domain_found">Keine %1$s-Domain gefunden</string>
@@ -475,7 +472,6 @@
     <string name="ks_try_again">Erneut versuchen</string>
     <!-- .kachat setup guide (iOS b000310, 66b152f) -->
     <string name="kg_claim_title">Sichere dir deinen .kachat-Namen</string>
-    <string name="kg_claim_body">Unter diesem Namen sehen dich andere überall in KaChat - in Chats, bei Beiträgen und über deinen Profillink. Ohne ihn sehen andere deine Adresse.</string>
     <string name="kg_welcome_body">Die komplette Einführung: Wallet, Chats, Zahlungen und mehr.</string>
     <string name="kg_previous">Zurück</string>
     <string name="kg_setup_guide">Einrichtungsanleitung</string>
@@ -820,7 +816,6 @@
     <string name="chats_new_public_subtitle">Tritt einem öffentlichen Raum bei oder erstelle einen.</string>
     <string name="chats_fund_subtitle">Zeigt den QR-Code, um Kaspa zum Senden von Nachrichten hinzuzufügen.</string>
     <string name="chats_receive_subtitle">Zeigt eine neue Adresse, um bezahlt zu werden.</string>
-    <string name="qr_receive_address_subtitle">Eine neue, noch nie benutzte Adresse. Kaspa, die hierher gesendet werden, landen in diesem Konto und erscheinen in deinem Ausgabenguthaben. Diese Adresse sollte für alles verwendet werden, was nichts mit Chats oder Domains zu tun hat.</string>
     <string name="qr_chatting_address_subtitle">Diese Adresse sollte nur für Chats und Domains genutzt werden. 1 Kaspa reicht für etwa 500 Aktionen in der App. Domains kosten je nach Name 35 bis 4.000 Kaspa.</string>
     <!-- Send Kaspa screens: shared pieces (iOS 4d0324f) -->
     <string name="coin_control">Coin Control</string>
@@ -1217,12 +1212,9 @@
     <!-- Payment requests (iOS c6851d6, 7c71a98, 1fe8388, 6594936) -->
     <string name="pr_request_payment">Zahlung anfordern</string>
     <string name="pr_request_payment_hint">Ein Link, der einen genauen Betrag anfordert, mit dem Zweck.</string>
-    <string name="pr_chatting_footer">Die Zahlung landet in deinem Chat mit der zahlenden Person, mit der Notiz.</string>
     <string name="pr_memo_placeholder">Wofür (optional)</string>
     <string name="pr_copy">Zahlungsanforderung kopieren</string>
     <string name="pr_requested">Angefordert</string>
-    <string name="pr_paid_as_chat_payment">Als Chat-Zahlung: Sie erscheint in deinem Chat mit der Person.</string>
-    <string name="pr_paid_to_their_spending">An ihre Ausgabenadresse.</string>
     <string name="pr_payment_request">Zahlungsanforderung</string>
     <string name="pr_preview">Zahlungsanforderung: %1$s KAS</string>
     <string name="pr_tap_to_pay">Zum Bezahlen tippen.</string>
@@ -1232,8 +1224,6 @@
     <string name="pr_not_signed">Nicht signiert: Wer diese Anforderung erstellt hat, lässt sich nicht bestätigen.</string>
     <string name="pr_your_payment_request">Deine Zahlungsanforderung</string>
     <string name="pr_your_request_tap_to_view">Deine Zahlungsanforderung. Zum Ansehen tippen.</string>
-    <string name="pr_paid_to_your_chatting">An deine Chat-Adresse</string>
-    <string name="pr_paid_to_your_spending">An deine Ausgabenadresse</string>
     <string name="pr_ask_contact_hint">Bitte diesen Kontakt um einen genauen Betrag, mit dem Zweck.</string>
     <string name="pr_send_request">Zahlungsanforderung senden</string>
     <!-- Chat list: delete one chat (iOS ChatListView rowDeleteContact) -->
@@ -1257,7 +1247,6 @@
     <string name="pr_used">Benutzt</string>
     <string name="pr_unused">Unbenutzt</string>
     <string name="pr_checking">Wird geprüft</string>
-    <string name="pr_spending_footer_new">An eine ganz neue Adresse von dir, nur für diese Anforderung. Die Notiz sieht, wer zahlt; sie wird nicht mit der Zahlung gesendet.</string>
     <!-- iOS 245a5d2: Your Addresses, Hide All -->
     <string name="hide_all">Alle ausblenden</string>
     <string name="hide_all_addresses_title">Alle Adressen ausblenden?</string>
@@ -1382,4 +1371,8 @@
     <string name="connection_tab_push">Push</string>
     <string name="ab_add_address_sub">Speichere eine Kaspa-Adresse unter einem Namen, den du wiedererkennst.</string>
     <string name="something_went_wrong">Etwas ist schiefgelaufen</string>
+    <string name="all_nodes">Alle Nodes</string>
+    <string name="no_active_nodes">Keine aktiven Nodes</string>
+    <string name="no_nodes_discovered">Keine Nodes entdeckt</string>
+    <string name="kaspa_node_settings_footer">Automatische Suche findet die besten verfügbaren Nodes und verbindet sich mit ihnen. Ein bestimmter Node verbindet nur mit diesem, ohne Ausweichen auf andere. Betrifft nicht die Indexer, Domains oder den Explorer in den anderen Tabs. Füge unten im IP-Adressbuch eigene Adressen hinzu, um sie hier auszuwählen.</string>
 </resources>

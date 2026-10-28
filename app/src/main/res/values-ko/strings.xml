@@ -83,7 +83,7 @@
     <string name="every_member_will_see_the_new">모든 멤버가 새 이름을 보게 됩니다.</string>
     <string name="failed_to_send">전송 실패</string>
     <string name="fee_kas">수수료 (KAS)</string>
-    <string name="fee_usd_optional">수수료 (USD, 선택 사항)</string>
+    <string name="fee_usd_optional">수수료 (선택 사항)</string>
     <string name="first_let_s_create_your_identity">먼저 도메인 이름으로 신원을 만들어 봅시다</string>
     <string name="from">보낸 사람</string>
     <string name="fund_your_chatting_address">채팅 주소에 자금을 지원하세요</string>
@@ -153,7 +153,6 @@
     <string name="ok">확인</string>
     <string name="only_notify_if_i_m_mentioned">내가 언급된 경우에만 알림</string>
     <string name="open_settings">설정 열기</string>
-    <string name="other_nodes">기타 노드</string>
     <string name="paste_from_clipboard">클립보드에서 붙여넣기</string>
     <string name="paste_kpub">kpub 붙여넣기</string>
     <string name="payment">결제</string>
@@ -361,7 +360,6 @@
     <string name="select_the_currency_youd_like_prices">가격을 표시할 통화를 선택하세요.</string>
     <string name="i_have_written_down_my_seed_phrase">시드 문구를 기록하고 안전하게 보관했습니다</string>
     <string name="i_already_have_a_domain_somewhere">이미 다른 곳에 도메인이 있어요</string>
-    <string name="transfer_your_domain_to_this_address">신원을 KaChat에 연결하려면 도메인을 이 주소로 이전하세요.</string>
     <string name="user_info">사용자 정보</string>
     <!-- Message actions: translation, share, read state (iOS 3eee9e4) -->
     <string name="share">공유</string>
@@ -388,7 +386,6 @@
     <string name="could_not_reach_service">%1$s에 연결할 수 없습니다. 아래로 당겨 다시 시도하세요.</string>
     <string name="no_names_yet">아직 %1$s 이름이 없습니다.</string>
     <string name="kachat_names_are_coming">.kachat 이름이 곧 나옵니다</string>
-    <string name="kachat_names_coming_body">KaChat 고유 이름이 여기에 표시됩니다. 이름을 받아 채팅에서 이름으로 쓰고 프로필 링크로 공유하세요.</string>
     <!-- 5.2 name lookups (iOS a0dbc15, 79b6ac8, 9858bd1) -->
     <string name="no_domain_found">도메인을 찾을 수 없음</string>
     <string name="no_tld_domain_found">%1$s 도메인을 찾을 수 없음</string>
@@ -475,7 +472,6 @@
     <string name="ks_try_again">다시 시도</string>
     <!-- .kachat setup guide (iOS b000310, 66b152f) -->
     <string name="kg_claim_title">.kachat 이름 받기</string>
-    <string name="kg_claim_body">KaChat 어디서나 사람들이 보는 이름입니다. 채팅, 게시물, 프로필 링크에 표시됩니다. 이름이 없으면 주소가 표시됩니다.</string>
     <string name="kg_welcome_body">처음 사용자를 위한 전체 안내: 지갑, 채팅, 결제 등.</string>
     <string name="kg_previous">이전</string>
     <string name="kg_setup_guide">설정 가이드</string>
@@ -820,7 +816,6 @@
     <string name="chats_new_public_subtitle">공개 방에 참여하거나 새로 만듭니다.</string>
     <string name="chats_fund_subtitle">메시지 전송용 Kaspa를 추가할 QR 코드를 보여줍니다.</string>
     <string name="chats_receive_subtitle">결제를 받을 새 주소를 보여줍니다.</string>
-    <string name="qr_receive_address_subtitle">한 번도 사용하지 않은 새 주소입니다. 여기로 보낸 Kaspa는 이 계정에 들어오며 지출 잔액에 표시됩니다. 채팅이나 도메인과 관련 없는 모든 용도에 이 주소를 사용하세요.</string>
     <string name="qr_chatting_address_subtitle">이 주소는 채팅과 도메인 전용입니다. 1 Kaspa로 앱에서 약 500번의 활동을 할 수 있습니다. 도메인은 이름에 따라 35~4,000 Kaspa입니다.</string>
     <!-- Send Kaspa screens: shared pieces (iOS 4d0324f) -->
     <string name="coin_control">코인 컨트롤</string>
@@ -1220,12 +1215,9 @@
     <!-- Payment requests (iOS c6851d6, 7c71a98, 1fe8388, 6594936) -->
     <string name="pr_request_payment">결제 요청</string>
     <string name="pr_request_payment_hint">정확한 금액과 용도를 담아 결제를 요청하는 링크.</string>
-    <string name="pr_chatting_footer">결제는 메모와 함께 결제한 사람과의 채팅에 도착합니다.</string>
     <string name="pr_memo_placeholder">용도 (선택)</string>
     <string name="pr_copy">결제 요청 복사</string>
     <string name="pr_requested">요청 금액</string>
-    <string name="pr_paid_as_chat_payment">채팅 결제로 보내져 그 사람과의 채팅에 표시됩니다.</string>
-    <string name="pr_paid_to_their_spending">상대의 지출 주소로 보냅니다.</string>
     <string name="pr_payment_request">결제 요청</string>
     <string name="pr_preview">결제 요청: %1$s KAS</string>
     <string name="pr_tap_to_pay">탭하여 결제.</string>
@@ -1235,8 +1227,6 @@
     <string name="pr_not_signed">서명 없음: 이 요청을 만든 사람을 확인할 수 없습니다.</string>
     <string name="pr_your_payment_request">내 결제 요청</string>
     <string name="pr_your_request_tap_to_view">내 결제 요청입니다. 탭하여 보기.</string>
-    <string name="pr_paid_to_your_chatting">내 채팅 주소로 결제</string>
-    <string name="pr_paid_to_your_spending">내 지출 주소로 결제</string>
     <string name="pr_ask_contact_hint">이 연락처에 용도와 함께 정확한 금액을 요청합니다.</string>
     <string name="pr_send_request">결제 요청 보내기</string>
     <!-- Chat list: delete one chat (iOS ChatListView rowDeleteContact) -->
@@ -1260,7 +1250,6 @@
     <string name="pr_used">사용됨</string>
     <string name="pr_unused">미사용</string>
     <string name="pr_checking">확인 중</string>
-    <string name="pr_spending_footer_new">이 요청에만 쓰이는 완전히 새로운 내 주소로 결제됩니다. 메모는 결제하는 사람에게만 보이고 결제와 함께 전송되지 않습니다.</string>
     <!-- iOS 245a5d2: Your Addresses, Hide All -->
     <string name="hide_all">모두 숨기기</string>
     <string name="hide_all_addresses_title">모든 주소를 숨길까요?</string>
@@ -1385,4 +1374,8 @@
     <string name="connection_tab_push">푸시</string>
     <string name="ab_add_address_sub">알아보기 쉬운 이름으로 Kaspa 주소를 저장하세요.</string>
     <string name="something_went_wrong">문제가 발생했습니다</string>
+    <string name="all_nodes">전체 노드</string>
+    <string name="no_active_nodes">활성 노드 없음</string>
+    <string name="no_nodes_discovered">발견된 노드 없음</string>
+    <string name="kaspa_node_settings_footer">자동 검색은 사용 가능한 최적의 노드를 찾아 연결합니다. 특정 노드를 선택하면 다른 노드로 전환하지 않고 그 노드에만 연결합니다. 다른 탭의 인덱서, 도메인, 탐색기에는 영향이 없습니다. 여기서 선택하려면 아래 IP 주소록에 주소를 추가하세요.</string>
 </resources>

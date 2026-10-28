@@ -419,7 +419,8 @@ fun CreatePaymentRequestSheet(
                             if (chosen != null) {
                                 AddressResolutionCard(address = chosen)
                                 Text(
-                                    stringResource(if (chosen == chattingAddress) R.string.pr_chatting_footer else R.string.pr_memo_shows_note),
+                                    // iOS: the same line whichever address was chosen (no chat to land in).
+                                    stringResource(R.string.pr_memo_shows_note),
                                     color = colors.textSecondary,
                                     fontSize = 13.sp,
                                 )
@@ -565,11 +566,7 @@ fun PaymentRequestSummary(request: PaymentRequest, modifier: Modifier = Modifier
         if (request.memo.isNotEmpty()) {
             Text(request.memo, color = colors.textPrimary, fontSize = 15.sp)
         }
-        Text(
-            stringResource(if (request.toChattingAddress) R.string.pr_paid_as_chat_payment else R.string.pr_paid_to_their_spending),
-            color = colors.textSecondary,
-            fontSize = 12.sp,
-        )
+        // iOS's summary says nothing about how it is paid: there are no chat payments in KaPay.
 
         HorizontalDivider(color = colors.divider, modifier = Modifier.padding(vertical = 4.dp))
 
@@ -648,17 +645,16 @@ private fun OwnPaymentRequestSheet(request: PaymentRequest, onDismissed: () -> U
                 }
 
                 Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // iOS OwnPaymentRequestView: one heading and one footer, whichever address.
                     Text(
-                        stringResource(
-                            if (request.toChattingAddress) R.string.pr_paid_to_your_chatting else R.string.pr_paid_to_your_spending
-                        ).uppercase(),
+                        "Paid to your address".uppercase(),
                         color = KaspaTeal,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                     )
                     AddressResolutionCard(address = request.address)
                     Text(
-                        stringResource(if (request.toChattingAddress) R.string.pr_chatting_footer else R.string.pr_spending_footer_new),
+                        stringResource(R.string.pr_memo_shows_note),
                         color = colors.textSecondary,
                         fontSize = 13.sp,
                     )

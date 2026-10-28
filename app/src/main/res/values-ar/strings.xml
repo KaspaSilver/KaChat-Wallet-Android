@@ -83,7 +83,7 @@
     <string name="every_member_will_see_the_new">سيرى كل عضو الاسم الجديد.</string>
     <string name="failed_to_send">فشل الإرسال</string>
     <string name="fee_kas">الرسوم (KAS)</string>
-    <string name="fee_usd_optional">الرسوم (دولار أمريكي، اختياري)</string>
+    <string name="fee_usd_optional">الرسوم (اختياري)</string>
     <string name="first_let_s_create_your_identity">لننشئ أولاً هويتك باسم نطاق</string>
     <string name="from">من</string>
     <string name="fund_your_chatting_address">موّل عنوان الدردشة الخاص بك</string>
@@ -153,7 +153,6 @@
     <string name="ok">موافق</string>
     <string name="only_notify_if_i_m_mentioned">الإخطار فقط إذا تم ذكري</string>
     <string name="open_settings">فتح الإعدادات</string>
-    <string name="other_nodes">عقد أخرى</string>
     <string name="paste_from_clipboard">لصق من الحافظة</string>
     <string name="paste_kpub">لصق kpub</string>
     <string name="payment">دفعة</string>
@@ -361,7 +360,6 @@
     <string name="select_the_currency_youd_like_prices">اختر العملة التي تريد عرض الأسعار بها.</string>
     <string name="i_have_written_down_my_seed_phrase">لقد كتبت عبارتي الاسترجاعية وحفظتها في مكان آمن</string>
     <string name="i_already_have_a_domain_somewhere">لدي بالفعل نطاق في مكان آخر</string>
-    <string name="transfer_your_domain_to_this_address">انقل نطاقك إلى هذا العنوان حتى تتصل هويتك بـ KaChat.</string>
     <string name="user_info">معلومات المستخدم</string>
     <!-- Message actions: translation, share, read state (iOS 3eee9e4) -->
     <string name="share">مشاركة</string>
@@ -388,7 +386,6 @@
     <string name="could_not_reach_service">تعذّر الوصول إلى %1$s. اسحب للأسفل لإعادة المحاولة.</string>
     <string name="no_names_yet">لا توجد أسماء %1$s بعد.</string>
     <string name="kachat_names_are_coming">أسماء .kachat قادمة قريبًا</string>
-    <string name="kachat_names_coming_body">ستكون أسماء KaChat الخاصة هنا: احصل على اسم، واستخدمه اسمًا لك في المحادثات، وشاركه رابطًا لملفك الشخصي.</string>
     <!-- 5.2 name lookups (iOS a0dbc15, 79b6ac8, 9858bd1) -->
     <string name="no_domain_found">لم يُعثر على نطاق</string>
     <string name="no_tld_domain_found">لم يُعثر على نطاق %1$s</string>
@@ -475,7 +472,6 @@
     <string name="ks_try_again">إعادة المحاولة</string>
     <!-- .kachat setup guide (iOS b000310, 66b152f) -->
     <string name="kg_claim_title">احصل على اسم ‎.kachat الخاص بك</string>
-    <string name="kg_claim_body">هو الاسم الذي يراك به الناس في كل KaChat - في المحادثات وعلى المنشورات وفي رابط ملفك الشخصي. بدونه يرى الناس عنوانك.</string>
     <string name="kg_welcome_body">الجولة الكاملة للبداية: المحفظة والمحادثات والمدفوعات والمزيد.</string>
     <string name="kg_previous">السابق</string>
     <string name="kg_setup_guide">دليل الإعداد</string>
@@ -820,7 +816,6 @@
     <string name="chats_new_public_subtitle">انضم إلى غرفة عامة أو أنشئ واحدة.</string>
     <string name="chats_fund_subtitle">يعرض رمز QR لإضافة Kaspa لإرسال الرسائل.</string>
     <string name="chats_receive_subtitle">يعرض عنوانًا جديدًا لتلقي المدفوعات.</string>
-    <string name="qr_receive_address_subtitle">عنوان جديد لم يُستخدم من قبل. تصل عملات Kaspa المرسلة إليه إلى هذا الحساب وتظهر في رصيد الإنفاق. استخدم هذا العنوان لكل ما لا يتعلق بالدردشة أو النطاقات.</string>
     <string name="qr_chatting_address_subtitle">يجب أن يكون هذا العنوان للدردشة والنطاقات فقط. يكفي 1 Kaspa لنحو 500 تفاعل في التطبيق. تتراوح تكلفة النطاقات بين 35 و4000 Kaspa حسب الاسم.</string>
     <!-- Send Kaspa screens: shared pieces (iOS 4d0324f) -->
     <string name="coin_control">التحكم في العملات</string>
@@ -1220,12 +1215,9 @@
     <!-- Payment requests (iOS c6851d6, 7c71a98, 1fe8388, 6594936) -->
     <string name="pr_request_payment">طلب دفعة</string>
     <string name="pr_request_payment_hint">رابط يطلب مبلغًا محددًا، مع ما هو مقابله.</string>
-    <string name="pr_chatting_footer">تصل الدفعة إلى محادثتك مع من يدفع، مع الملاحظة.</string>
     <string name="pr_memo_placeholder">مقابل ماذا (اختياري)</string>
     <string name="pr_copy">نسخ طلب الدفع</string>
     <string name="pr_requested">المطلوب</string>
-    <string name="pr_paid_as_chat_payment">تُدفع كدفعة في المحادثة: تظهر في محادثتك معه.</string>
-    <string name="pr_paid_to_their_spending">تُدفع إلى عنوان الإنفاق الخاص به.</string>
     <string name="pr_payment_request">طلب دفعة</string>
     <string name="pr_preview">طلب دفعة: %1$s KAS</string>
     <string name="pr_tap_to_pay">اضغط للدفع.</string>
@@ -1235,8 +1227,6 @@
     <string name="pr_not_signed">غير موقّع: لا يمكن التأكد ممن أنشأ هذا الطلب.</string>
     <string name="pr_your_payment_request">طلب الدفع الخاص بك</string>
     <string name="pr_your_request_tap_to_view">طلب الدفع الخاص بك. اضغط للعرض.</string>
-    <string name="pr_paid_to_your_chatting">يُدفع إلى عنوان الدردشة الخاص بك</string>
-    <string name="pr_paid_to_your_spending">يُدفع إلى عنوان الإنفاق الخاص بك</string>
     <string name="pr_ask_contact_hint">اطلب من جهة الاتصال هذه مبلغًا محددًا، مع ما هو مقابله.</string>
     <string name="pr_send_request">إرسال طلب الدفع</string>
     <!-- Chat list: delete one chat (iOS ChatListView rowDeleteContact) -->
@@ -1260,7 +1250,6 @@
     <string name="pr_used">مستخدم</string>
     <string name="pr_unused">غير مستخدم</string>
     <string name="pr_checking">جارٍ التحقق</string>
-    <string name="pr_spending_footer_new">تُدفع إلى عنوان جديد تمامًا لك، يُستخدم لهذا الطلب فقط. تظهر الملاحظة لمن يدفع، لكنها لا تُرسل مع الدفعة.</string>
     <!-- iOS 245a5d2: Your Addresses, Hide All -->
     <string name="hide_all">إخفاء الكل</string>
     <string name="hide_all_addresses_title">إخفاء كل العناوين؟</string>
@@ -1385,4 +1374,8 @@
     <string name="connection_tab_push">الإشعارات</string>
     <string name="ab_add_address_sub">احفظ عنوان كاسبا باسم تتعرف عليه.</string>
     <string name="something_went_wrong">حدث خطأ ما</string>
+    <string name="all_nodes">جميع العقد</string>
+    <string name="no_active_nodes">لا توجد عقد نشطة</string>
+    <string name="no_nodes_discovered">لم يتم اكتشاف عقد</string>
+    <string name="kaspa_node_settings_footer">يعثر الفحص التلقائي على أفضل العقد المتاحة ويتصل بها. اختيار عقدة محددة يتصل بها وحدها دون الرجوع إلى غيرها. لا يؤثر على المفهرسات أو النطاقات أو المستكشف في التبويبات الأخرى. أضف عناوينك إلى دفتر عناوين IP أدناه لاختيارها هنا.</string>
 </resources>
