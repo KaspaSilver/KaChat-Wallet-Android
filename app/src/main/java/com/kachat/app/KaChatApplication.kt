@@ -65,6 +65,10 @@ class KaChatApplication : Application(), Configuration.Provider {
     @Inject
     lateinit var addressActivityNotifier: dagger.Lazy<com.kachat.app.services.AddressActivityNotifier>
 
+    /** The live UTXO subscription to the wallet's own addresses, while the app is open. */
+    @Inject
+    lateinit var ownAddressSubscription: dagger.Lazy<com.kachat.app.services.OwnAddressSubscription>
+
     // Continuous automatic Nextcloud sync — same lazy-singleton reasoning as above: its init block observes the connected account + Automatic Sync toggle (schedules or
     // cancels the 6h WorkManager fallback) and the active wallet (silent one-time auto-restore
     // of the shared backup file). Field-injecting it here guarantees those observers run from
@@ -216,6 +220,7 @@ class KaChatApplication : Application(), Configuration.Provider {
                 // Backgrounded: the Received push shows its banner again.
                 startupStep("notifications: background") { notificationHelper.get().setAppForeground(false) }
                 startupStep("address activity: background") { addressActivityNotifier.get().onAppBackground() }
+                startupStep("own-address subscription: stop") { ownAddressSubscription.get().stop() }
                 // Backgrounding is the natural "done" moment - run the Nextcloud
                 // automatic sync then: a catch-up when the last upload is an hour old or the
                 // persisted dirty flag says a sync is owed (NEXTCLOUD_SYNC.md §6). autoBackupIfDue
@@ -233,6 +238,9 @@ class KaChatApplication : Application(), Configuration.Provider {
                 // Immediate catch-up diff for address activity (external receipts while the app
                 // was closed, first-run silent baseline seeding), then its foreground poll loop.
                 startupStep("address activity: foreground") { addressActivityNotifier.get().onAppForeground() }
+                // Live "Received KAS" and balance for the wallet's own addresses (iOS wallet
+                // 301ebfb `WalletService.setupUtxoSubscription`).
+                startupStep("own-address subscription: start") { ownAddressSubscription.get().start() }
                 // KaChat Wallet: the push service watches the wallet's own addresses, and a new
                 // spending slot or Cold Storage account adds one - re-sent on foreground, skipped
                 // when nothing changed (the registration fingerprint).

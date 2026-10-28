@@ -728,6 +728,21 @@ class NodePoolManager @Inject constructor(
     }
 
     /**
+     * The connection the wallet's live UTXO subscription runs on ([OwnAddressSubscription], iOS
+     * `NodePoolService.subscribeUtxosChanged`): the pinned node when there is one, else the
+     * fastest Active node that reports a UTXO index (only those accept `NotifyUtxosChanged`),
+     * else whatever [getBroadcastConnection] would use.
+     */
+    fun getUtxoSubscriptionConnection(): KaspadConnection {
+        trustedNodeAddress.value?.let { return connectionFor(it) }
+        val bestIndexed = registry.snapshot()
+            .filter { registry.statusOf(it) == "Active" && it.lastProbe?.isUtxoIndexed != false }
+            .minByOrNull { it.lastProbe?.latencyMs ?: Long.MAX_VALUE }
+        if (bestIndexed != null) return connectionFor(bestIndexed.address)
+        return getBroadcastConnection()
+    }
+
+    /**
      * The UTXOs at [address] from the node the next broadcast would use, in the same shape the
      * REST gateway returns them, or null when the node cannot answer (no UTXO index, dead
      * stream, timeout) so the caller can fall back to REST. The spend path asks here first: a

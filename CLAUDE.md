@@ -60,11 +60,15 @@ those two; anything older is rebuilt empty. The Address Book lives in SharedPref
 (`AddressBookManager`), settings in DataStore (`AppSettingsRepository`, which still has KaChat's
 unused chat keys).
 
-What runs is the wallet: the node pool, `AddressActivityNotifier` (a 30 s foreground poll of the
-wallet's own addresses - Android has no UTXO subscription - where the main address now counts as a
-wallet address, so every receive notifies, and a receive refreshes the balance), Portfolio, Cold
-Storage and .kachat. `SyncWorker` (every 15 min) refreshes the balance and runs one receive pass
-instead of syncing groups. Notification channels carry no launcher badge.
+What runs is the wallet: the node pool; `OwnAddressSubscription`, the live UTXO subscription to
+the wallet's own addresses (main, spending, cold storage) while the app is open - a node with a
+UTXO index streams `NotifyUtxosChanged` batches into `AddressActivityNotifier.handleLiveUtxoChanges`
+("Received KAS", self-sends suppressed) and a balance refresh, re-subscribing after a dropped
+stream or a changed address set (iOS wallet `WalletService.setupUtxoSubscription`);
+`AddressActivityNotifier`'s catch-up (on foreground, when the subscription comes up, and a 60 s
+fallback poll only while it is down); Portfolio, Cold Storage and .kachat. `SyncWorker` (every
+15 min) refreshes the balance and runs one receive pass. Notification channels carry no launcher
+badge.
 
 ## Push
 

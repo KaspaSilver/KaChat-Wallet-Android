@@ -30,6 +30,7 @@ import protowire.getPeerAddressesRequestMessage
 import protowire.getUtxosByAddressesRequestMessage
 import protowire.kaspadRequest
 import protowire.notifyBlockAddedRequestMessage
+import protowire.notifyUtxosChangedRequestMessage
 import protowire.rpcOutpoint
 import protowire.rpcScriptPublicKey
 import protowire.rpcTransaction
@@ -144,6 +145,11 @@ class KaspadConnection internal constructor(
     // since broadcast scanning is a best-effort rolling cache, not a delivery guarantee.
     private val blockAddedNotifications = MutableSharedFlow<Rpc.RpcBlock>(extraBufferCapacity = 64)
 
+    /** UTXO changes at the addresses this stream subscribed with [subscribeToUtxosChanged] -
+     *  unsolicited, like block-added ones. Buffered so a slow collector never blocks the stream;
+     *  the wallet's catch-up pass finds anything that fell off. */
+    private val utxosChangedNotifications = MutableSharedFlow<Rpc.UtxosChangedNotificationMessage>(extraBufferCapacity = 64)
+
     private var streamJob: Job? = null
 
     /** Who wants block-added notifications on the current stream - see [unsubscribeFromBlockAdded]. */
@@ -169,6 +175,8 @@ class KaspadConnection internal constructor(
                         matched.complete(response)
                     } else if (response.hasBlockAddedNotification()) {
                         blockAddedNotifications.tryEmit(response.blockAddedNotification.block)
+                    } else if (response.hasUtxosChangedNotification()) {
+                        utxosChangedNotifications.tryEmit(response.utxosChangedNotification)
                     }
                     // Any other unsolicited response is still ignored.
                 }
@@ -348,6 +356,47 @@ class KaspadConnection internal constructor(
                 }
             },
             extract = { it.notifyBlockAddedResponse }
+        )
+    }
+
+    /**
+     * Subscribes this stream to UTXO changes at [addresses] (`NotifyUtxosChanged` NOTIFY_START,
+     * iOS `NodePoolService.subscribeUtxosChanged`) - the wallet's live "Received KAS" and balance.
+     * Only a node started with `--utxoindex` accepts it; any other answers an RPC error, thrown
+     * here. The returned flow emits every later change for as long as this stream lives: watch
+     * [connectionGeneration] to learn when it died and the subscription with it.
+     */
+    suspend fun subscribeToUtxosChanged(addresses: List<String>, timeoutMs: Long = 10_000): Flow<Rpc.UtxosChangedNotificationMessage> {
+        val response = call(
+            timeoutMs = timeoutMs,
+            build = { id ->
+                kaspadRequest {
+                    this.id = id
+                    notifyUtxosChangedRequest = notifyUtxosChangedRequestMessage {
+                        this.addresses.addAll(addresses)
+                        command = Rpc.RpcNotifyCommand.NOTIFY_START
+                    }
+                }
+            },
+            extract = { it.notifyUtxosChangedResponse }
+        )
+        if (response.hasError()) throw IllegalStateException(response.error.message)
+        return utxosChangedNotifications.asSharedFlow()
+    }
+
+    /** Stops the UTXO notifications [subscribeToUtxosChanged] started for [addresses] (NOTIFY_STOP). */
+    suspend fun unsubscribeFromUtxosChanged(addresses: List<String>) {
+        call(
+            build = { id ->
+                kaspadRequest {
+                    this.id = id
+                    notifyUtxosChangedRequest = notifyUtxosChangedRequestMessage {
+                        this.addresses.addAll(addresses)
+                        command = Rpc.RpcNotifyCommand.NOTIFY_STOP
+                    }
+                }
+            },
+            extract = { it.notifyUtxosChangedResponse }
         )
     }
 

@@ -28,10 +28,11 @@ import javax.inject.Singleton
  * address, spending-chain addresses (Manage Addresses) or watch-only cold-storage addresses -
  * receives Kaspa from someone else. Android port of iOS's `AddressActivityNotifier.swift`.
  *
- * iOS drives this from a live UTXO subscription plus a catch-up diff. Android has no UTXO
- * subscription, so the catch-up is the whole engine: a per-wallet BASELINE + DIFF on a
- * foreground poll loop ([POLL_INTERVAL_MS]), an immediate pass on app-foreground
- * ([onAppForeground]), and one from the periodic background worker ([runPassNow]):
+ * As on iOS, two paths: the live one - [OwnAddressSubscription] streams the node's UTXO changes
+ * for the wallet's own addresses into [handleLiveUtxoChanges] - and a catch-up diff for what
+ * arrived while there was no stream: a per-wallet BASELINE + DIFF on app-foreground
+ * ([onAppForeground]), when the subscription comes (back) up, from the periodic background worker
+ * ([runPassNow]), and on a fallback poll ([POLL_INTERVAL_MS]) only while the subscription is down:
  *
  * - Per-wallet balance baselines persist across launches; the first run for a wallet (or a new
  *   address) seeds them silently and sets the address's floor - no dredging up history.
@@ -77,8 +78,9 @@ class AddressActivityNotifier @Inject constructor(
 
     // --- Lifecycle --------------------------------------------------------------------
 
-    /** Called from the process lifecycle observer on foreground: immediate catch-up pass, then a
-     *  foreground-only poll loop approximating iOS's live subscription events. */
+    /** Called from the process lifecycle observer on foreground: an immediate catch-up pass,
+     *  then the foreground-only fallback poll - which does its pass only while the live UTXO
+     *  subscription ([OwnAddressSubscription]) is down, as iOS's `startFallbackPolling`. */
     fun onAppForeground() {
         activeSinceMs = System.currentTimeMillis()
         scope.launch { runDiffPass() }
@@ -86,6 +88,7 @@ class AddressActivityNotifier @Inject constructor(
         pollJob = scope.launch {
             while (true) {
                 delay(POLL_INTERVAL_MS)
+                if (liveSubscriptionActive) continue
                 try {
                     runDiffPass()
                 } catch (e: Exception) {
@@ -93,6 +96,22 @@ class AddressActivityNotifier @Inject constructor(
                 }
             }
         }
+    }
+
+    /** True while [OwnAddressSubscription] streams this wallet's UTXO changes: the poll then
+     *  stands aside (iOS wallet 301ebfb `WalletService`: no fallback polling while subscribed). */
+    @Volatile
+    var liveSubscriptionActive: Boolean = false
+
+    /**
+     * Every address the live subscription watches (iOS `watchedOwnAddresses` plus the main
+     * address): the main address, every revealed spending address and every cold-storage address
+     * - muted ones too, so their changes still refresh the screens and count as ours.
+     */
+    fun watchedOwnAddresses(): Set<String> {
+        val wallet = walletAddressOrNull() ?: return emptySet()
+        val spending = runCatching { walletManager.allSpendingAddresses() }.getOrDefault(emptyList())
+        return spending.toSet() + coldLabelByAddress().keys + wallet
     }
 
     /** Called on background - the loop freezes with the process, matching the app's
@@ -178,6 +197,129 @@ class AddressActivityNotifier @Inject constructor(
         coldMutedAddresses = muted
         return result
     }
+
+    // --- Live path (iOS wallet 42470af / 34f4b45 `handleLiveUtxoAdditions`) -----------------
+
+    /** One UTXO in a live batch: who it belongs to and which output it is. */
+    data class LiveUtxo(val address: String, val transactionId: String, val index: Int, val amount: Long)
+
+    /** Txs the live path is checking right now - the catch-up leaves them to it. */
+    private val inFlightTxIds: MutableSet<String> = java.util.concurrent.ConcurrentHashMap.newKeySet()
+
+    /** Outpoints (`txid:index`) our addresses spent, from the live batches' removed entries - kept
+     *  a few minutes so a receive whose input addresses the REST API hasn't filled in yet can
+     *  still be recognised as our own spend. */
+    private val recentOwnSpentOutpoints = java.util.concurrent.ConcurrentHashMap<String, Long>()
+
+    /** When the live path last saw a receive to each address - the catch-up's neutral "Balance
+     *  increased" stays quiet for those, since the live path announces that receive itself. */
+    private val recentLiveHitAt = java.util.concurrent.ConcurrentHashMap<String, Long>()
+
+    /**
+     * A live batch from [OwnAddressSubscription]: the UI refresh signal (always), then "Received"
+     * for each transaction that put Kaspa on a notifiable address of ours - once its self-send
+     * check (any input spending from our addresses, [spendsOwnFunds]) says it came from someone
+     * else. The coins our addresses spent are remembered by outpoint for that check.
+     */
+    suspend fun handleLiveUtxoChanges(added: List<LiveUtxo>, removed: List<LiveUtxo>) {
+        val walletAddress = walletAddressOrNull() ?: return
+        val touched = (added + removed).map { it.address }.toSet()
+        if (touched.isNotEmpty()) _utxoActivityEvents.tryEmit(touched)
+
+        val spending = runCatching { walletManager.allSpendingAddresses() }.getOrDefault(emptyList()).toSet()
+        val coldLabels = coldLabelByAddress()
+        val ownAll = spending + coldLabels.keys + walletAddress
+        val now = System.currentTimeMillis()
+        for (entry in removed) {
+            if (entry.address in ownAll) recentOwnSpentOutpoints[outpointKey(entry.transactionId, entry.index)] = now
+        }
+        pruneOwnSpends(now)
+        val batchSpentOwn = removed.any { it.address in ownAll }
+
+        val featureOn = settingsRepository.addressActivityNotificationsEnabled.first() &&
+            settingsRepository.notificationsEnabled.first()
+        if (!featureOn) return
+        val spendingMuted = if (settingsRepository.spendingReceiveNotifications.first()) emptySet() else spending
+        val notifiable = ownAll - coldMutedAddresses - spendingMuted
+        // one entry per outpoint: the same batch delivered twice must not count an output twice
+        val hitsByTx = added.filter { it.address in notifiable && it.amount > 0 }
+            .distinctBy { outpointKey(it.transactionId, it.index) }
+            .groupBy { it.transactionId }
+        if (hitsByTx.isEmpty()) return
+
+        recentLiveHitAt.entries.removeAll { now - it.value >= LIVE_HIT_TTL_MS }
+        hitsByTx.values.flatten().forEach { recentLiveHitAt[it.address] = now }
+
+        ensureHandledLoaded(walletAddress)
+        for ((txId, hits) in hitsByTx) {
+            if (isHandled(txId, walletAddress) || !inFlightTxIds.add(txId)) continue
+            scope.launch {
+                try {
+                    resolveAndNotifyLive(txId, hits, ownAll, batchSpentOwn, walletAddress, coldLabels)
+                } finally {
+                    inFlightTxIds.remove(txId)
+                }
+            }
+        }
+    }
+
+    private suspend fun resolveAndNotifyLive(
+        txId: String,
+        hits: List<LiveUtxo>,
+        ownAddresses: Set<String>,
+        batchSpentOwn: Boolean,
+        walletAddress: String,
+        coldLabels: Map<String, String>,
+    ) {
+        val api = networkService.kaspaRestApi.value
+        // A seconds-old tx may not be on the REST API yet: a few tries, 2 s apart, as iOS.
+        var tx: TransactionResponse? = null
+        if (api != null) {
+            for (attempt in 0 until LIVE_TX_FETCH_RETRIES) {
+                tx = try { api.getTransactionWithInputAddresses(txId) } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) { null }
+                if (tx != null) break
+                delay(LIVE_TX_FETCH_DELAY_MS)
+            }
+        }
+        val spendsOwn = if (tx != null && api != null) spendsOwnFunds(tx, ownAddresses, api) else null
+        // Inputs we couldn't place (or no tx at all): an own spend in the same batch makes it our
+        // own change far more likely than a receive - e.g. a KaPosts post from this seed.
+        val isSelfSend = spendsOwn ?: batchSpentOwn
+        if (isHandled(txId, walletAddress)) return
+        markHandled(txId, walletAddress)
+        if (isSelfSend) {
+            Log.i(TAG, "Suppressed self-send $txId (live)")
+        } else if (pushShowsReceive(blockTimeMs = null)) {
+            Log.i(TAG, "Receive ${txId.take(12)} left to the push (app not open)")
+        } else {
+            // An unreadable tx in a batch that spent nothing of ours still notifies: missing
+            // real funds is worse than a rare stray ping.
+            postReceiveHits(hits, coldLabels, txId)
+        }
+        refreshBaselines(hits.map { it.address }.toSet(), walletAddress)
+    }
+
+    /** The balances the live path just moved, written into the baselines so the next catch-up
+     *  doesn't count them again (iOS `refreshBaselines`). */
+    private suspend fun refreshBaselines(addresses: Set<String>, walletAddress: String) {
+        val api = networkService.kaspaRestApi.value ?: return
+        val fresh = addresses.mapNotNull { address ->
+            runCatching { address to api.getBalance(address).balance }.getOrNull()
+        }
+        if (fresh.isEmpty()) return
+        runMutex.withLock {
+            if (walletAddressOrNull() != walletAddress) return@withLock
+            val baselines = loadBaselines(walletAddress).toMutableMap()
+            fresh.forEach { (address, balance) -> baselines[address] = balance }
+            saveBaselines(baselines, walletAddress)
+        }
+    }
+
+    private fun pruneOwnSpends(now: Long = System.currentTimeMillis()) {
+        recentOwnSpentOutpoints.entries.removeAll { now - it.value >= OWN_SPENT_OUTPOINT_TTL_MS }
+    }
+
+    private fun outpointKey(txId: String, index: Int) = "${txId.lowercase()}:$index"
 
     // --- Core diff pass ---------------------------------------------------------------
 
@@ -289,7 +431,10 @@ class AddressActivityNotifier @Inject constructor(
         transactions.mapNotNull { it.blockTime }.maxOrNull()?.let { newest ->
             setCatchUpFloor(maxOf(newest, floor ?: 0L), address, walletAddress)
         }
-        val mayFallBack = featureOn && !pushShowsReceive(blockTimeMs = null)
+        // The neutral fallback stays quiet when the receive is someone else's to announce: the
+        // live path's (it just saw one here) or the push's (the app was away).
+        val liveSawIt = recentLiveHitAt[address]?.let { System.currentTimeMillis() - it < LIVE_HIT_TTL_MS } == true
+        val mayFallBack = featureOn && !liveSawIt && !pushShowsReceive(blockTimeMs = null)
         if (transactions.isEmpty()) {
             // Resolution failed entirely - still surface the funds, neutral wording.
             if (mayFallBack) postBalanceIncreased(address, delta, coldLabels)
@@ -307,12 +452,13 @@ class AddressActivityNotifier @Inject constructor(
             val toAddress = tx.outputs.filter { it.scriptPublicKeyAddress == address }.sumOf { it.amount }
             if (toAddress <= 0) continue
             attributedAny = true
-            if (isHandled(tx.transactionId, walletAddress)) {
+            // Already announced, or the live path is on it right now.
+            if (isHandled(tx.transactionId, walletAddress) || tx.transactionId in inFlightTxIds) {
                 remaining -= minOf(remaining, toAddress)
                 continue
             }
             val isSelfSend = spendsOwnFunds(tx, ownAll, api) ?: false
-            if (isHandled(tx.transactionId, walletAddress)) continue
+            if (isHandled(tx.transactionId, walletAddress) || tx.transactionId in inFlightTxIds) continue
             markHandled(tx.transactionId, walletAddress)
             if (isSelfSend) {
                 Log.i(TAG, "Suppressed self-send ${tx.transactionId.take(12)}")
@@ -358,12 +504,15 @@ class AddressActivityNotifier @Inject constructor(
     private suspend fun spendsOwnFunds(tx: TransactionResponse, ownAddresses: Set<String>, api: KaspaRestApi): Boolean? {
         val inputs = tx.inputs
         if (inputs.isEmpty()) return null
+        pruneOwnSpends()
         val unresolved = mutableListOf<TransactionInput>()
         for (input in inputs) {
             val address = input.previousOutpointAddress
             if (!address.isNullOrEmpty()) {
                 if (address in ownAddresses) return true
             } else {
+                // a coin our addresses just spent, by outpoint (the live batches' removed entries)
+                if (recentOwnSpentOutpoints.containsKey(outpointKey(input.previousOutpointHash, input.previousOutpointIndex))) return true
                 unresolved += input
             }
         }
@@ -388,6 +537,24 @@ class AddressActivityNotifier @Inject constructor(
     }
 
     // --- Notifications ----------------------------------------------------------------
+
+    /** One notification for a tx's outputs to our addresses, summed (iOS `postReceiveNotification`):
+     *  the body names the address, or how many; the tap opens the one that got the most. */
+    private suspend fun postReceiveHits(hits: List<LiveUtxo>, coldLabels: Map<String, String>, dedupeKey: String) {
+        val byAddress = hits.groupBy { it.address }.mapValues { (_, v) -> v.sumOf { it.amount } }
+        val total = byAddress.values.sum()
+        val opened = byAddress.maxByOrNull { it.value }?.key ?: return
+        if (byAddress.size == 1) {
+            postReceive(totalSompi = total, address = opened, coldLabels = coldLabels, dedupeKey = dedupeKey)
+            return
+        }
+        if (total <= 0 || !notificationHelper.claimForBanner(dedupeKey)) return
+        val title = "Received ${formatKas(total)} ${KaspaUnit.symbol}"
+        val text = "${byAddress.size} of your addresses"
+        notificationHelper.showAddressActivity(title = title, text = text, dedupeKey = dedupeKey, kind = kindOf(opened, coldLabels), address = opened)
+        notificationCenter.record("wallet-$dedupeKey", "wallet", title, text, System.currentTimeMillis(), opened)
+        Log.i(TAG, "Notified external receive $dedupeKey (${hits.size} outputs)")
+    }
 
     private suspend fun postReceive(totalSompi: Long, address: String, coldLabels: Map<String, String>, dedupeKey: String) {
         if (totalSompi <= 0) return
@@ -494,6 +661,7 @@ class AddressActivityNotifier @Inject constructor(
     private var handledSet: MutableSet<String> = mutableSetOf()
     private var handledLoadedFor: String? = null
 
+    @Synchronized
     private fun ensureHandledLoaded(walletAddress: String) {
         if (handledLoadedFor == walletAddress) return
         val json = prefs.getString(handledKey(walletAddress), null)
@@ -507,11 +675,13 @@ class AddressActivityNotifier @Inject constructor(
         handledLoadedFor = walletAddress
     }
 
+    @Synchronized
     private fun isHandled(txId: String, walletAddress: String): Boolean {
         ensureHandledLoaded(walletAddress)
         return txId in handledSet
     }
 
+    @Synchronized
     private fun markHandled(txId: String, walletAddress: String) {
         ensureHandledLoaded(walletAddress)
         if (!handledSet.add(txId)) return
@@ -526,7 +696,12 @@ class AddressActivityNotifier @Inject constructor(
         private const val TAG = "AddressActivity"
         private const val PREFS_NAME = "kachat_address_activity"
         private const val HANDLED_TX_ID_CAP = 500
-        private const val POLL_INTERVAL_MS = 30_000L
+        /** The fallback poll while there is no live subscription - iOS's `pollDelayAfterSync`. */
+        private const val POLL_INTERVAL_MS = 60_000L
+        private const val OWN_SPENT_OUTPOINT_TTL_MS = 600_000L
+        private const val LIVE_HIT_TTL_MS = 180_000L
+        private const val LIVE_TX_FETCH_RETRIES = 6
+        private const val LIVE_TX_FETCH_DELAY_MS = 2_000L
 
         /** The push service keeps this many watch-only addresses at most. */
         private const val MAX_PUSH_WATCH_ONLY = 200
