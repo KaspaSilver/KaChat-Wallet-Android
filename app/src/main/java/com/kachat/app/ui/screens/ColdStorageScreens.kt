@@ -2,6 +2,18 @@ package com.kachat.app.ui.screens
 
 import com.kachat.app.R
 import androidx.compose.ui.window.Dialog
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.material.icons.filled.Verified
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.foundation.Image
 import androidx.activity.compose.BackHandler
@@ -552,11 +564,13 @@ fun ColdStorageDetailScreen(accountId: String, navController: NavController, vie
     // inflating the balance you actually think of as available.
     val totalBalanceKas = visibleAddresses.sumOf { it.balanceSompi } / 100_000_000.0
 
-    // A sheet over the list with Cancel leading its bar, as iOS presents ColdSendFlowView.
+    // A sheet over the list, as iOS presents ColdSendFlowView; a swipe down closes it, except
+    // while the signed transaction is going out.
     sendFromRow?.let { row ->
+        var isSending by remember { mutableStateOf(false) }
         IosFullSheet(
             onDismissed = { sendFromRow = null; viewModel.refreshAddressesSoonAfterSend(accountId) },
-            swipeToDismiss = true,
+            swipeToDismiss = !isSending,
         ) { close ->
             ColdSendFlow(
                 fromAddress = row.address,
@@ -564,6 +578,7 @@ fun ColdStorageDetailScreen(accountId: String, navController: NavController, vie
                 viewModel = viewModel,
                 onDone = close,
                 presentedAsSheet = true,
+                onSendingChange = { isSending = it },
             )
         }
     }
@@ -1192,12 +1207,17 @@ enum class ColdFeeTier(val label: String, val multiplier: Long) {
 }
 
 /**
- * The whole "send" round trip for one Cold Storage address: enter recipient/amount, build an
- * unsigned tx, display it as an animated KSPT QR for the KasSigner device to scan/sign, scan the
- * signed response back, then broadcast. Takes over the full screen (like [ColdStorageListScreen]'s
- * scanner) rather than living in a dialog — the animated QR needs real room to be scannable.
+ * The whole "send" round trip for one Cold Storage address, in steps as Send Kaspa (iOS wallet
+ * 05db583 `ColdSendFlowView`): To, Amount (the app's keypad, "To" / "From Cold Storage" chips),
+ * and the review, where only the fee (its Edit opens [SendFeeEditorScreen]) and coin control
+ * change, ending in Build Unsigned Transaction. Then **Sign with KasSigner**: the unsigned
+ * transaction as an animated KSPT QR for the device to scan and sign; Scan Signed Transaction
+ * opens the scanner, and closing it without a scan returns to the QR. The signed transaction
+ * scanned back is the **signed** screen ("Signed by KasSigner", the summary) with swipe up to
+ * send: the BlockDAG, then Sent, or Failed with Try Again (back on it, still signed). Compound
+ * opens on the review, its recipient and amount set. Every screen draws its own header; the
+ * engine never sees a private key - signing happens entirely on the physical device.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ColdSendFlow(
     fromAddress: String,
@@ -1205,19 +1225,27 @@ private fun ColdSendFlow(
     viewModel: ColdStorageViewModel,
     onDone: () -> Unit,
     // Pre-fills the recipient with fromAddress itself (a self-send) and auto-fills Max, for the
-    // "Compound UTXOs" entry point — merges every UTXO at this address into one. Locks the
-    // recipient field instead of just pre-filling it, since editing it away from fromAddress
-    // would defeat the point of a compound send.
+    // "Compound UTXOs" entry point — merges every UTXO at this address into one. Opens on the
+    // review, which has no Back: editing the recipient away from fromAddress would defeat the
+    // point of a compound send.
     isCompoundMode: Boolean = false,
-    /** Inside an [IosFullSheet], as iOS presents it: "Cancel" leads the bar, and the bars take no
-     *  system insets of their own. */
+    /** Inside an [IosFullSheet], as iOS presents it: the screens take no system insets of their
+     *  own. */
     presentedAsSheet: Boolean = false,
+    /** True while the signed transaction is going out: the presenting sheet refuses a swipe down
+     *  (iOS `interactiveDismissDisabled`). */
+    onSendingChange: (Boolean) -> Unit = {},
     portfolioViewModel: com.kachat.app.viewmodels.PortfolioViewModel = hiltViewModel()
 ) {
     val sendState by viewModel.sendState.collectAsState()
     val kaspaExplorer by viewModel.kaspaExplorer.collectAsState()
     val fiatPriceInCurrency by portfolioViewModel.currentPriceUsd.collectAsState()
     val fiatCurrencyCode by portfolioViewModel.currency.collectAsState()
+    val colors = LocalAppColors.current
+    val focusManager = LocalFocusManager.current
+    val insets = if (presentedAsSheet) WindowInsets(0, 0, 0, 0) else WindowInsets.systemBars
+    val somethingWentWrong = stringResource(R.string.something_went_wrong)
+    val screenTitle = stringResource(if (isCompoundMode) R.string.compound_utxos else R.string.send_from_cold_storage)
     var toAddress by remember { mutableStateOf("") }
     var amountText by remember { mutableStateOf("") }
     val fiatAmountState = com.kachat.app.util.rememberKaspaFiatAmountState(onKasTextChange = { amountText = it })
@@ -1234,10 +1262,8 @@ private fun ColdSendFlow(
     var compoundHasMoreRounds by remember { mutableStateOf(false) }
     var feeTier by remember { mutableStateOf(ColdFeeTier.NORMAL) }
     var customExtraFeeSompi by remember { mutableStateOf<Long?>(null) }
-    // Custom fee, edited in place on the fee row (SendFeeControls), as on iOS.
-    var isEditingFee by remember { mutableStateOf(false) }
-    var feeEditorInput by remember { mutableStateOf("") }
-    val uriHandler = LocalUriHandler.current
+    // The fee editor's typed KAS (iOS feeDraft).
+    var feeDraft by remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
     // Fetched once and reused for both the preview below and the actual build/estimate calls
     // (via feeRateOverrideSompi) — letting each of those independently fetch their own quote was
@@ -1245,24 +1271,47 @@ private fun ColdSendFlow(
     // costing, whenever the live quote drifted between two separate fetches.
     var liveFeeRateSompiPerGram by remember { mutableStateOf<Long?>(null) }
 
+    // iOS ColdSendFlowView.Step: the form (To, Amount, Review - Build keeps it up with the button
+    // busy), the QR, the signed screen, or a failed build. The scanner is a sheet over the QR.
+    var screen by remember { mutableStateOf<ColdSendScreen>(ColdSendScreen.Form) }
+    // iOS FormStep: null until a step is chosen - To for a send, the review for a compound.
+    var formStep by remember { mutableStateOf<ColdFormStep?>(null) }
+    val currentFormStep = formStep ?: if (isCompoundMode) ColdFormStep.REVIEW else ColdFormStep.RECIPIENT
+    val go: (ColdFormStep) -> Unit = { next ->
+        focusManager.clearFocus()
+        formStep = next
+    }
+    // The signed transaction going out (the swipe-up), and how it went.
+    var isBroadcasting by remember { mutableStateOf(false) }
+    var broadcastError by remember { mutableStateOf<String?>(null) }
+    var sentTransaction by remember { mutableStateOf<SentTransaction?>(null) }
+
     LaunchedEffect(Unit) {
         liveFeeRateSompiPerGram = viewModel.fetchQuotedFeeRateSompiPerGram()
         if (isCompoundMode) {
             toAddress = fromAddress
+            // Fix the input set to the largest <=8 UTXOs — the most one KasSigner-signable
+            // transaction can hold — then Max the amount for exactly that set. Without this cap,
+            // Max spans every UTXO at the address and the build fails with "too many inputs" the
+            // moment it holds more than 8. `compoundHasMoreRounds` records whether another round
+            // is needed afterward. Inputs that can't be read are Something Went Wrong, as iOS's
+            // setupCompoundInputs.
+            val compound = try {
+                viewModel.compoundInputs(fromAddress)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                screen = ColdSendScreen.Failed(com.kachat.app.util.UserFacingError.message(e, somethingWentWrong))
+                return@LaunchedEffect
+            }
+            manualUtxos = compound.utxos
+            compoundHasMoreRounds = compound.hasMore
             isEstimatingMax = true
             try {
-                // Fix the input set to the largest <=8 UTXOs — the most one KasSigner-signable
-                // transaction can hold — then Max the amount for exactly that set. Without this
-                // cap, Max spans every UTXO at the address and the build fails with "too many
-                // inputs" the moment it holds more than 8. `compoundHasMoreRounds` records whether
-                // another round is needed afterward.
-                val compound = viewModel.compoundInputs(fromAddress)
-                manualUtxos = compound.utxos
-                compoundHasMoreRounds = compound.hasMore
                 val maxSompi = viewModel.estimateMaxAmount(fromAddress, liveFeeRateSompiPerGram, compound.utxos)
                 fiatAmountState.setMaxKas(maxSompi / 100_000_000.0, fiatPriceInCurrency)
             } catch (e: Exception) {
-                // Leave the field untouched on failure — same as the Max button itself.
+                // Leave the amount untouched on failure — same as the Max button itself.
             } finally {
                 isEstimatingMax = false
             }
@@ -1273,8 +1322,9 @@ private fun ColdSendFlow(
         onDispose { viewModel.resetColdSendState() }
     }
 
-    // The one exact parser for typed KAS (iOS 16b64bc): comma or dot, at most 8 decimals.
-    val amountSompi = KaspaUnit.sompiFromUserText(amountText)
+    // The one exact parser for typed KAS (iOS 16b64bc): comma or dot, at most 8 decimals. Zero is
+    // no amount, as iOS's amountSompi.
+    val amountSompi = KaspaUnit.sompiFromUserText(amountText)?.takeIf { it > 0L }
     // Only an address of the network the app runs on (iOS ce20e87).
     val isValidRecipient = remember(toAddress) { KaspaAddress.isValidOnActiveNetwork(toAddress.trim()) }
 
@@ -1317,8 +1367,8 @@ private fun ColdSendFlow(
     } else {
         com.kachat.app.util.KaspaMass.calculateFee(estimatedMass, baseFeeRateSompiPerGram)
     }
-    // Normal/Fast/Priority multiplier system, same inline (no separate screen) pattern as iOS's
-    // ColdSendFlowView and this app's own chatting-address withdraw flow's WithdrawFeeTier.
+    // Normal/Fast/Priority multiplier system, same as iOS's ColdSendFlowView and this app's own
+    // spending-address send flow.
     val extraFeeSompi = if (usesPreview) {
         previewSelection!!.extraFeeSompi
     } else {
@@ -1394,11 +1444,91 @@ private fun ColdSendFlow(
     // precedence as Create Chat's own address field.
     val effectiveAddress = knsResolvedAddress ?: toAddress
     val hasValidRecipient = if (knsResolvedAddress != null) true else (isValidRecipient && !isResolvingKns)
+    val canBuild = hasValidRecipient && amountSompi != null
+    val exceedsBalance = amountSompi != null && amountSompi > availableBalanceSompi
+    // What the swipe-up and Sent name as the recipient: a resolved name as the name. A compound
+    // is a self-send, so it names none.
+    val recipientLabel = if (isCompoundMode) null else (knsResolvedDomain ?: effectiveAddress.trim()).takeIf { it.isNotEmpty() }
 
-    // Back is Cancel, and Cancel closes the send at any time, as iOS's ColdSendFlowView does -
-    // mid-build or mid-broadcast too; that work finishes in the background (see
-    // ColdStorageViewModel.resetColdSendState).
-    BackHandler { onDone() }
+    // The build's outcome moves the form on: the QR once built, Something Went Wrong if it
+    // failed. The broadcast's outcome is the signed screen's Sent or Failed.
+    LaunchedEffect(sendState) {
+        val state = sendState
+        if (screen == ColdSendScreen.Form) {
+            when (state.step) {
+                ColdStorageViewModel.ColdSendStep.SHOWING_QR -> screen = ColdSendScreen.Qr(state.qrFrames, state.feeSompi)
+                ColdStorageViewModel.ColdSendStep.FAILED -> screen = ColdSendScreen.Failed(state.errorMessage ?: somethingWentWrong)
+                else -> Unit
+            }
+        } else if (isBroadcasting) {
+            when (state.step) {
+                ColdStorageViewModel.ColdSendStep.SUCCESS -> {
+                    isBroadcasting = false
+                    sentTransaction = state.txId?.let { txId ->
+                        SentTransaction(txId = txId, amountSompi = amountSompi?.takeIf { !isCompoundMode }, recipient = recipientLabel)
+                    }
+                }
+                ColdStorageViewModel.ColdSendStep.FAILED -> {
+                    isBroadcasting = false
+                    broadcastError = state.errorMessage
+                }
+                else -> Unit
+            }
+        }
+    }
+
+    // Back on the form as it was (the QR's Back, a failure's Try Again): a new Build starts over,
+    // so the built transaction is let go.
+    val backToForm: () -> Unit = {
+        viewModel.resetColdSendState()
+        screen = ColdSendScreen.Form
+    }
+
+    val buildTransaction: () -> Unit = {
+        amountSompi?.let {
+            // Real coin control (explicit user selection) wins if set; otherwise, if a fresh
+            // automatic-selection preview is available, pass its exact UTXO set through too -
+            // guaranteeing the fee just shown on this screen and the fee the real build produces
+            // are the same number, not just close. Re-resolved against a fresh fetch inside
+            // buildUnsignedTransaction either way, so this is never stale-unsafe.
+            val utxosForBuild = manualUtxos ?: previewSelection?.utxos
+            viewModel.startColdSend(fromAddress, effectiveAddress.trim(), it, feeRateOverrideSompi, utxosForBuild, extraFeeSompi)
+        }
+    }
+
+    // The swipe let go: the signed transaction goes out (iOS broadcast(unsignedTx:decoded:)). A
+    // debug build can be made to fail it on purpose first, as iOS's SendFailureSimulation.
+    val broadcast: (ByteArray) -> Unit = { signedKspt ->
+        isBroadcasting = true
+        broadcastError = null
+        coroutineScope.launch {
+            val simulated = com.kachat.app.services.SendFailureSimulation.failureIfEnabled()
+            if (simulated != null) {
+                isBroadcasting = false
+                broadcastError = simulated.message
+            } else {
+                viewModel.onSignedKsptScanned(signedKspt)
+            }
+        }
+    }
+
+    val setMaxAmount: () -> Unit = {
+        if (hasValidRecipient) {
+            coroutineScope.launch {
+                isEstimatingMax = true
+                try {
+                    // Room for the base and the Fast / Priority / custom extra, the extra derived
+                    // from Max's own base.
+                    val maxSompi = viewModel.estimateMaxAmount(fromAddress, feeRateOverrideSompi, manualUtxos, feeTier.multiplier, customExtraFeeSompi)
+                    fiatAmountState.setMaxKas(maxSompi / 100_000_000.0, fiatPriceInCurrency)
+                } catch (e: Exception) {
+                    // Leave the amount untouched on failure — same as iOS.
+                } finally {
+                    isEstimatingMax = false
+                }
+            }
+        }
+    }
 
     // The recipient scanner and coin control are sheets over the send, as iOS's ColdSendFlowView
     // presents its QRScannerView and CoinControlView.
@@ -1409,22 +1539,29 @@ private fun ColdSendFlow(
         )
     }
 
-    // iOS's ColdSendFlowView presents MultiFrameQRScannerView as a sheet over an empty page;
-    // closing it without a complete scan goes back to the form.
+    // iOS's MultiFrameQRScannerView, a sheet over the QR: a complete scan is read and opens the
+    // signed screen (one that can't be read is Something Went Wrong); closed without one, the
+    // QR is still there.
     if (showSignedScanner) {
-        var scanned by remember { mutableStateOf(false) }
         MultiFrameQrScannerSheet(
             isComplete = { KsptCodec.looksLikeKspt(it) },
             onComplete = { bytes ->
-                scanned = true
-                viewModel.onSignedKsptScanned(bytes)
-            },
-            onDismiss = {
-                showSignedScanner = false
-                if (!scanned && viewModel.sendState.value.step == ColdStorageViewModel.ColdSendStep.SHOWING_QR) {
-                    viewModel.resetColdSendState()
+                (screen as? ColdSendScreen.Qr)?.let { qr ->
+                    KsptCodec.decode(bytes).fold(
+                        onSuccess = {
+                            broadcastError = null
+                            sentTransaction = null
+                            screen = ColdSendScreen.Signed(qr.frames, qr.feeSompi, bytes)
+                        },
+                        onFailure = { e ->
+                            screen = ColdSendScreen.Failed(
+                                com.kachat.app.util.UserFacingError.message(e, "Couldn't read the signed transaction")
+                            )
+                        },
+                    )
                 }
-            }
+            },
+            onDismiss = { showSignedScanner = false }
         )
     }
 
@@ -1441,269 +1578,495 @@ private fun ColdSendFlow(
         )
     }
 
-    Scaffold(
-        containerColor = LocalAppColors.current.background,
-        contentWindowInsets = if (presentedAsSheet) WindowInsets(0, 0, 0, 0) else ScaffoldDefaults.contentWindowInsets,
-        topBar = {
-            CenterAlignedTopAppBar(
-                windowInsets = if (presentedAsSheet) WindowInsets(0, 0, 0, 0) else TopAppBarDefaults.windowInsets,
-                // iOS: "Compound UTXOs" for a compound, else "Send from Cold Storage".
-                title = {
-                    Text(
-                        stringResource(if (isCompoundMode) R.string.compound_utxos else R.string.send_from_cold_storage),
-                        color = LocalAppColors.current.textPrimary,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 17.sp,
-                    )
-                },
-                navigationIcon = {
-                    if (presentedAsSheet) {
-                        SheetBarButton(stringResource(R.string.cancel), onClick = onDone, modifier = Modifier.padding(start = 12.dp))
-                    } else {
-                        SheetBarBackButton(onDone, Modifier.padding(start = 12.dp))
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = LocalAppColors.current.background)
+    // The summary's To and From rows (iOS summaryCard / the review's card).
+    val toRow: @Composable () -> Unit = {
+        ColdReviewRow(stringResource(R.string.to)) {
+            if (isCompoundMode) {
+                Text("This address (consolidating)", color = colors.textPrimary, fontSize = 15.sp, textAlign = TextAlign.End)
+            } else {
+                knsResolvedDomain?.let {
+                    Text(it, color = colors.textPrimary, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.End)
+                }
+                MiddleEllipsisText(
+                    effectiveAddress,
+                    color = colors.textSecondary,
+                    fontSize = 12.sp,
+                    fontFamily = FontFamily.Monospace,
+                    textAlign = TextAlign.End,
+                )
+            }
+        }
+    }
+    val fromRow: @Composable () -> Unit = {
+        ColdReviewRow(stringResource(R.string.from)) {
+            Text(stringResource(R.string.cold_storage), color = colors.textPrimary, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+            Text(
+                "${fromAddress.take(14)}...${fromAddress.takeLast(6)}",
+                color = colors.textSecondary,
+                fontSize = 12.sp,
+                fontFamily = FontFamily.Monospace,
+                maxLines = 1,
             )
         }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            when (sendState.step) {
-                ColdStorageViewModel.ColdSendStep.IDLE,
-                ColdStorageViewModel.ColdSendStep.FAILED,
-                ColdStorageViewModel.ColdSendStep.BUILDING -> {
-                    // The layout of the 1:1 chat's Send KAS sheet, from the shared Send Kaspa
-                    // pieces (iOS 4d0324f): From / Available pills, recipient, the big amount, fee
-                    // and coin control, and Build. Building keeps this form up with the button
-                    // busy, as iOS's ColdSendFlowView does.
-                    val isBuilding = sendState.step == ColdStorageViewModel.ColdSendStep.BUILDING
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(18.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        // 20 dp from the edges in all, as the other Send Kaspa screens.
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-                    ) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally), modifier = Modifier.fillMaxWidth()) {
-                            SendInfoPill(modifier = Modifier.weight(1f, fill = false)) {
-                                Text(stringResource(R.string.from))
-                                Text(
-                                    "${fromAddress.take(14)}...${fromAddress.takeLast(6)}",
-                                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                                    maxLines = 1,
-                                )
-                            }
-                            SendInfoPill(modifier = Modifier.weight(1f, fill = false)) {
-                                Text(stringResource(R.string.available))
-                                Text("${com.kachat.app.services.AddressActivityNotifier.formatKas(availableBalanceSompi)} ${KaspaUnit.symbol}", maxLines = 1)
-                            }
-                        }
+    }
+    // To, From, the fee and the total, as built (iOS summaryCard).
+    val summaryCard: @Composable (Long) -> Unit = { feeSompi ->
+        ColdSummaryCard {
+            toRow()
+            HorizontalDivider(color = colors.divider)
+            fromRow()
+            HorizontalDivider(color = colors.divider)
+            ColdReviewRow(stringResource(R.string.network_fee)) {
+                Text("${KaspaUnit.plain(feeSompi)} ${KaspaUnit.symbol}", color = colors.textPrimary, fontSize = 15.sp, style = ColdTabularDigits)
+            }
+            amountSompi?.let {
+                HorizontalDivider(color = colors.divider)
+                ColdReviewRow(stringResource(R.string.total)) {
+                    Text(
+                        "${KaspaUnit.plain(it + feeSompi)} ${KaspaUnit.symbol}",
+                        color = colors.textPrimary,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        style = ColdTabularDigits,
+                    )
+                }
+            }
+        }
+    }
 
-                        SendRecipientCard(
-                            input = toAddress,
-                            onInputChange = { toAddress = it },
-                            lockedAddress = if (isCompoundMode) fromAddress else null,
-                            isResolving = isResolvingKns,
-                            resolvedAddress = knsResolvedAddress,
-                            resolvedName = knsResolvedDomain,
-                            nameResolutions = nameResolutions,
-                            selectedTld = selectedTld,
-                            onSelectResolution = selectResolution,
-                            lookupError = knsError,
-                            isValidAddress = isValidRecipient,
-                            onScan = { showRecipientScanner = true },
-                            enabled = !isBuilding,
-                        )
-                        if (isCompoundMode) {
-                            Text(
-                                if (compoundHasMoreRounds)
-                                    stringResource(R.string.compound_more_rounds_note, KsptCodec.MAX_INPUTS)
-                                else
-                                    stringResource(R.string.compound_single_round_note),
-                                color = LocalAppColors.current.textSecondary,
-                                fontSize = 12.sp,
-                                textAlign = TextAlign.Center,
+    AnimatedContent(
+        targetState = screen,
+        contentKey = { it::class },
+        transitionSpec = {
+            // As iOS animates its steps: the signed screen comes in from the trailing edge over
+            // the QR, and the QR's Back slides it out to the leading edge as the form fades in. The
+            // rest (built, failed, the signed screen's Back) change at once.
+            val initial = initialState
+            val target = targetState
+            when {
+                initial is ColdSendScreen.Qr && target is ColdSendScreen.Signed ->
+                    slideInHorizontally(ColdSendStepSpring) { it } togetherWith slideOutHorizontally(ColdSendStepSpring) { -it }
+                initial is ColdSendScreen.Qr && target == ColdSendScreen.Form ->
+                    fadeIn(spring(dampingRatio = 0.9f, stiffness = 247f)) togetherWith slideOutHorizontally(ColdSendStepSpring) { -it }
+                else -> EnterTransition.None togetherWith ExitTransition.None
+            }
+        },
+        label = "coldSendScreen",
+        modifier = Modifier.fillMaxSize(),
+    ) { shown ->
+        when (shown) {
+            ColdSendScreen.Form -> AnimatedContent(
+                targetState = currentFormStep,
+                transitionSpec = {
+                    // iOS: the next step moves in from the trailing edge, Back brings one in from the leading
+                    val forward = targetState.ordinal > initialState.ordinal
+                    (slideInHorizontally(ColdSendStepSpring) { if (forward) it else -it } togetherWith
+                        slideOutHorizontally(ColdSendStepSpring) { if (forward) -it else it })
+                },
+                label = "coldSendFormStep",
+                modifier = Modifier.fillMaxSize(),
+            ) { step ->
+                when (step) {
+                    // MARK: To
+                    ColdFormStep.RECIPIENT -> SendStepScreen(
+                        title = screenTitle,
+                        onCancel = onDone,
+                        canContinue = hasValidRecipient,
+                        onContinue = { go(ColdFormStep.AMOUNT) },
+                        insets = insets,
+                    ) {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState())
+                                .padding(horizontal = 20.dp)
+                                .padding(top = 12.dp, bottom = 24.dp),
+                        ) {
+                            SendStepQuestion("Who are you sending to?")
+                            SendRecipientCard(
+                                input = toAddress,
+                                onInputChange = { toAddress = it },
+                                isResolving = isResolvingKns,
+                                resolvedAddress = knsResolvedAddress,
+                                resolvedName = knsResolvedDomain,
+                                nameResolutions = nameResolutions,
+                                selectedTld = selectedTld,
+                                onSelectResolution = selectResolution,
+                                lookupError = knsError,
+                                isValidAddress = isValidRecipient,
+                                onScan = { showRecipientScanner = true },
+                                focusOnAppear = true,
                             )
                         }
+                    }
 
-                        KaspaAmountEntry(
+                    // MARK: Amount
+                    ColdFormStep.AMOUNT -> SendStepScreen(
+                        title = screenTitle,
+                        onBack = { go(ColdFormStep.RECIPIENT) },
+                        onCancel = onDone,
+                        continueTitle = "Review",
+                        canContinue = canBuild && !exceedsBalance && !isEstimatingMax,
+                        onContinue = { go(ColdFormStep.REVIEW) },
+                        insets = insets,
+                    ) {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp)
+                                .padding(top = 4.dp),
+                        ) {
+                            SendStepChip(
+                                label = stringResource(R.string.to),
+                                value = knsResolvedDomain ?: effectiveAddress,
+                                isAddress = knsResolvedDomain == null,
+                            )
+                            SendStepChip(label = stringResource(R.string.from), value = stringResource(R.string.cold_storage))
+                        }
+                        KaspaKeypadAmountEntry(
                             fiatAmountState = fiatAmountState,
                             priceInCurrency = fiatPriceInCurrency,
                             currencyCode = fiatCurrencyCode,
+                            onMax = setMaxAmount,
                             isEstimatingMax = isEstimatingMax,
                             maxEnabled = hasValidRecipient,
-                            onMax = {
-                                coroutineScope.launch {
-                                    isEstimatingMax = true
-                                    try {
-                                        // Room for the base and the Fast / Priority / custom
-                                        // extra, the extra derived from Max's own base.
-                                        val maxSompi = viewModel.estimateMaxAmount(fromAddress, feeRateOverrideSompi, manualUtxos, feeTier.multiplier, customExtraFeeSompi)
-                                        fiatAmountState.setMaxKas(maxSompi / 100_000_000.0, fiatPriceInCurrency)
-                                    } catch (e: Exception) {
-                                        // Leave the field untouched on failure — same as iOS.
-                                    } finally {
-                                        isEstimatingMax = false
+                            footnote = if (exceedsBalance) {
+                                "This is more than the address you're sending from holds."
+                            } else {
+                                KaspaUnit.label("Available: ${String.format(Locale.US, "%.8f", availableBalanceSompi / 100_000_000.0)} KAS")
+                            },
+                            footnoteIsError = exceedsBalance,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+
+                    // MARK: Review
+                    ColdFormStep.REVIEW -> {
+                        val isBuilding = sendState.step == ColdStorageViewModel.ColdSendStep.BUILDING
+                        // A tap, not a swipe: this only builds the transaction for KasSigner to sign.
+                        SendStepScreen(
+                            title = if (isCompoundMode) screenTitle else "Review",
+                            onBack = if (isCompoundMode) null else ({ go(ColdFormStep.AMOUNT) }),
+                            onCancel = onDone,
+                            continueTitle = if (isBuilding) "Building..." else stringResource(R.string.build_unsigned_transaction),
+                            canContinue = canBuild && !isBuilding,
+                            onContinue = buildTransaction,
+                            insets = insets,
+                        ) {
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(18.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .verticalScroll(rememberScrollState())
+                                    .padding(horizontal = 20.dp)
+                                    .padding(top = 12.dp, bottom = 24.dp),
+                            ) {
+                                ColdSendAmountHeadline(
+                                    caption = if (isCompoundMode) "Consolidating" else "You're sending",
+                                    amountSompi = amountSompi,
+                                    showsProgressWhenEmpty = true,
+                                    modifier = Modifier.padding(top = 8.dp),
+                                )
+
+                                ColdSummaryCard {
+                                    toRow()
+                                    HorizontalDivider(color = colors.divider)
+                                    fromRow()
+                                    HorizontalDivider(color = colors.divider)
+                                    ColdReviewRow(stringResource(R.string.total)) {
+                                        if (amountSompi != null) {
+                                            Text(
+                                                "~${KaspaUnit.plain(amountSompi + effectiveFeeSompi)} ${KaspaUnit.symbol}",
+                                                color = colors.textPrimary,
+                                                fontSize = 15.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                style = ColdTabularDigits,
+                                            )
+                                        } else {
+                                            Text("—", color = colors.textSecondary, fontSize = 15.sp)
+                                        }
                                     }
                                 }
-                            },
-                            modifier = Modifier.padding(top = 8.dp),
-                        )
 
-                        // Compound auto-manages its own input set (largest <=8, KasSigner's per-tx
-                        // limit), so manual coin control is hidden there - it only applies to a
-                        // normal send.
-                        SendFeeControls(
-                            feeTier = feeTier,
-                            onFeeTierChange = {
-                                feeTier = it
-                                customExtraFeeSompi = null
-                                isEditingFee = false
-                            },
-                            isEditingFee = isEditingFee,
-                            customFeeText = feeEditorInput,
-                            onCustomFeeTextChange = { feeEditorInput = it },
-                            isEstimatingFee = false,
-                            feeText = "~${com.kachat.app.services.AddressActivityNotifier.formatKas(effectiveFeeSompi)} ${KaspaUnit.symbol}",
-                            onStartEditing = {
-                                feeEditorInput = com.kachat.app.services.AddressActivityNotifier.formatKas(effectiveFeeSompi)
-                                isEditingFee = true
-                            },
-                            onCommit = {
-                                KaspaUnit.sompiFromUserText(feeEditorInput)?.let { totalSompi ->
-                                    customExtraFeeSompi = (totalSompi - defaultFeeSompi).coerceAtLeast(0L)
+                                if (isCompoundMode) {
+                                    Text(
+                                        if (compoundHasMoreRounds)
+                                            stringResource(R.string.compound_more_rounds_note, KsptCodec.MAX_INPUTS)
+                                        else
+                                            stringResource(R.string.compound_single_round_note),
+                                        color = colors.textSecondary,
+                                        fontSize = 12.sp,
+                                        textAlign = TextAlign.Center,
+                                    )
                                 }
-                                isEditingFee = false
-                            },
-                            showsCoinControl = !isCompoundMode,
-                            coinControlSummary = coinControlSummary(manualUtxos),
-                            onCoinControl = { showCoinControl = true },
-                        )
 
-                        if (sendState.step == ColdStorageViewModel.ColdSendStep.FAILED) {
-                            Text(
-                                sendState.errorMessage ?: stringResource(R.string.something_went_wrong),
-                                color = LocalAppColors.current.danger,
-                                fontSize = 13.sp,
-                                textAlign = TextAlign.Center,
-                            )
-                        }
-
-                        // A tap, not a slide: this only builds the transaction for KasSigner to sign.
-                        SendActionButton(
-                            title = stringResource(R.string.build_unsigned_transaction),
-                            isBusy = isBuilding,
-                            isEnabled = hasValidRecipient && (amountSompi ?: 0) > 0,
-                            requiresSlide = false,
-                            onSend = {
-                                amountSompi?.let {
-                                    // Real coin control (explicit user selection) wins if set;
-                                    // otherwise, if a fresh automatic-selection preview is
-                                    // available, pass its exact UTXO set through too -
-                                    // guaranteeing the fee just shown on this screen and the fee
-                                    // the real build produces are the same number, not just close.
-                                    // Re-resolved against a fresh fetch inside
-                                    // buildUnsignedTransaction either way, so this is never
-                                    // stale-unsafe.
-                                    val utxosForBuild = manualUtxos ?: previewSelection?.utxos
-                                    viewModel.startColdSend(fromAddress, effectiveAddress.trim(), it, feeRateOverrideSompi, utxosForBuild, extraFeeSompi)
-                                }
-                            },
-                        )
-                    }
-                }
-
-                ColdStorageViewModel.ColdSendStep.SHOWING_QR -> {
-                    if (!showSignedScanner) {
-                        // A bright, high-contrast quiet zone around the code — same reasoning as
-                        // the full-screen "big mode" QR overlay elsewhere — gets a more reliable
-                        // scan on the KasSigner device's camera than the app's own dark theme.
-                        Surface(
-                            color = Color.White,
-                            shape = RoundedCornerShape(20.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(20.dp)) {
-                                Text(
-                                    stringResource(R.string.scan_this_with_your_kassigner_device),
-                                    color = Color(0xFF6B6B70),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    textAlign = TextAlign.Center
+                                // Compound auto-manages its own input set (largest <=8, KasSigner's
+                                // per-tx limit), so manual coin control is hidden there - it only
+                                // applies to a normal send.
+                                SendFeeControls(
+                                    feeTier = feeTier,
+                                    onFeeTierChange = {
+                                        feeTier = it
+                                        customExtraFeeSompi = null
+                                    },
+                                    isEstimatingFee = false,
+                                    feeText = "~${KaspaUnit.plain(effectiveFeeSompi)} ${KaspaUnit.symbol}",
+                                    showsCoinControl = !isCompoundMode,
+                                    coinControlSummary = coinControlSummary(manualUtxos),
+                                    onCoinControl = { showCoinControl = true },
+                                    onEditFee = {
+                                        feeDraft = KaspaUnit.plain(effectiveFeeSompi)
+                                        go(ColdFormStep.FEE)
+                                    },
                                 )
-                                Spacer(Modifier.height(16.dp))
-                                AnimatedQrDisplay(frames = sendState.qrFrames, modifier = Modifier.fillMaxWidth())
                             }
                         }
-                        Spacer(Modifier.height(16.dp))
-                        Text(
-                            "Network fee: ~%.8f ${KaspaUnit.symbol}".format(java.util.Locale.US, sendState.feeSompi / 100_000_000.0),
-                            color = LocalAppColors.current.textSecondary,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                        Button(
-                            onClick = { showSignedScanner = true },
-                            colors = ButtonDefaults.buttonColors(containerColor = KaspaTeal),
-                            modifier = Modifier.fillMaxWidth().height(48.dp)
-                        ) {
-                            Text(stringResource(R.string.scan_signed_transaction), color = Color.Black, fontWeight = FontWeight.Bold)
-                        }
                     }
-                }
 
-                ColdStorageViewModel.ColdSendStep.BROADCASTING -> {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().padding(top = 32.dp)) {
-                        com.kachat.app.ui.theme.IosActivityIndicator(color = KaspaTeal)
-                        Spacer(Modifier.height(12.dp))
-                        Text(stringResource(R.string.broadcasting), color = LocalAppColors.current.textSecondary)
-                    }
+                    // MARK: Fee
+                    ColdFormStep.FEE -> SendFeeEditorScreen(
+                        draft = feeDraft,
+                        onDraftChange = { feeDraft = it },
+                        onCancel = { go(ColdFormStep.REVIEW) },
+                        onConfirm = { typed ->
+                            // never under the network's minimum
+                            customExtraFeeSompi = (typed - defaultFeeSompi).coerceAtLeast(0L)
+                            go(ColdFormStep.REVIEW)
+                        },
+                        minimumSompi = defaultFeeSompi,
+                        insets = insets,
+                    )
                 }
+            }
 
-                ColdStorageViewModel.ColdSendStep.SUCCESS -> {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
-                        Icon(Icons.Default.CheckCircle, null, tint = LocalAppColors.current.success, modifier = Modifier.size(48.dp))
-                        Spacer(Modifier.height(12.dp))
-                        Text(stringResource(R.string.sent), color = LocalAppColors.current.textPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        Spacer(Modifier.height(20.dp))
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(LocalAppColors.current.surface)
-                                .padding(16.dp)
-                        ) {
-                            Text(stringResource(R.string.to), color = LocalAppColors.current.textSecondary, fontSize = 12.sp)
-                            Text(effectiveAddress, color = LocalAppColors.current.textPrimary, style = MaterialTheme.typography.bodySmall)
-                        }
-                        Spacer(Modifier.height(12.dp))
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(LocalAppColors.current.surface)
-                                .clickable {
-                                    sendState.txId?.let { uriHandler.openUri(kaspaExplorer.txUrl(it)) }
-                                }
-                                .padding(16.dp)
-                        ) {
-                            Text("Transaction ID · tap to view in ${kaspaExplorer.displayName}", color = LocalAppColors.current.textSecondary, fontSize = 12.sp)
-                            Text(sendState.txId ?: "", color = KaspaTeal, style = MaterialTheme.typography.bodySmall)
-                        }
-                        Spacer(Modifier.height(20.dp))
-                        Button(
-                            onClick = onDone,
-                            colors = ButtonDefaults.buttonColors(containerColor = KaspaTeal),
-                            modifier = Modifier.fillMaxWidth().height(48.dp)
-                        ) {
-                            Text(stringResource(R.string.done), color = Color.Black, fontWeight = FontWeight.Bold)
-                        }
+            // MARK: Sign with KasSigner
+            // The unsigned transaction as an animated QR for KasSigner, on its own white card
+            // whatever the theme - a dark surround gives a camera photographing this screen far
+            // less contrast around the code. Continue opens the scanner for the signed one.
+            is ColdSendScreen.Qr -> SendStepScreen(
+                title = "Sign with KasSigner",
+                onBack = backToForm,
+                onCancel = onDone,
+                continueTitle = stringResource(R.string.scan_signed_transaction),
+                canContinue = true,
+                onContinue = { showSignedScanner = true },
+                insets = insets,
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(18.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 20.dp)
+                        .padding(top = 12.dp, bottom = 24.dp),
+                ) {
+                    SendStepQuestion("Scan this on your KasSigner")
+                    AnimatedQrDisplay(frames = shown.frames)
+                    Text(
+                        "KasSigner shows what it is signing. Check it matches, sign, then scan the signed transaction it shows.",
+                        color = colors.textSecondary,
+                        fontSize = 13.sp,
+                        textAlign = TextAlign.Center,
+                    )
+                    summaryCard(shown.feeSompi)
+                }
+            }
+
+            // MARK: Signed
+            // Signed and scanned back: the last look, then swipe up to send it - the BlockDAG,
+            // then Sent with the transaction, or Failed with Try Again (back here, still signed).
+            is ColdSendScreen.Signed -> SwipeUpToSendScreen(
+                screenTitle = screenTitle,
+                onCancel = onDone,
+                barTitle = stringResource(if (isCompoundMode) R.string.swipe_up_to_consolidate else R.string.swipe_up_to_send),
+                isBusy = isBroadcasting,
+                isEnabled = !isBroadcasting && sentTransaction == null,
+                amountSompi = amountSompi,
+                recipient = recipientLabel,
+                sent = sentTransaction,
+                failureMessage = broadcastError,
+                onDone = onDone,
+                onSwipe = { broadcast(shown.signedKspt) },
+                explorerUrl = { kaspaExplorer.txUrl(it) },
+                insets = insets,
+                onSendingChange = onSendingChange,
+                onBack = { screen = ColdSendScreen.Qr(shown.frames, shown.feeSompi) },
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(18.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                        .padding(bottom = 24.dp),
+                ) {
+                    // iOS Label("Signed by KasSigner", systemImage: "checkmark.seal.fill") on a
+                    // green capsule
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier
+                            .padding(top = 8.dp)
+                            .clip(CircleShape)
+                            .background(colors.success.copy(alpha = 0.12f))
+                            .padding(horizontal = 14.dp, vertical = 8.dp),
+                    ) {
+                        Icon(Icons.Default.Verified, contentDescription = null, tint = colors.success, modifier = Modifier.size(17.dp))
+                        Text("Signed by KasSigner", color = colors.success, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                    ColdSendAmountHeadline(
+                        caption = if (isCompoundMode) "Consolidating" else "You're sending",
+                        amountSompi = amountSompi,
+                        showsProgressWhenEmpty = false,
+                    )
+                    summaryCard(shown.feeSompi)
+                    Text(
+                        "Nothing can change now: this is the transaction KasSigner signed.",
+                        color = colors.textSecondary,
+                        fontSize = 13.sp,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+
+            // MARK: Failed
+            // Building failed (or the compound inputs couldn't be read, or the scan couldn't be
+            // read): what went wrong, and Try Again back to the form as it was.
+            is ColdSendScreen.Failed -> SendStepScreen(
+                title = screenTitle,
+                onCancel = onDone,
+                continueTitle = stringResource(R.string.try_again),
+                canContinue = true,
+                onContinue = backToForm,
+                insets = insets,
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    Spacer(Modifier.weight(1f).heightIn(min = 40.dp))
+                    Icon(Icons.Default.Cancel, contentDescription = null, tint = colors.danger, modifier = Modifier.size(56.dp))
+                    Text(somethingWentWrong, color = colors.textPrimary, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        shown.message,
+                        color = colors.textSecondary,
+                        fontSize = 15.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 24.dp),
+                    )
+                    Spacer(Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
+/** Where a [ColdSendFlow] is (iOS `ColdSendFlowView.Step`); the scanner is a sheet over [Qr]. */
+private sealed interface ColdSendScreen {
+    /** To, Amount, Review (and the fee editor) - Build keeps it up with the button busy. */
+    data object Form : ColdSendScreen
+    /** Built: the unsigned transaction's QR frames, and the fee it pays. */
+    class Qr(val frames: List<ByteArray>, val feeSompi: Long) : ColdSendScreen
+    /** The signed transaction scanned back, ready for the swipe up. */
+    class Signed(val frames: List<ByteArray>, val feeSompi: Long, val signedKspt: ByteArray) : ColdSendScreen
+    data class Failed(val message: String) : ColdSendScreen
+}
+
+/** A [ColdSendFlow] form's steps, in order (iOS `ColdSendFlowView.FormStep`). */
+private enum class ColdFormStep { RECIPIENT, AMOUNT, REVIEW, FEE }
+
+/** iOS `.spring(response: 0.4, dampingFraction: 0.9)`: stiffness (2*pi/0.4)^2. */
+private val ColdSendStepSpring = spring(dampingRatio = 0.9f, stiffness = 247f, visibilityThreshold = IntOffset.VisibilityThreshold)
+
+/** iOS `.monospacedDigit()`. */
+private val ColdTabularDigits = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum")
+
+/** The review's and the summary's card: rows on the Send Kaspa glass (iOS `sendKaspaGlass(20)`),
+ *  subheadline. */
+@Composable
+private fun ColdSummaryCard(content: @Composable ColumnScope.() -> Unit) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .sendKaspaGlass(20.dp)
+            .padding(14.dp),
+        content = content,
+    )
+}
+
+/** One row of [ColdSummaryCard] (iOS `reviewRow`): the grey label leading, the value trailing,
+ *  on the first line's baseline. */
+@Composable
+private fun ColdReviewRow(label: String, value: @Composable ColumnScope.() -> Unit) {
+    Row(Modifier.fillMaxWidth()) {
+        Text(label, color = LocalAppColors.current.textSecondary, fontSize = 15.sp, maxLines = 1, modifier = Modifier.alignByBaseline())
+        Spacer(Modifier.width(12.dp))
+        Column(
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+            modifier = Modifier
+                .weight(1f)
+                .alignByBaseline(),
+            content = value,
+        )
+    }
+}
+
+/** "You're sending" / "Consolidating" over the amount, 40 bold rounded and shrinking to half
+ *  rather than being cut (iOS `.minimumScaleFactor(0.5)`); a spinner in its place while there is
+ *  no amount yet, with [showsProgressWhenEmpty] (a compound's Max still being worked out). */
+@Composable
+private fun ColdSendAmountHeadline(
+    caption: String,
+    amountSompi: Long?,
+    showsProgressWhenEmpty: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val colors = LocalAppColors.current
+    Column(
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Text(caption, color = colors.textSecondary, fontSize = 15.sp)
+        if (amountSompi != null) {
+            val measurer = androidx.compose.ui.text.rememberTextMeasurer()
+            val text = "${KaspaUnit.plain(amountSompi)} ${KaspaUnit.symbol}"
+            val style = androidx.compose.ui.text.TextStyle(
+                color = colors.textPrimary,
+                fontSize = 40.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = com.kachat.app.ui.theme.IosRoundedFontFamily,
+                fontFeatureSettings = "tnum",
+            )
+            BoxWithConstraints(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
+                val maxWidth = constraints.maxWidth
+                val scale = remember(text, maxWidth) {
+                    if (maxWidth == androidx.compose.ui.unit.Constraints.Infinity) {
+                        1f
+                    } else {
+                        val width = measurer.measure(text, style, maxLines = 1, softWrap = false).size.width
+                        if (width <= maxWidth) 1f else (maxWidth.toFloat() / width).coerceIn(0.5f, 1f)
                     }
                 }
+                Text(
+                    text,
+                    style = style.copy(fontSize = style.fontSize * scale),
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        } else if (showsProgressWhenEmpty) {
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.height(48.dp)) {
+                com.kachat.app.ui.theme.IosActivityIndicator(color = colors.textSecondary)
             }
         }
     }
@@ -2059,16 +2422,17 @@ fun ColdStorageTxHistoryScreen(
         return
     }
 
-    // Send and Compound are sheets over this screen with Cancel leading their bar, as iOS
-    // presents ColdSendFlowView (which a swipe down also closes).
+    // Send and Compound are sheets over this screen, as iOS presents ColdSendFlowView (which a
+    // swipe down also closes, except while the signed transaction is going out).
     if (showSendFlow) {
+        var isSending by remember { mutableStateOf(false) }
         IosFullSheet(
             onDismissed = {
                 showSendFlow = false
                 viewModel.loadTxHistory(address)
                 viewModel.loadUtxos(address)
             },
-            swipeToDismiss = true,
+            swipeToDismiss = !isSending,
         ) { close ->
             ColdSendFlow(
                 fromAddress = address,
@@ -2076,18 +2440,20 @@ fun ColdStorageTxHistoryScreen(
                 viewModel = viewModel,
                 onDone = close,
                 presentedAsSheet = true,
+                onSendingChange = { isSending = it },
             )
         }
     }
 
     if (showCompoundFlow) {
+        var isSending by remember { mutableStateOf(false) }
         IosFullSheet(
             onDismissed = {
                 showCompoundFlow = false
                 viewModel.loadTxHistory(address)
                 viewModel.loadUtxos(address)
             },
-            swipeToDismiss = true,
+            swipeToDismiss = !isSending,
         ) { close ->
             ColdSendFlow(
                 fromAddress = address,
@@ -2096,6 +2462,7 @@ fun ColdStorageTxHistoryScreen(
                 isCompoundMode = true,
                 onDone = close,
                 presentedAsSheet = true,
+                onSendingChange = { isSending = it },
             )
         }
     }
