@@ -18,9 +18,6 @@ package com.kachat.app.ui.screens
  * A profile's `<address>` is a full Kaspa address; in the web form a mainnet address drops its
  * `kaspa:` prefix (the app writes it without, so the link reads cleanly) and a missing prefix
  * means mainnet.
- *
- * Links written before kachat.app used kachat.duckdns.org. Those are still opened; they are
- * never written.
  */
 sealed class KaChatLinkRef {
     /** Someone's KaChat profile. Always a full, valid address. */
@@ -35,11 +32,8 @@ sealed class KaChatLinkRef {
 data class KaChatLinkMatch(val range: IntRange, val raw: String, val ref: KaChatLinkRef)
 
 object KaChatLink {
-    /** The only host the app ever writes into a share. */
+    /** The only web host a link is written with or opened from. */
     const val WEB_HOST = "kachat.app"
-
-    /** Hosts from before kachat.app: still opened, never written. */
-    val LEGACY_WEB_HOSTS = setOf("kachat.duckdns.org")
 
     /** The one builder the share buttons use, so the links cannot drift apart:
      *  kachat.app/u/<address>, trimmed and lowercased (iOS 44d5fa4). */
@@ -49,13 +43,13 @@ object KaChatLink {
     // The trailing segment deliberately excludes '/', '?' and '#' so a link can never carry a
     // second path component, a query string or a fragment into the app.
     private val LINK_REGEX = Regex(
-        """(?:kachat://(profile)/|https?://(?:kachat\.app|kachat\.duckdns\.org)/(u)/)([^\s/?#]+)""",
+        """(?:kachat://(profile)/|https?://kachat\.app/(u)/)([^\s/?#]+)""",
         RegexOption.IGNORE_CASE
     )
     // A payment request carries a query, so it has its own pattern: everything up to whitespace
     // or a quote/angle bracket, as iOS matches it (the memo inside is percent-encoded).
     private val PAY_LINK_REGEX = Regex(
-        """(?:kachat://pay/|https?://(?:www\.)?(?:kachat\.app|kachat\.duckdns\.org)/pay/)([^\s<>"']+)""",
+        """(?:kachat://pay/|https?://(?:www\.)?kachat\.app/pay/)([^\s<>"']+)""",
         RegexOption.IGNORE_CASE
     )
     private val TRAILING_PUNCTUATION = setOf('.', ',', '!', '?', ';', ':', '\'', '"', ')', ']', '}', '>')

@@ -55,10 +55,10 @@ class KaspaAddressTest {
         assertFalse(KaspaAddress.isValidOnActiveNetwork(testnet))
         assertTrue(KaspaAddress.isValidOnNetwork(testnet, "kaspatest"))
         assertEquals(KaspaNetwork.Type.TESTNET, KaspaAddress.otherNetwork(testnet))
-        assertEquals("This is a Testnet address. KaChat is on Mainnet.", KaspaAddress.otherNetworkReason(testnet))
+        assertEquals("This is a Testnet address. KaPay is on Mainnet.", KaspaAddress.otherNetworkReason(testnet))
         assertEquals(com.kachat.app.R.string.address_other_network_testnet, KaspaAddress.otherNetworkMessageRes(testnet))
         val e = assertThrows(IllegalArgumentException::class.java) { KaspaAddress.requireActiveNetwork(testnet) }
-        assertEquals("This is a Testnet address. KaChat is on Mainnet.", e.message)
+        assertEquals("This is a Testnet address. KaPay is on Mainnet.", e.message)
         // The same key on mainnet is fine.
         assertTrue(KaspaAddress.isValidOnActiveNetwork(KaspaNetwork.reencode(testnet, "kaspa")))
     }

@@ -75,6 +75,8 @@ badge.
 See `PUSH_SERVICE.md`. KaChat's indexer is `https://indexer.kachat.app` - the default for push and the
 .kachat indexer alike (`AppSettingsRepository.DEFAULT_*`); a saved `kachat.duckdns.org`, its old
 host, reads as it, and the device unregisters from the old host before registering with the new.
+Testnet has no default indexer (blank: no push, .kachat names from the chain), and only
+`https://kachat.app` web links are opened (not the old `kachat.duckdns.org` ones).
 The wallet registers with KaChat's push service only for "Received KAS"
 on its own addresses (`watch_only_addresses`) and .kachat events (`primary_address`, which keeps it
 registered with Address Activity off), with

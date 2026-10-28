@@ -305,11 +305,9 @@ class MainActivity : AppCompatActivity() {
         listOf("name", "address", "thread_id", "tx_id").forEach(intent::removeExtra)
     }
 
-    /** The hosts a KaChat link can arrive on: the one the app writes, and the one it used to. */
-    private fun isKaChatWebHost(host: String?): Boolean {
-        val clean = host?.lowercase()?.removePrefix("www.") ?: return false
-        return clean == KaChatLink.WEB_HOST || clean in KaChatLink.LEGACY_WEB_HOSTS
-    }
+    /** The host a KaChat web link arrives on (kachat.app, with or without www.). */
+    private fun isKaChatWebHost(host: String?): Boolean =
+        host?.lowercase()?.removePrefix("www.") == KaChatLink.WEB_HOST
 
     /** kapay://pay/<address>?... (or kachatwallet://, kachat://, https://kachat.app/pay/...) - someone's payment
      *  request (iOS c6851d6). Everything in it is checked - the address on this network, the exact
