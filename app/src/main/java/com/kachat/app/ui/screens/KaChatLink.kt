@@ -60,9 +60,18 @@ object KaChatLink {
     )
     private val TRAILING_PUNCTUATION = setOf('.', ',', '!', '?', ';', ':', '\'', '"', ')', ']', '}', '>')
 
+    /** KaPay's own schemes, read as kachat:// (iOS wallet d9bec97): kapay:// is what KaPost
+     *  hands its payment requests over with (kachat:// opens KaChat), kachatwallet:// its name
+     *  from before KaPay. */
+    private val WALLET_SCHEME_REGEX = Regex("^(?:kapay|kachatwallet)://", RegexOption.IGNORE_CASE)
+
+    /** kachat://, kapay:// or kachatwallet:// - the custom schemes a link can open the app with. */
+    fun isAppScheme(scheme: String?): Boolean =
+        scheme != null && scheme.lowercase() in setOf("kachat", "kapay", "kachatwallet")
+
     /** True when [raw] is nothing but one of these links (no surrounding text). */
     fun parse(raw: String): KaChatLinkRef? {
-        val trimmed = raw.trim()
+        val trimmed = raw.trim().replaceFirst(WALLET_SCHEME_REGEX, "kachat://")
         PAY_LINK_REGEX.matchEntire(trimmed)?.let { return paymentRequestRef(it.groupValues[1]) }
         val match = LINK_REGEX.matchEntire(trimmed) ?: return null
         return refFor(match)

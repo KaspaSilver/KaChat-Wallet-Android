@@ -67,8 +67,18 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- kapay://pay/<address>?... (the same tail as kachat://pay/) is how KaPost and KaChat
+                 hand a payment request over: Send Kaspa opens filled in. kachatwallet:// is its
+                 name from before KaPay, still accepted (iOS wallet d9bec97). -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="kapay" />
+                <data android:scheme="kachatwallet" />
+            </intent-filter>
             <!-- No kachat:// or https://kachat.app links and no share target: those open KaChat,
-                 whose chats, posts and rooms they lead to, and KaChat Wallet has none (iOS wallet
+                 whose chats, posts and rooms they lead to, and KaPay has none (iOS wallet
                  registers no associated domains, and dd35458 dropped its chat Shortcuts). -->
         </activity>
 

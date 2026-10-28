@@ -100,7 +100,10 @@ The status-bar icon is the vector `drawable/ic_kachat_wallet_notification.xml`.
 
 - `applicationId` `com.kachat.wallet` (`com.kachat.wallet.debug` for debug builds). Nothing is
   shared with KaChat (`com.kachat.app`), so the two apps never read each other's storage or keys.
-- No `kachat://` or `https://kachat.app` links and no share target: those belong to KaChat.
+- URL schemes `kapay` (what KaPost and KaChat open to hand over a payment request:
+  `kapay://pay/<address>?...`, the same tail as `kachat://pay/`) and `kachatwallet` (its old name,
+  still accepted). No `kachat://` or `https://kachat.app` links and no share target: those belong
+  to KaChat.
 - Version: `app/build.gradle.kts` (`versionName`, `versionCode`, `kachatBuildNumber`), from 1.0 (1).
 - Signing: `keystore.properties` and the keystores are gitignored and the owner's; the wallet
   needs its own upload key for Play.
