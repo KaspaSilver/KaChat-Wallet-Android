@@ -156,7 +156,6 @@
     <string name="other_nodes">Altri nodi</string>
     <string name="paste_from_clipboard">Incolla dagli appunti</string>
     <string name="paste_kpub">Incolla kpub</string>
-    <string name="paste_the_kpub_exported_from_your">Incolla la kpub esportata dal tuo dispositivo KasSigner. Non contiene materiale di chiave privata.</string>
     <string name="payment">Pagamento</string>
     <string name="photo">Foto</string>
     <string name="photo_message">Messaggio foto</string>
@@ -196,7 +195,7 @@
     <string name="scan_qr_code">Scansiona codice QR</string>
     <string name="scan_signed_transaction">Scansiona transazione firmata</string>
     <string name="scan_kpub_from_kassigner">Scansiona kpub da KasSigner</string>
-    <string name="scan_this_with_your_kassigner_device">Scansiona questo con il tuo dispositivo KasSigner, controllalo li, poi firma.</string>
+    <string name="scan_this_with_your_kassigner_device">Scansiona questo sul tuo dispositivo KasSigner</string>
     <string name="scroll_to_latest">Scorri all\'ultimo</string>
     <string name="search_chats">Cerca chat</string>
     <string name="secure_messaging_on_kaspa_blockdag">Messaggistica sicura su Kaspa BlockDAG</string>
@@ -1085,7 +1084,6 @@
     <string name="ab_editor_footer">Salvato in KaPay solo per questo wallet. Mai aggiunto ai contatti del telefono.</string>
     <string name="ab_remove_from">Rimuovi dalla rubrica</string>
     <string name="ab_edit_address">Modifica indirizzo</string>
-    <string name="ab_picker_empty_body">Aggiungi indirizzi in Kaspa Hub &gt; Rubrica indirizzi.</string>
     <string name="ab_err_no_wallet">Apri prima un wallet.</string>
     <string name="ab_err_empty_name">Inserisci un nome.</string>
     <string name="ab_err_invalid_address">Inserisci un indirizzo Kaspa valido.</string>
@@ -1225,7 +1223,6 @@
     <string name="pr_chatting_footer">Il pagamento arriva nella tua chat con chi paga, con la nota.</string>
     <string name="pr_memo_placeholder">A cosa serve (facoltativo)</string>
     <string name="pr_copy">Copia richiesta di pagamento</string>
-    <string name="pr_anyone_note">Chi lo apre o lo incolla in KaChat ottiene Invia Kaspa compilato e vede che viene dal tuo indirizzo di chat (firmato con la sua chiave).</string>
     <string name="pr_requested">Richiesto</string>
     <string name="pr_paid_as_chat_payment">Pagato come pagamento in chat: compare nella tua chat con questa persona.</string>
     <string name="pr_paid_to_their_spending">Pagato al suo indirizzo di spesa.</string>
@@ -1274,7 +1271,6 @@
     <string name="welcome_everything_else">Tutto il resto</string>
     <string name="welcome_everything_else_caption">Per proteggere la tua privacy, usa gli altri tuoi indirizzi per ogni altra attività sulla rete Kaspa. Ricevi Kaspa te ne dà uno nuovo, e Gestisci indirizzi li elenca tutti.</string>
     <!-- .kachat Names guide (claim, how it works, make it yours, keep it) -->
-    <string name="kg_claim_hint">Cerca il nome che vuoi in Kaspa Hub &gt; .kachat, poi rivendicalo.</string>
     <string name="kg_how_title">Come funziona un nome</string>
     <string name="kg_how_body">Il tuo nome vive sulla rete Kaspa, detenuto dal tuo indirizzo di chat. Finché è tuo, nessuno può prenderlo o cambiarlo.</string>
     <string name="kg_how_commit">Rivendicarlo richiede due transazioni rapide: la prima tiene segreta la scelta, la seconda lo registra.</string>
@@ -1286,12 +1282,10 @@
     <string name="kg_use_pay">Possono inviarti Kaspa a tuonome.kachat invece che a un indirizzo lungo.</string>
     <string name="kg_use_link">Il link del tuo profilo mostra il tuo nome.</string>
     <string name="kg_keep_title">Tienilo</string>
-    <string name="kg_keep_body">I tuoi nomi sono in Profilo &gt; I tuoi domini &gt; .kachat.</string>
     <string name="kg_keep_renew">Rinnovalo prima che scada. Ogni nome mostra quando.</string>
     <string name="kg_keep_grace">Dopo la scadenza c’è un periodo di grazia per rinnovarlo prima che altri possano rivendicarlo.</string>
     <string name="kg_keep_transfer">Puoi trasferirlo, metterlo in vendita o accettare un’offerta.</string>
     <string name="kg_finished_title">Tutto pronto</string>
-    <string name="kg_finished_body">Rivendica il tuo nome in Kaspa Hub &gt; .kachat quando vuoi.</string>
     <string name="kg_names_help_title">Guida ai nomi .kachat</string>
     <string name="kg_names_help_body">Rivendica un nome .kachat, rendilo tuo e tienilo.</string>
     <string name="kg_names_setup_footer">Passo dopo passo: rivendicare il tuo nome .kachat e renderlo tuo.</string>
@@ -1390,4 +1384,5 @@
     <string name="wallet_title">Portafoglio</string>
     <string name="connection_tab_push">Push</string>
     <string name="ab_add_address_sub">Salva un indirizzo Kaspa con un nome che riconosci.</string>
+    <string name="something_went_wrong">Qualcosa e andato storto</string>
 </resources>

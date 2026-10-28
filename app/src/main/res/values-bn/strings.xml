@@ -156,7 +156,6 @@
     <string name="other_nodes">অন্যান্য নোড</string>
     <string name="paste_from_clipboard">ক্লিপবোর্ড থেকে পেস্ট করুন</string>
     <string name="paste_kpub">kpub পেস্ট করুন</string>
-    <string name="paste_the_kpub_exported_from_your">আপনার KasSigner ডিভাইস থেকে এক্সপোর্ট করা kpub পেস্ট করুন। এতে কোনো প্রাইভেট কী উপাদান নেই।</string>
     <string name="payment">পেমেন্ট</string>
     <string name="photo">ছবি</string>
     <string name="photo_message">ছবি বার্তা</string>
@@ -196,7 +195,7 @@
     <string name="scan_qr_code">QR কোড স্ক্যান করুন</string>
     <string name="scan_signed_transaction">স্বাক্ষরিত লেনদেন স্ক্যান করুন</string>
     <string name="scan_kpub_from_kassigner">KasSigner থেকে kpub স্ক্যান করুন</string>
-    <string name="scan_this_with_your_kassigner_device">আপনার KasSigner ডিভাইস দিয়ে এটি স্ক্যান করুন, সেখানে পর্যালোচনা করুন, তারপর স্বাক্ষর করুন।</string>
+    <string name="scan_this_with_your_kassigner_device">এটি আপনার KasSigner ডিভাইসে স্ক্যান করুন</string>
     <string name="scroll_to_latest">সর্বশেষে স্ক্রল করুন</string>
     <string name="search_chats">চ্যাট খুঁজুন</string>
     <string name="secure_messaging_on_kaspa_blockdag">Kaspa BlockDAG-এ নিরাপদ মেসেজিং</string>
@@ -1085,7 +1084,6 @@
     <string name="ab_editor_footer">শুধু এই ওয়ালেটের জন্য KaPay-এ সংরক্ষিত। কখনো আপনার ফোনের কন্টাক্টসে যোগ হয় না।</string>
     <string name="ab_remove_from">ঠিকানা বই থেকে সরান</string>
     <string name="ab_edit_address">ঠিকানা সম্পাদনা</string>
-    <string name="ab_picker_empty_body">Kaspa Hub &gt; ঠিকানা বই থেকে ঠিকানা যোগ করুন।</string>
     <string name="ab_err_no_wallet">প্রথমে একটি ওয়ালেট খুলুন।</string>
     <string name="ab_err_empty_name">একটি নাম লিখুন।</string>
     <string name="ab_err_invalid_address">একটি বৈধ Kaspa ঠিকানা লিখুন।</string>
@@ -1225,7 +1223,6 @@
     <string name="pr_chatting_footer">পেমেন্টটি যে দেবে তার সাথে আপনার চ্যাটে আসবে, মেমোসহ।</string>
     <string name="pr_memo_placeholder">কীসের জন্য (ঐচ্ছিক)</string>
     <string name="pr_copy">পেমেন্ট অনুরোধ কপি করুন</string>
-    <string name="pr_anyone_note">KaChat-এ যে কেউ এটি খুললে বা পেস্ট করলে তথ্য ভরা Kaspa পাঠানোর স্ক্রিন পাবেন, এবং দেখবেন এটি আপনার চ্যাটিং ঠিকানা থেকে তৈরি (এর কী দিয়ে স্বাক্ষরিত)।</string>
     <string name="pr_requested">অনুরোধকৃত</string>
     <string name="pr_paid_as_chat_payment">চ্যাট পেমেন্ট হিসেবে দেওয়া হবে: তাদের সাথে আপনার চ্যাটে দেখাবে।</string>
     <string name="pr_paid_to_their_spending">তাদের স্পেন্ডিং ঠিকানায় দেওয়া হবে।</string>
@@ -1274,7 +1271,6 @@
     <string name="welcome_everything_else">বাকি সবকিছু</string>
     <string name="welcome_everything_else_caption">গোপনীয়তা রক্ষায় Kaspa নেটওয়ার্কের অন্য সব কাজে আপনার অন্য ঠিকানাগুলো ব্যবহার করুন। Kaspa গ্রহণ করুন আপনাকে নতুন একটি দেয়, আর ঠিকানা ব্যবস্থাপনায় সব দেখা যায়।</string>
     <!-- .kachat Names guide (claim, how it works, make it yours, keep it) -->
-    <string name="kg_claim_hint">Kaspa হাব &gt; .kachat-এ আপনার কাঙ্ক্ষিত নাম খুঁজে দাবি করুন।</string>
     <string name="kg_how_title">নাম যেভাবে কাজ করে</string>
     <string name="kg_how_body">আপনার নাম Kaspa নেটওয়ার্কে থাকে, আপনার চ্যাটিং ঠিকানার কাছে। আপনার থাকা অবস্থায় কেউ তা নিতে বা বদলাতে পারে না।</string>
     <string name="kg_how_commit">দাবি করতে দুটি দ্রুত লেনদেন লাগে: প্রথমটি আপনার পছন্দ গোপন রাখে, দ্বিতীয়টি নিবন্ধন করে।</string>
@@ -1286,12 +1282,10 @@
     <string name="kg_use_pay">লম্বা ঠিকানার বদলে তারা yourname.kachat-এ Kaspa পাঠাতে পারে।</string>
     <string name="kg_use_link">আপনার প্রোফাইল লিংকে আপনার নাম দেখায়।</string>
     <string name="kg_keep_title">ধরে রাখুন</string>
-    <string name="kg_keep_body">আপনার নামগুলো প্রোফাইল &gt; আপনার ডোমেইন &gt; .kachat-এ।</string>
     <string name="kg_keep_renew">মেয়াদ শেষের আগে নবায়ন করুন। প্রতিটি নামে তারিখ দেখায়।</string>
     <string name="kg_keep_grace">মেয়াদ শেষের পর অন্য কেউ দাবি করার আগে নবায়নের জন্য একটি গ্রেস পিরিয়ড থাকে।</string>
     <string name="kg_keep_transfer">আপনি এটি হস্তান্তর, বিক্রির জন্য তালিকাভুক্ত বা কোনো অফার গ্রহণ করতে পারেন।</string>
     <string name="kg_finished_title">সব প্রস্তুত</string>
-    <string name="kg_finished_body">প্রস্তুত হলে Kaspa হাব &gt; .kachat-এ আপনার নাম দাবি করুন।</string>
     <string name="kg_names_help_title">.kachat নাম গাইড</string>
     <string name="kg_names_help_body">একটি .kachat নাম দাবি করুন, নিজের নাম করুন এবং ধরে রাখুন।</string>
     <string name="kg_names_setup_footer">.kachat নাম দাবি ও নিজের করার ধাপগুলো দেখুন।</string>
@@ -1390,4 +1384,5 @@
     <string name="wallet_title">ওয়ালেট</string>
     <string name="connection_tab_push">পুশ</string>
     <string name="ab_add_address_sub">চেনা নাম দিয়ে একটি ক্যাসপা ঠিকানা সংরক্ষণ করুন।</string>
+    <string name="something_went_wrong">কিছু ভুল হয়েছে</string>
 </resources>

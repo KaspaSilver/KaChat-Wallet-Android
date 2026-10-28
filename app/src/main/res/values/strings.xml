@@ -109,7 +109,7 @@
     <string name="hide_password">Hide password</string>
     <string name="coin_control">Coin Control</string>
     <string name="compound_utxos">Compound UTXOs</string>
-    <string name="compound_utxos_description">Combine this address\'s UTXOs to reduce the inputs a future send needs. A single transaction can only merge so many at once, so if this address has a very large number, tap Compound again after it confirms to keep reducing.</string>
+    <string name="compound_utxos_description">Combines all UTXOs at this address into a single one, to reduce the number of inputs a future send needs.</string>
     <string name="cancel_photo">Cancel photo</string>
     <string name="cancel_recording">Cancel recording</string>
     <string name="cancel_reply">Cancel reply</string>
@@ -250,7 +250,7 @@
     <string name="primary_domain">Primary Domain</string>
     <string name="set_as_primary">Set as Primary</string>
     <string name="primary">Primary</string>
-    <string name="something_went_wrong">Something went wrong</string>
+    <string name="something_went_wrong">Something Went Wrong</string>
     <string name="no_hidden_addresses">No hidden addresses.</string>
     <string name="no_hidden_users_in_this_group">No hidden users in this group.</string>
     <string name="no_messages_yet">No messages yet</string>
@@ -271,7 +271,7 @@
     <string name="other_nodes">Other Nodes</string>
     <string name="paste_from_clipboard">Paste from Clipboard</string>
     <string name="paste_kpub">Paste kpub</string>
-    <string name="paste_the_kpub_exported_from_your">Paste the kpub exported from your KasSigner device. This contains no private key material.</string>
+    <string name="paste_the_kpub_exported_from_your">Paste the kpub exported from your KasSigner device. It contains no private key material.</string>
     <string name="payment">Payment</string>
     <string name="photo">Photo</string>
     <string name="photo_message">Photo message</string>
@@ -315,7 +315,7 @@
     <string name="scan_qr_code">Scan QR Code</string>
     <string name="scan_signed_transaction">Scan Signed Transaction</string>
     <string name="scan_kpub_from_kassigner">Scan kpub from KasSigner</string>
-    <string name="scan_this_with_your_kassigner_device">Scan this with your KasSigner device, review it there, then sign.</string>
+    <string name="scan_this_with_your_kassigner_device">Scan this on your KasSigner device</string>
     <string name="scroll_to_latest">Scroll to latest</string>
     <string name="search_chats">Search chats</string>
     <string name="search_coins">Search coins</string>
@@ -1286,7 +1286,7 @@
     <string name="ab_editor_footer">Saved in KaPay for this wallet only. Never added to your phone\'s Contacts.</string>
     <string name="ab_remove_from">Remove from Address Book</string>
     <string name="ab_edit_address">Edit Address</string>
-    <string name="ab_picker_empty_body">Add addresses in Kaspa Hub &gt; Address Book.</string>
+    <string name="ab_picker_empty_body">Add addresses in Wallet > Address Book.</string>
     <string name="ab_err_no_wallet">Open a wallet first.</string>
     <string name="ab_err_empty_name">Enter a name.</string>
     <string name="ab_err_invalid_address">Enter a valid Kaspa address.</string>
@@ -1428,7 +1428,7 @@
     <string name="pr_chatting_footer">The payment lands in your chat with whoever pays, with the memo.</string>
     <string name="pr_memo_placeholder">What it\'s for (optional)</string>
     <string name="pr_copy">Copy Payment Request</string>
-    <string name="pr_anyone_note">Anyone who opens or pastes it in KaChat gets Send Kaspa with this filled in, and sees it was made by your chatting address (signed with its key).</string>
+    <string name="pr_anyone_note">Anyone who opens it in KaPay or KaChat gets Send Kaspa with this filled in, and sees it was made by your chatting address (signed with its key).</string>
     <string name="pr_requested">Requested</string>
     <string name="pr_paid_as_chat_payment">Paid as a chat payment: it shows in your chat with them.</string>
     <string name="pr_paid_to_their_spending">Paid to their spending address.</string>
@@ -1477,7 +1477,7 @@
     <string name="welcome_everything_else">Everything Else</string>
     <string name="welcome_everything_else_caption">To protect your privacy, use your other addresses for all other activity on the Kaspa network. Receive Kaspa gives you a fresh one, and Manage Addresses lists them all.</string>
     <!-- .kachat Names guide (claim, how it works, make it yours, keep it) -->
-    <string name="kg_claim_hint">Search for the name you want in Kaspa Hub &gt; .kachat, then claim it.</string>
+    <string name="kg_claim_hint">Search for the name you want in the .kachat tab, then claim it.</string>
     <string name="kg_how_title">How a name works</string>
     <string name="kg_how_body">Your name lives on the Kaspa network, held by your chatting address. Nobody can take it or change it while it\'s yours.</string>
     <string name="kg_how_commit">Claiming takes two quick transactions: the first keeps your pick secret, the second registers it.</string>
@@ -1489,12 +1489,12 @@
     <string name="kg_use_pay">They can send you Kaspa to yourname.kachat instead of a long address.</string>
     <string name="kg_use_link">Your profile link shows your name.</string>
     <string name="kg_keep_title">Keep it</string>
-    <string name="kg_keep_body">Your names are in Profile &gt; Your Domains &gt; .kachat.</string>
+    <string name="kg_keep_body">Your names are in Wallet > Your Domains > .kachat.</string>
     <string name="kg_keep_renew">Renew before it expires. It shows when, on each name.</string>
     <string name="kg_keep_grace">After it expires there\'s a grace period to renew it before anyone else can claim it.</string>
     <string name="kg_keep_transfer">You can transfer it, list it for sale, or accept an offer for it.</string>
     <string name="kg_finished_title">You\'re all set</string>
-    <string name="kg_finished_body">Claim your name in Kaspa Hub &gt; .kachat whenever you\'re ready.</string>
+    <string name="kg_finished_body">Claim your name in the .kachat tab whenever you\'re ready.</string>
     <string name="kg_names_help_title">.kachat Names Guide</string>
     <string name="kg_names_help_body">Claim a .kachat name, make it your name, and keep it.</string>
     <string name="kg_names_setup_footer">Walk through claiming your .kachat name and making it yours.</string>
@@ -1714,4 +1714,5 @@
     <string name="ncw_off_on_testnet_footer">The backup works on mainnet only, so testnet can never overwrite your mainnet backup. Turn off Testnet in Settings > Connection and your Nextcloud connection comes back as it was.</string>
     <!-- Settings > Storage hub, the Nextcloud row's footer (iOS wallet 59593af), for Screens.kt -->
     <string name="storage_nextcloud_footer">Back up your Address Book and Portfolio to the KaChat folder on your own Nextcloud server. Nothing is stored with Google or Apple.</string>
+    <string name="cold_name_this_account">Name This Account</string>
 </resources>

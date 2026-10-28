@@ -156,7 +156,6 @@
     <string name="other_nodes">기타 노드</string>
     <string name="paste_from_clipboard">클립보드에서 붙여넣기</string>
     <string name="paste_kpub">kpub 붙여넣기</string>
-    <string name="paste_the_kpub_exported_from_your">KasSigner 기기에서 내보낸 kpub를 붙여넣으세요. 개인 키 자료는 포함되어 있지 않습니다.</string>
     <string name="payment">결제</string>
     <string name="photo">사진</string>
     <string name="photo_message">사진 메시지</string>
@@ -196,7 +195,7 @@
     <string name="scan_qr_code">QR 코드 스캔</string>
     <string name="scan_signed_transaction">서명된 거래 스캔</string>
     <string name="scan_kpub_from_kassigner">KasSigner에서 kpub 스캔</string>
-    <string name="scan_this_with_your_kassigner_device">KasSigner 기기로 이것을 스캔하고 거기서 검토한 다음 서명하세요.</string>
+    <string name="scan_this_with_your_kassigner_device">KasSigner 기기에서 이것을 스캔하세요</string>
     <string name="scroll_to_latest">최신으로 스크롤</string>
     <string name="search_chats">채팅 검색</string>
     <string name="secure_messaging_on_kaspa_blockdag">Kaspa BlockDAG에서 안전한 메시징</string>
@@ -1085,7 +1084,6 @@
     <string name="ab_editor_footer">이 지갑 전용으로 KaPay에 저장됩니다. 휴대폰 연락처에는 추가되지 않습니다.</string>
     <string name="ab_remove_from">주소록에서 제거</string>
     <string name="ab_edit_address">주소 편집</string>
-    <string name="ab_picker_empty_body">Kaspa Hub &gt; 주소록에서 주소를 추가하세요.</string>
     <string name="ab_err_no_wallet">먼저 지갑을 여세요.</string>
     <string name="ab_err_empty_name">이름을 입력하세요.</string>
     <string name="ab_err_invalid_address">올바른 Kaspa 주소를 입력하세요.</string>
@@ -1225,7 +1223,6 @@
     <string name="pr_chatting_footer">결제는 메모와 함께 결제한 사람과의 채팅에 도착합니다.</string>
     <string name="pr_memo_placeholder">용도 (선택)</string>
     <string name="pr_copy">결제 요청 복사</string>
-    <string name="pr_anyone_note">KaChat에서 열거나 붙여 넣으면 내용이 채워진 Kaspa 보내기 화면이 열리고, 내 채팅 주소가 만든 요청(그 키로 서명됨)임을 확인할 수 있습니다.</string>
     <string name="pr_requested">요청 금액</string>
     <string name="pr_paid_as_chat_payment">채팅 결제로 보내져 그 사람과의 채팅에 표시됩니다.</string>
     <string name="pr_paid_to_their_spending">상대의 지출 주소로 보냅니다.</string>
@@ -1274,7 +1271,6 @@
     <string name="welcome_everything_else">그 밖의 모든 것</string>
     <string name="welcome_everything_else_caption">개인정보를 지키려면 Kaspa 네트워크의 다른 모든 활동에는 다른 주소를 쓰세요. Kaspa 받기가 새 주소를 주고, 주소 관리에서 모두 볼 수 있습니다.</string>
     <!-- .kachat Names guide (claim, how it works, make it yours, keep it) -->
-    <string name="kg_claim_hint">Kaspa 허브 &gt; .kachat에서 원하는 이름을 찾아 받으세요.</string>
     <string name="kg_how_title">이름의 작동 방식</string>
     <string name="kg_how_body">이름은 Kaspa 네트워크에 있으며 채팅 주소가 보유합니다. 내 것인 동안에는 아무도 가져가거나 바꿀 수 없습니다.</string>
     <string name="kg_how_commit">받기는 두 번의 빠른 거래로 이루어집니다. 첫 번째는 선택을 비밀로 하고, 두 번째는 등록합니다.</string>
@@ -1286,12 +1282,10 @@
     <string name="kg_use_pay">긴 주소 대신 yourname.kachat으로 Kaspa를 보낼 수 있습니다.</string>
     <string name="kg_use_link">프로필 링크에 이름이 표시됩니다.</string>
     <string name="kg_keep_title">유지하기</string>
-    <string name="kg_keep_body">내 이름은 프로필 &gt; 내 도메인 &gt; .kachat에 있습니다.</string>
     <string name="kg_keep_renew">만료 전에 갱신하세요. 각 이름에 만료일이 표시됩니다.</string>
     <string name="kg_keep_grace">만료 후에도 다른 사람이 받기 전에 갱신할 수 있는 유예 기간이 있습니다.</string>
     <string name="kg_keep_transfer">이전하거나 판매 등록하거나 제안을 수락할 수 있습니다.</string>
     <string name="kg_finished_title">준비 완료</string>
-    <string name="kg_finished_body">준비되면 Kaspa 허브 &gt; .kachat에서 이름을 받으세요.</string>
     <string name="kg_names_help_title">.kachat 이름 가이드</string>
     <string name="kg_names_help_body">.kachat 이름을 받아 내 이름으로 만들고 유지하세요.</string>
     <string name="kg_names_setup_footer">.kachat 이름을 받고 내 것으로 만드는 단계를 안내합니다.</string>
@@ -1390,4 +1384,5 @@
     <string name="wallet_title">지갑</string>
     <string name="connection_tab_push">푸시</string>
     <string name="ab_add_address_sub">알아보기 쉬운 이름으로 Kaspa 주소를 저장하세요.</string>
+    <string name="something_went_wrong">문제가 발생했습니다</string>
 </resources>

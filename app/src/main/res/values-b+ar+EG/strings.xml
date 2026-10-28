@@ -156,7 +156,6 @@
     <string name="other_nodes">عقد أخرى</string>
     <string name="paste_from_clipboard">لصق من الحافظة</string>
     <string name="paste_kpub">لصق kpub</string>
-    <string name="paste_the_kpub_exported_from_your">الصق الـ kpub المُصدَّر من جهاز KasSigner الخاص بك. لا يحتوي هذا على مواد المفتاح الخاص.</string>
     <string name="payment">دفعة</string>
     <string name="photo">صورة</string>
     <string name="photo_message">رسالة صورة</string>
@@ -196,7 +195,7 @@
     <string name="scan_qr_code">مسح رمز QR</string>
     <string name="scan_signed_transaction">مسح المعاملة الموقّعة</string>
     <string name="scan_kpub_from_kassigner">مسح kpub من KasSigner</string>
-    <string name="scan_this_with_your_kassigner_device">امسح هذا ضوئيًا بجهاز KasSigner الخاص بك، راجعه هناك، ثم وقّع.</string>
+    <string name="scan_this_with_your_kassigner_device">امسح هذا على جهاز KasSigner الخاص بك</string>
     <string name="scroll_to_latest">التمرير إلى الأحدث</string>
     <string name="search_chats">البحث في المحادثات</string>
     <string name="secure_messaging_on_kaspa_blockdag">مراسلة آمنة على Kaspa BlockDAG</string>
@@ -1085,7 +1084,6 @@
     <string name="ab_editor_footer">محفوظ في KaPay لهذه المحفظة فقط. لا يُضاف أبدًا إلى جهات اتصال هاتفك.</string>
     <string name="ab_remove_from">إزالة من دفتر العناوين</string>
     <string name="ab_edit_address">تعديل العنوان</string>
-    <string name="ab_picker_empty_body">أضف العناوين من Kaspa Hub &gt; دفتر العناوين.</string>
     <string name="ab_err_no_wallet">افتح محفظة أولًا.</string>
     <string name="ab_err_empty_name">أدخل اسمًا.</string>
     <string name="ab_err_invalid_address">أدخل عنوان Kaspa صالحًا.</string>
@@ -1225,7 +1223,6 @@
     <string name="pr_chatting_footer">تصل الدفعة إلى محادثتك مع من يدفع، مع الملاحظة.</string>
     <string name="pr_memo_placeholder">مقابل ماذا (اختياري)</string>
     <string name="pr_copy">نسخ طلب الدفع</string>
-    <string name="pr_anyone_note">كل من يفتحه أو يلصقه في KaChat يحصل على شاشة إرسال Kaspa معبأة، ويرى أنه صادر من عنوان الدردشة الخاص بك (موقّع بمفتاحه).</string>
     <string name="pr_requested">المطلوب</string>
     <string name="pr_paid_as_chat_payment">تُدفع كدفعة في المحادثة: تظهر في محادثتك معه.</string>
     <string name="pr_paid_to_their_spending">تُدفع إلى عنوان الإنفاق الخاص به.</string>
@@ -1274,7 +1271,6 @@
     <string name="welcome_everything_else">كل ما عدا ذلك</string>
     <string name="welcome_everything_else_caption">لحماية خصوصيتك، استخدم عناوينك الأخرى لكل نشاط آخر على شبكة Kaspa. يمنحك «استلام Kaspa» عنوانًا جديدًا، و«إدارة العناوين» تعرضها كلها.</string>
     <!-- .kachat Names guide (claim, how it works, make it yours, keep it) -->
-    <string name="kg_claim_hint">ابحث عن الاسم الذي تريده في مركز Kaspa &gt; .kachat، ثم احجزه.</string>
     <string name="kg_how_title">كيف يعمل الاسم</string>
     <string name="kg_how_body">اسمك موجود على شبكة Kaspa، ويحتفظ به عنوان الدردشة الخاص بك. لا يمكن لأحد أخذه أو تغييره ما دام لك.</string>
     <string name="kg_how_commit">الحجز يتم بمعاملتين سريعتين: الأولى تُبقي اختيارك سرًا، والثانية تسجّله.</string>
@@ -1286,12 +1282,10 @@
     <string name="kg_use_pay">يمكنهم إرسال Kaspa إلى yourname.kachat بدل عنوان طويل.</string>
     <string name="kg_use_link">رابط ملفك الشخصي يُظهر اسمك.</string>
     <string name="kg_keep_title">احتفظ به</string>
-    <string name="kg_keep_body">أسماؤك في الملف الشخصي &gt; نطاقاتك &gt; .kachat.</string>
     <string name="kg_keep_renew">جدّده قبل أن ينتهي. يظهر الموعد على كل اسم.</string>
     <string name="kg_keep_grace">بعد انتهائه توجد فترة سماح لتجديده قبل أن يحجزه أي شخص آخر.</string>
     <string name="kg_keep_transfer">يمكنك نقله أو عرضه للبيع أو قبول عرض عليه.</string>
     <string name="kg_finished_title">أنت جاهز</string>
-    <string name="kg_finished_body">احجز اسمك في مركز Kaspa &gt; .kachat متى شئت.</string>
     <string name="kg_names_help_title">دليل أسماء .kachat</string>
     <string name="kg_names_help_body">احجز اسم .kachat واجعله اسمك واحتفظ به.</string>
     <string name="kg_names_setup_footer">تعرّف خطوة بخطوة على حجز اسم .kachat وجعله اسمك.</string>
@@ -1390,4 +1384,5 @@
     <string name="wallet_title">المحفظة</string>
     <string name="connection_tab_push">الإشعارات</string>
     <string name="ab_add_address_sub">احفظ عنوان كاسبا باسم تعرفه.</string>
+    <string name="something_went_wrong">حدث خطأ ما</string>
 </resources>

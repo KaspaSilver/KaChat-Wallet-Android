@@ -156,7 +156,6 @@
     <string name="other_nodes">צמתים אחרים</string>
     <string name="paste_from_clipboard">הדבק מהלוח</string>
     <string name="paste_kpub">הדבק kpub</string>
-    <string name="paste_the_kpub_exported_from_your">הדבק את ה-kpub שיוצא מהמכשיר KasSigner שלך. זה לא מכיל חומר מפתח פרטי.</string>
     <string name="payment">תשלום</string>
     <string name="photo">תמונה</string>
     <string name="photo_message">הודעת תמונה</string>
@@ -196,7 +195,7 @@
     <string name="scan_qr_code">סרוק קוד QR</string>
     <string name="scan_signed_transaction">סרוק עסקה חתומה</string>
     <string name="scan_kpub_from_kassigner">סרוק kpub מ-KasSigner</string>
-    <string name="scan_this_with_your_kassigner_device">סרוק זאת עם מכשיר KasSigner שלך, בדוק שם, ואז חתום.</string>
+    <string name="scan_this_with_your_kassigner_device">סרוק את זה במכשיר KasSigner שלך</string>
     <string name="scroll_to_latest">גלול לאחרון</string>
     <string name="search_chats">חפש צ\'אטים</string>
     <string name="secure_messaging_on_kaspa_blockdag">הודעות מאובטחות על Kaspa BlockDAG</string>
@@ -1085,7 +1084,6 @@
     <string name="ab_editor_footer">נשמר ב-KaPay עבור הארנק הזה בלבד. לעולם לא נוסף לאנשי הקשר בטלפון.</string>
     <string name="ab_remove_from">הסרה מפנקס הכתובות</string>
     <string name="ab_edit_address">עריכת כתובת</string>
-    <string name="ab_picker_empty_body">הוסיפו כתובות ב-Kaspa Hub &gt; פנקס כתובות.</string>
     <string name="ab_err_no_wallet">פתחו קודם ארנק.</string>
     <string name="ab_err_empty_name">הזינו שם.</string>
     <string name="ab_err_invalid_address">הזינו כתובת Kaspa תקינה.</string>
@@ -1225,7 +1223,6 @@
     <string name="pr_chatting_footer">התשלום מגיע לצ׳אט שלך עם המשלם, עם ההערה.</string>
     <string name="pr_memo_placeholder">בשביל מה (אופציונלי)</string>
     <string name="pr_copy">העתקת בקשת התשלום</string>
-    <string name="pr_anyone_note">מי שפותח או מדביק אותה ב-KaChat מקבל את מסך שליחת Kaspa ממולא, ורואה שהיא נוצרה מכתובת הצ׳אט שלך (חתומה במפתח שלה).</string>
     <string name="pr_requested">מבוקש</string>
     <string name="pr_paid_as_chat_payment">משולם כתשלום בצ׳אט: מופיע בצ׳אט שלך איתם.</string>
     <string name="pr_paid_to_their_spending">משולם לכתובת ההוצאה שלהם.</string>
@@ -1274,7 +1271,6 @@
     <string name="welcome_everything_else">כל השאר</string>
     <string name="welcome_everything_else_caption">כדי להגן על הפרטיות שלך, השתמשו בכתובות האחרות שלכם לכל פעילות אחרת ברשת Kaspa. «קבלת Kaspa» נותנת כתובת חדשה, ו«ניהול כתובות» מציג את כולן.</string>
     <!-- .kachat Names guide (claim, how it works, make it yours, keep it) -->
-    <string name="kg_claim_hint">חפשו את השם שאתם רוצים במרכז Kaspa &gt; .kachat ותבעו אותו.</string>
     <string name="kg_how_title">איך שם עובד</string>
     <string name="kg_how_body">השם שלך נמצא ברשת Kaspa ומוחזק על ידי כתובת הצ׳אט שלך. כל עוד הוא שלך, אף אחד לא יכול לקחת או לשנות אותו.</string>
     <string name="kg_how_commit">תביעה דורשת שתי עסקאות מהירות: הראשונה שומרת את הבחירה בסוד, השנייה רושמת אותו.</string>
@@ -1286,12 +1282,10 @@
     <string name="kg_use_pay">הם יכולים לשלוח Kaspa ל-yourname.kachat במקום לכתובת ארוכה.</string>
     <string name="kg_use_link">קישור הפרופיל שלך מציג את השם.</string>
     <string name="kg_keep_title">שמרו עליו</string>
-    <string name="kg_keep_body">השמות שלכם נמצאים בפרופיל &gt; הדומיינים שלך &gt; .kachat.</string>
     <string name="kg_keep_renew">חדשו לפני שיפוג. התאריך מופיע על כל שם.</string>
     <string name="kg_keep_grace">אחרי שפג יש תקופת חסד לחידוש לפני שמישהו אחר יוכל לתבוע אותו.</string>
     <string name="kg_keep_transfer">אפשר להעביר אותו, להציע אותו למכירה או לקבל הצעה עליו.</string>
     <string name="kg_finished_title">הכול מוכן</string>
-    <string name="kg_finished_body">תבעו את השם במרכז Kaspa &gt; .kachat מתי שתרצו.</string>
     <string name="kg_names_help_title">מדריך שמות .kachat</string>
     <string name="kg_names_help_body">תבעו שם .kachat, הפכו אותו לשמכם ושמרו עליו.</string>
     <string name="kg_names_setup_footer">שלב אחר שלב: תביעת שם .kachat והפיכתו לשלכם.</string>
@@ -1390,4 +1384,5 @@
     <string name="wallet_title">ארנק</string>
     <string name="connection_tab_push">התראות</string>
     <string name="ab_add_address_sub">שמרו כתובת Kaspa עם שם שתזהו.</string>
+    <string name="something_went_wrong">משהו השתבש</string>
 </resources>

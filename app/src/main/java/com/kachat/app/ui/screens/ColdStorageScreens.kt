@@ -285,7 +285,7 @@ fun ColdStorageListScreen(
                                 ActionSheetRow(
                                     icon = Icons.Default.ContentCopy,
                                     title = stringResource(R.string.copy_kpub),
-                                    subtitle = "Puts the account's extended public key on the clipboard.",
+                                    subtitle = "Puts the extended public key on the clipboard.",
                                 ) {
                                     showMenu = false
                                     clipboardManager.setText(AnnotatedString(account.kpub))
@@ -295,7 +295,7 @@ fun ColdStorageListScreen(
                                 ActionSheetRow(
                                     icon = Icons.Default.QrCode,
                                     title = "Show kpub QR",
-                                    subtitle = "Full screen, for importing this account on another device.",
+                                    subtitle = "Scan it into another device to watch this account there.",
                                 ) {
                                     showMenu = false
                                     kpubQrAccount = account
@@ -430,8 +430,9 @@ fun ColdStorageListScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
+                        // iOS importNameSheet's headline.
                         Text(
-                            stringResource(R.string.import_cold_storage_account),
+                            stringResource(R.string.cold_name_this_account),
                             color = colors.textPrimary,
                             fontWeight = FontWeight.Bold,
                             fontSize = 17.sp,
@@ -1586,7 +1587,7 @@ private fun ColdSendFlow(
 
                         if (sendState.step == ColdStorageViewModel.ColdSendStep.FAILED) {
                             Text(
-                                sendState.errorMessage ?: "Something went wrong",
+                                sendState.errorMessage ?: stringResource(R.string.something_went_wrong),
                                 color = LocalAppColors.current.danger,
                                 fontSize = 13.sp,
                                 textAlign = TextAlign.Center,

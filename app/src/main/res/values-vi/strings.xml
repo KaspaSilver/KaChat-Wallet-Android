@@ -156,7 +156,6 @@
     <string name="other_nodes">Nút khác</string>
     <string name="paste_from_clipboard">Dán từ bộ nhớ tạm</string>
     <string name="paste_kpub">Dán kpub</string>
-    <string name="paste_the_kpub_exported_from_your">Dán kpub được xuất từ thiết bị KasSigner của bạn. Điều này không chứa dữ liệu khóa riêng tư.</string>
     <string name="payment">Thanh toán</string>
     <string name="photo">Ảnh</string>
     <string name="photo_message">Tin nhắn ảnh</string>
@@ -196,7 +195,7 @@
     <string name="scan_qr_code">Quét mã QR</string>
     <string name="scan_signed_transaction">Quét giao dịch đã ký</string>
     <string name="scan_kpub_from_kassigner">Quét kpub từ KasSigner</string>
-    <string name="scan_this_with_your_kassigner_device">Quét mã này bằng thiết bị KasSigner của bạn, xem lại ở đó, rồi ký.</string>
+    <string name="scan_this_with_your_kassigner_device">Quét mã này trên thiết bị KasSigner của bạn</string>
     <string name="scroll_to_latest">Cuộn đến tin nhắn mới nhất</string>
     <string name="search_chats">Tìm kiếm cuộc trò chuyện</string>
     <string name="secure_messaging_on_kaspa_blockdag">Nhắn tin bảo mật trên Kaspa BlockDAG</string>
@@ -1085,7 +1084,6 @@
     <string name="ab_editor_footer">Lưu trong KaPay chỉ cho ví này. Không bao giờ được thêm vào danh bạ điện thoại.</string>
     <string name="ab_remove_from">Gỡ khỏi sổ địa chỉ</string>
     <string name="ab_edit_address">Sửa địa chỉ</string>
-    <string name="ab_picker_empty_body">Thêm địa chỉ trong Kaspa Hub &gt; Sổ địa chỉ.</string>
     <string name="ab_err_no_wallet">Hãy mở một ví trước.</string>
     <string name="ab_err_empty_name">Nhập tên.</string>
     <string name="ab_err_invalid_address">Nhập một địa chỉ Kaspa hợp lệ.</string>
@@ -1225,7 +1223,6 @@
     <string name="pr_chatting_footer">Khoản thanh toán kèm ghi chú sẽ vào cuộc trò chuyện của bạn với người trả.</string>
     <string name="pr_memo_placeholder">Để làm gì (tùy chọn)</string>
     <string name="pr_copy">Sao chép yêu cầu thanh toán</string>
-    <string name="pr_anyone_note">Ai mở hoặc dán nó trong KaChat sẽ thấy màn hình Gửi Kaspa đã điền sẵn, và thấy nó được tạo từ địa chỉ trò chuyện của bạn (ký bằng khóa của địa chỉ đó).</string>
     <string name="pr_requested">Yêu cầu</string>
     <string name="pr_paid_as_chat_payment">Trả dưới dạng thanh toán trong trò chuyện: hiện trong cuộc trò chuyện của bạn với họ.</string>
     <string name="pr_paid_to_their_spending">Trả vào địa chỉ chi tiêu của họ.</string>
@@ -1274,7 +1271,6 @@
     <string name="welcome_everything_else">Mọi thứ khác</string>
     <string name="welcome_everything_else_caption">Để bảo vệ quyền riêng tư, hãy dùng các địa chỉ khác của bạn cho mọi hoạt động khác trên mạng Kaspa. Nhận Kaspa cho bạn một địa chỉ mới, và Quản lý địa chỉ liệt kê tất cả.</string>
     <!-- .kachat Names guide (claim, how it works, make it yours, keep it) -->
-    <string name="kg_claim_hint">Tìm tên bạn muốn trong Kaspa Hub &gt; .kachat, rồi nhận nó.</string>
     <string name="kg_how_title">Tên hoạt động thế nào</string>
     <string name="kg_how_body">Tên của bạn nằm trên mạng Kaspa, do địa chỉ trò chuyện của bạn nắm giữ. Khi còn là của bạn, không ai có thể lấy hay đổi nó.</string>
     <string name="kg_how_commit">Nhận tên cần hai giao dịch nhanh: giao dịch đầu giữ bí mật lựa chọn, giao dịch thứ hai đăng ký.</string>
@@ -1286,12 +1282,10 @@
     <string name="kg_use_pay">Họ có thể gửi Kaspa tới tenban.kachat thay vì một địa chỉ dài.</string>
     <string name="kg_use_link">Liên kết hồ sơ của bạn hiển thị tên bạn.</string>
     <string name="kg_keep_title">Giữ lấy</string>
-    <string name="kg_keep_body">Các tên của bạn nằm ở Hồ sơ &gt; Tên miền của bạn &gt; .kachat.</string>
     <string name="kg_keep_renew">Gia hạn trước khi hết hạn. Mỗi tên đều hiện ngày.</string>
     <string name="kg_keep_grace">Sau khi hết hạn có một thời gian ân hạn để gia hạn trước khi người khác có thể nhận.</string>
     <string name="kg_keep_transfer">Bạn có thể chuyển nhượng, rao bán hoặc chấp nhận một lời đề nghị.</string>
     <string name="kg_finished_title">Đã xong</string>
-    <string name="kg_finished_body">Nhận tên của bạn trong Kaspa Hub &gt; .kachat khi bạn sẵn sàng.</string>
     <string name="kg_names_help_title">Hướng dẫn tên .kachat</string>
     <string name="kg_names_help_body">Nhận một tên .kachat, biến nó thành tên của bạn và giữ lấy.</string>
     <string name="kg_names_setup_footer">Từng bước nhận tên .kachat và biến nó thành của bạn.</string>
@@ -1390,4 +1384,5 @@
     <string name="wallet_title">Ví</string>
     <string name="connection_tab_push">Thông báo</string>
     <string name="ab_add_address_sub">Lưu một địa chỉ Kaspa với tên bạn dễ nhận ra.</string>
+    <string name="something_went_wrong">Đã xảy ra lỗi</string>
 </resources>

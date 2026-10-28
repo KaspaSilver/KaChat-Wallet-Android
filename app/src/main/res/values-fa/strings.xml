@@ -43,7 +43,6 @@
     <string name="cancel">لغو</string>
     <string name="coin_control">کنترل سکه (Coin Control)</string>
     <string name="compound_utxos">ترکیب UTXOها</string>
-    <string name="compound_utxos_description">ترکیب تمام UTXOهای این آدرس به یک UTXO واحد.</string>
     <string name="cancel_photo">لغو عکس</string>
     <string name="cancel_recording">لغو ضبط</string>
     <string name="cancel_reply">لغو پاسخ</string>
@@ -185,7 +184,6 @@
     <string name="other_nodes">گره‌های دیگر</string>
     <string name="paste_from_clipboard">جای‌گذاری از حافظه</string>
     <string name="paste_kpub">چسباندن kpub</string>
-    <string name="paste_the_kpub_exported_from_your">kpub صادرشده از دستگاه KasSigner خود را بچسبانید. این شامل هیچ ماده کلید خصوصی نمی‌شود.</string>
     <string name="payment">پرداخت</string>
     <string name="photo">عکس</string>
     <string name="photo_message">پیام عکس</string>
@@ -228,7 +226,7 @@
     <string name="scan_qr_code">اسکن کد QR</string>
     <string name="scan_signed_transaction">اسکن تراکنش امضاشده</string>
     <string name="scan_kpub_from_kassigner">اسکن kpub از KasSigner</string>
-    <string name="scan_this_with_your_kassigner_device">این را با دستگاه KasSigner خود اسکن کنید، آنجا بررسی کنید، سپس امضا کنید.</string>
+    <string name="scan_this_with_your_kassigner_device">این را روی دستگاه KasSigner خود اسکن کنید</string>
     <string name="scroll_to_latest">پیمایش به آخرین</string>
     <string name="search_chats">جستجوی گفتگوها</string>
     <string name="secure_messaging_on_kaspa_blockdag">پیام‌رسانی امن روی Kaspa BlockDAG</string>
@@ -1116,7 +1114,6 @@
     <string name="ab_editor_footer">فقط برای این کیف پول در KaPay ذخیره می‌شود. هرگز به مخاطبین گوشی شما اضافه نمی‌شود.</string>
     <string name="ab_remove_from">برداشتن از دفترچه نشانی</string>
     <string name="ab_edit_address">ویرایش نشانی</string>
-    <string name="ab_picker_empty_body">نشانی‌ها را در Kaspa Hub &gt; دفترچه نشانی اضافه کنید.</string>
     <string name="ab_err_no_wallet">ابتدا یک کیف پول باز کنید.</string>
     <string name="ab_err_empty_name">یک نام وارد کنید.</string>
     <string name="ab_err_invalid_address">یک نشانی معتبر Kaspa وارد کنید.</string>
@@ -1256,7 +1253,6 @@
     <string name="pr_chatting_footer">پرداخت با یادداشت در گفتگوی شما با پرداخت‌کننده ثبت می‌شود.</string>
     <string name="pr_memo_placeholder">بابت چه (اختیاری)</string>
     <string name="pr_copy">کپی درخواست پرداخت</string>
-    <string name="pr_anyone_note">هر کس آن را در KaChat باز یا جای‌گذاری کند، صفحه ارسال Kaspa را پرشده می‌بیند و می‌فهمد که از آدرس گفتگوی شما ساخته شده است (با کلید آن امضا شده).</string>
     <string name="pr_requested">درخواست‌شده</string>
     <string name="pr_paid_as_chat_payment">به‌صورت پرداخت در گفتگو: در گفتگوی شما با او نمایش داده می‌شود.</string>
     <string name="pr_paid_to_their_spending">به آدرس هزینه او پرداخت می‌شود.</string>
@@ -1305,7 +1301,6 @@
     <string name="welcome_everything_else">همه چیز دیگر</string>
     <string name="welcome_everything_else_caption">برای حفظ حریم خصوصی، برای هر فعالیت دیگری در شبکه Kaspa از آدرس‌های دیگرتان استفاده کنید. «دریافت Kaspa» یک آدرس تازه می‌دهد و «مدیریت آدرس‌ها» همه را نشان می‌دهد.</string>
     <!-- .kachat Names guide (claim, how it works, make it yours, keep it) -->
-    <string name="kg_claim_hint">نام دلخواه را در هاب Kaspa &gt; .kachat جست‌وجو و ثبت کنید.</string>
     <string name="kg_how_title">نام چگونه کار می‌کند</string>
     <string name="kg_how_body">نام شما روی شبکه Kaspa است و آدرس گفتگوی شما آن را نگه می‌دارد. تا وقتی مال شماست کسی نمی‌تواند آن را بگیرد یا تغییر دهد.</string>
     <string name="kg_how_commit">ثبت با دو تراکنش سریع انجام می‌شود: اولی انتخاب شما را مخفی نگه می‌دارد و دومی آن را ثبت می‌کند.</string>
@@ -1317,12 +1312,10 @@
     <string name="kg_use_pay">می‌توانند به‌جای آدرس طولانی به yourname.kachat کاسپا بفرستند.</string>
     <string name="kg_use_link">پیوند پروفایل شما نامتان را نشان می‌دهد.</string>
     <string name="kg_keep_title">نگهش دارید</string>
-    <string name="kg_keep_body">نام‌های شما در پروفایل &gt; دامنه‌های شما &gt; .kachat است.</string>
     <string name="kg_keep_renew">پیش از انقضا تمدیدش کنید. تاریخ روی هر نام نشان داده می‌شود.</string>
     <string name="kg_keep_grace">پس از انقضا یک دوره مهلت برای تمدید هست، پیش از آنکه کسی دیگر بتواند آن را ثبت کند.</string>
     <string name="kg_keep_transfer">می‌توانید آن را منتقل کنید، برای فروش بگذارید یا پیشنهادی را بپذیرید.</string>
     <string name="kg_finished_title">آماده‌اید</string>
-    <string name="kg_finished_body">هر وقت آماده بودید نام خود را در هاب Kaspa &gt; .kachat ثبت کنید.</string>
     <string name="kg_names_help_title">راهنمای نام‌های .kachat</string>
     <string name="kg_names_help_body">یک نام .kachat ثبت کنید، نام خودتان کنید و نگهش دارید.</string>
     <string name="kg_names_setup_footer">گام‌به‌گام ثبت نام .kachat و از آنِ خود کردنش.</string>

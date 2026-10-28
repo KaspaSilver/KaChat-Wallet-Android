@@ -119,7 +119,6 @@
     <string name="other_nodes">Node Lainnya</string>
     <string name="paste_from_clipboard">Tempel dari Papan Klip</string>
     <string name="paste_kpub">Tempel kpub</string>
-    <string name="paste_the_kpub_exported_from_your">Tempel kpub yang diekspor dari perangkat KasSigner Anda. Ini tidak berisi materi kunci privat apa pun.</string>
     <string name="payment">Pembayaran</string>
     <string name="photo">Foto</string>
     <string name="pool_health">Kesehatan Kumpulan</string>
@@ -958,7 +957,6 @@
     <string name="ab_editor_footer">Disimpan di KaPay hanya untuk dompet ini. Tidak pernah ditambahkan ke Kontak ponsel Anda.</string>
     <string name="ab_remove_from">Hapus dari Buku Alamat</string>
     <string name="ab_edit_address">Edit Alamat</string>
-    <string name="ab_picker_empty_body">Tambahkan alamat di Kaspa Hub &gt; Buku Alamat.</string>
     <string name="ab_err_no_wallet">Buka dompet terlebih dahulu.</string>
     <string name="ab_err_empty_name">Masukkan nama.</string>
     <string name="ab_err_invalid_address">Masukkan alamat Kaspa yang valid.</string>
@@ -1098,7 +1096,6 @@
     <string name="pr_chatting_footer">Pembayaran masuk ke obrolan Anda dengan pembayar, beserta catatannya.</string>
     <string name="pr_memo_placeholder">Untuk apa (opsional)</string>
     <string name="pr_copy">Salin Permintaan Pembayaran</string>
-    <string name="pr_anyone_note">Siapa pun yang membuka atau menempelkannya di KaChat mendapat Kirim Kaspa yang sudah terisi, dan melihat bahwa itu dibuat dari alamat obrolan Anda (ditandatangani dengan kuncinya).</string>
     <string name="pr_requested">Diminta</string>
     <string name="pr_paid_as_chat_payment">Dibayar sebagai pembayaran obrolan: muncul di obrolan Anda dengan mereka.</string>
     <string name="pr_paid_to_their_spending">Dibayar ke alamat belanja mereka.</string>
@@ -1147,7 +1144,6 @@
     <string name="welcome_everything_else">Selain Itu</string>
     <string name="welcome_everything_else_caption">Untuk menjaga privasi, gunakan alamat Anda yang lain untuk semua aktivitas lain di jaringan Kaspa. Terima Kaspa memberi Anda alamat baru, dan Kelola Alamat menampilkan semuanya.</string>
     <!-- .kachat Names guide (claim, how it works, make it yours, keep it) -->
-    <string name="kg_claim_hint">Cari nama yang Anda mau di Kaspa Hub &gt; .kachat, lalu klaim.</string>
     <string name="kg_how_title">Cara kerja nama</string>
     <string name="kg_how_body">Nama Anda ada di jaringan Kaspa, dipegang oleh alamat obrolan Anda. Selama milik Anda, tak ada yang bisa mengambil atau mengubahnya.</string>
     <string name="kg_how_commit">Klaim butuh dua transaksi cepat: yang pertama merahasiakan pilihan Anda, yang kedua mendaftarkannya.</string>
@@ -1159,12 +1155,10 @@
     <string name="kg_use_pay">Mereka bisa mengirim Kaspa ke namaanda.kachat alih-alih alamat yang panjang.</string>
     <string name="kg_use_link">Tautan profil Anda menampilkan nama Anda.</string>
     <string name="kg_keep_title">Pertahankan</string>
-    <string name="kg_keep_body">Nama Anda ada di Profil &gt; Domain Anda &gt; .kachat.</string>
     <string name="kg_keep_renew">Perpanjang sebelum kedaluwarsa. Tanggalnya tampil di setiap nama.</string>
     <string name="kg_keep_grace">Setelah kedaluwarsa ada masa tenggang untuk memperpanjang sebelum orang lain bisa mengklaimnya.</string>
     <string name="kg_keep_transfer">Anda bisa mentransfer, menjualnya, atau menerima tawaran.</string>
     <string name="kg_finished_title">Semua siap</string>
-    <string name="kg_finished_body">Klaim nama Anda di Kaspa Hub &gt; .kachat kapan saja.</string>
     <string name="kg_names_help_title">Panduan Nama .kachat</string>
     <string name="kg_names_help_body">Klaim nama .kachat, jadikan nama Anda, dan pertahankan.</string>
     <string name="kg_names_setup_footer">Langkah demi langkah mengklaim nama .kachat dan menjadikannya milik Anda.</string>
@@ -1264,4 +1258,5 @@
     <string name="addresses">Alamat</string>
     <string name="connection_tab_push">Push</string>
     <string name="ab_add_address_sub">Simpan alamat Kaspa dengan nama yang Anda kenali.</string>
+    <string name="scan_this_with_your_kassigner_device">Pindai ini di perangkat KasSigner Anda</string>
 </resources>

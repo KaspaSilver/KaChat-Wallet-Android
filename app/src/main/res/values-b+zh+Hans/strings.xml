@@ -156,7 +156,6 @@
     <string name="other_nodes">其他节点</string>
     <string name="paste_from_clipboard">从剪贴板粘贴</string>
     <string name="paste_kpub">粘贴 kpub</string>
-    <string name="paste_the_kpub_exported_from_your">粘贴从您的 KasSigner 设备导出的 kpub。它不包含任何私钥材料。</string>
     <string name="payment">付款</string>
     <string name="photo">照片</string>
     <string name="photo_message">照片消息</string>
@@ -196,7 +195,7 @@
     <string name="scan_qr_code">扫描 QR 码</string>
     <string name="scan_signed_transaction">扫描已签名的交易</string>
     <string name="scan_kpub_from_kassigner">从 KasSigner 扫描 kpub</string>
-    <string name="scan_this_with_your_kassigner_device">用您的 KasSigner 设备扫描此项,在那里查看,然后签名。</string>
+    <string name="scan_this_with_your_kassigner_device">在您的 KasSigner 设备上扫描此项</string>
     <string name="scroll_to_latest">滚动到最新</string>
     <string name="search_chats">搜索聊天</string>
     <string name="secure_messaging_on_kaspa_blockdag">在 Kaspa BlockDAG 上安全通信</string>
@@ -1085,7 +1084,6 @@
     <string name="ab_editor_footer">仅为这个钱包保存在 KaPay 中。绝不会添加到手机通讯录。</string>
     <string name="ab_remove_from">从地址簿移除</string>
     <string name="ab_edit_address">编辑地址</string>
-    <string name="ab_picker_empty_body">在 Kaspa Hub &gt; 地址簿 中添加地址。</string>
     <string name="ab_err_no_wallet">请先打开一个钱包。</string>
     <string name="ab_err_empty_name">请输入名称。</string>
     <string name="ab_err_invalid_address">请输入有效的 Kaspa 地址。</string>
@@ -1225,7 +1223,6 @@
     <string name="pr_chatting_footer">付款会附带备注，出现在你与付款人的聊天中。</string>
     <string name="pr_memo_placeholder">用途（可选）</string>
     <string name="pr_copy">复制付款请求</string>
-    <string name="pr_anyone_note">任何人在 KaChat 中打开或粘贴它，都会看到已填好的发送 Kaspa 界面，并能确认它由你的聊天地址创建（用其密钥签名）。</string>
     <string name="pr_requested">请求金额</string>
     <string name="pr_paid_as_chat_payment">以聊天付款方式支付：会显示在你与对方的聊天中。</string>
     <string name="pr_paid_to_their_spending">付到对方的支出地址。</string>
@@ -1274,7 +1271,6 @@
     <string name="welcome_everything_else">其他一切</string>
     <string name="welcome_everything_else_caption">为保护隐私，在 Kaspa 网络上的其他活动请使用你的其他地址。「接收 Kaspa」会给你一个新地址，「管理地址」列出全部地址。</string>
     <!-- .kachat Names guide (claim, how it works, make it yours, keep it) -->
-    <string name="kg_claim_hint">在 Kaspa 中心 &gt; .kachat 搜索你想要的名称，然后认领。</string>
     <string name="kg_how_title">名称如何运作</string>
     <string name="kg_how_body">你的名称存在于 Kaspa 网络上，由你的聊天地址持有。只要归你所有，谁也不能拿走或更改。</string>
     <string name="kg_how_commit">认领需要两笔很快的交易：第一笔为你的选择保密，第二笔完成注册。</string>
@@ -1286,12 +1282,10 @@
     <string name="kg_use_pay">他们可以把 Kaspa 发到 yourname.kachat，而不是一长串地址。</string>
     <string name="kg_use_link">你的个人资料链接显示你的名称。</string>
     <string name="kg_keep_title">保留它</string>
-    <string name="kg_keep_body">你的名称在 个人资料 &gt; 你的域名 &gt; .kachat。</string>
     <string name="kg_keep_renew">请在到期前续期。每个名称都会显示到期时间。</string>
     <string name="kg_keep_grace">到期后还有宽限期，在他人能认领前你仍可续期。</string>
     <string name="kg_keep_transfer">你可以转让它、挂牌出售，或接受报价。</string>
     <string name="kg_finished_title">一切就绪</string>
-    <string name="kg_finished_body">准备好后就在 Kaspa 中心 &gt; .kachat 认领你的名称。</string>
     <string name="kg_names_help_title">.kachat 名称指南</string>
     <string name="kg_names_help_body">认领一个 .kachat 名称，让它成为你的名字并保留它。</string>
     <string name="kg_names_setup_footer">一步步认领你的 .kachat 名称并让它成为你的。</string>
@@ -1390,4 +1384,5 @@
     <string name="wallet_title">钱包</string>
     <string name="connection_tab_push">推送</string>
     <string name="ab_add_address_sub">用你认得出的名字保存一个 Kaspa 地址。</string>
+    <string name="something_went_wrong">出错了</string>
 </resources>
