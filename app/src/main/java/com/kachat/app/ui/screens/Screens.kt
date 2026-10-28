@@ -6964,6 +6964,7 @@ fun ConnectionStatusScreen(onBack: () -> Unit, viewModel: ConnectionViewModel = 
     val network by viewModel.network.collectAsState()
     // The indexer this launch is connected to (a Testnet switch waits for the next launch).
     val indexerUrl by viewModel.runningIndexerUrl.collectAsState()
+    val pushIndexerUrl by viewModel.runningPushIndexerUrl.collectAsState()
 
     val activeNodes by viewModel.activeNodes.collectAsState()
     val allNodes by viewModel.allNodes.collectAsState()
@@ -7050,8 +7051,11 @@ fun ConnectionStatusScreen(onBack: () -> Unit, viewModel: ConnectionViewModel = 
         latencyMs < 500 -> LocalAppColors.current.warning
         else -> LocalAppColors.current.danger
     }
-    // iOS shows the indexer's host alone (URLComponents.host): no scheme, port or path.
-    val indexerHost = indexerUrl.substringAfter("://").substringBefore("/").substringBefore(":")
+    // iOS shows the indexer's host alone (URLComponents.host): no scheme, port or path; "None"
+    // when there is none (testnet, iOS wallet dd8afc4).
+    fun hostOf(url: String) =
+        if (url.isBlank()) "None" else url.substringAfter("://").substringBefore("/").substringBefore(":")
+    val indexerHost = hostOf(indexerUrl)
 
     IosSheetPage(grouped = true) {
         SheetNavBar(
@@ -7104,6 +7108,11 @@ fun ConnectionStatusScreen(onBack: () -> Unit, viewModel: ConnectionViewModel = 
                 }
                 SettingsDivider()
                 ConnectionStatusRow(stringResource(R.string.indexer), indexerHost, monospaced = true)
+                // The push service, only when it isn't the indexer (iOS ConnectionStatusDetailView).
+                if (pushIndexerUrl != indexerUrl) {
+                    SettingsDivider()
+                    ConnectionStatusRow("Push Register", hostOf(pushIndexerUrl), monospaced = true)
+                }
                 SettingsDivider()
                 ConnectionStatusRow(stringResource(R.string.last_sync), lastSyncAt)
             }
@@ -7699,7 +7708,7 @@ fun ConnectionSettingsScreen(onBack: () -> Unit, viewModel: ConnectionViewModel 
             when (selectedConnectionTab) {
             0 -> {
             SettingsFormSection(title = "Push Registration", footer = "Used only for push registration and updates") {
-                ConnectionUrlField(label = "Push Indexer URL", value = pushIndexerUrl)
+                ConnectionUrlField(label = "Push Indexer URL", value = pushIndexerUrl, placeholder = NO_INDEXER_PLACEHOLDER)
             }
 
             // Verbose API Logging lives in Settings > Diagnostics, as on iOS.
@@ -7718,6 +7727,7 @@ fun ConnectionSettingsScreen(onBack: () -> Unit, viewModel: ConnectionViewModel 
                 ConnectionUrlField(
                     label = ".kachat Indexer URL",
                     value = indexerUrl,
+                    placeholder = NO_INDEXER_PLACEHOLDER,
                     onClick = { editingKachatIndexerUrl = true }
                 )
                 SettingsDivider()
@@ -7761,13 +7771,23 @@ fun ConnectionSettingsScreen(onBack: () -> Unit, viewModel: ConnectionViewModel 
                     com.kachat.app.ui.theme.IosTextField(
                         value = draft,
                         onValueChange = { draft = it; rejected = false },
+                        placeholder = {
+                            Text(
+                                if (network.equals("mainnet", ignoreCase = true)) com.kachat.app.repository.AppSettingsRepository.DEFAULT_INDEXER_URL else NO_INDEXER_PLACEHOLDER,
+                                color = LocalAppColors.current.textTertiary
+                            )
+                        },
                         singleLine = true,
                         isError = rejected,
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        if (rejected) "The URL must start with https://" else "Leave blank for KaChat's own indexer",
+                        when {
+                            rejected -> "The URL must start with https://"
+                            network.equals("mainnet", ignoreCase = true) -> "Leave blank for KaChat's own indexer"
+                            else -> "Leave blank for none - testnet has no default indexer"
+                        },
                         color = if (rejected) Color(0xFFE57373) else LocalAppColors.current.textSecondary,
                         style = MaterialTheme.typography.bodySmall
                     )
@@ -7835,9 +7855,12 @@ private fun KachatNamesSourceRow() {
     }
 }
 
+/** An indexer field's text while it is blank - testnet has no default indexer (iOS wallet dd8afc4). */
+private const val NO_INDEXER_PLACEHOLDER = "None - enter an indexer URL"
+
 /** Read-only for now — editing these let a mistyped URL crash the whole app (fixed at the NetworkService layer too, but not editable at all is safer). */
 @Composable
-fun ConnectionUrlField(label: String, value: String, onClick: (() -> Unit)? = null) {
+fun ConnectionUrlField(label: String, value: String, placeholder: String? = null, onClick: (() -> Unit)? = null) {
     Column(
         modifier = Modifier
             .let { if (onClick != null) it.clickable { onClick() } else it }
@@ -7846,9 +7869,10 @@ fun ConnectionUrlField(label: String, value: String, onClick: (() -> Unit)? = nu
         Text(label, color = LocalAppColors.current.textSecondary, style = MaterialTheme.typography.bodySmall)
         Spacer(Modifier.height(6.dp))
         // iOS shows an address in the body font, monospaced.
+        val showPlaceholder = value.isBlank() && placeholder != null
         Text(
-            text = value,
-            color = LocalAppColors.current.textPrimary,
+            text = if (showPlaceholder) placeholder.orEmpty() else value,
+            color = if (showPlaceholder) LocalAppColors.current.textTertiary else LocalAppColors.current.textPrimary,
             fontSize = 17.sp,
             fontFamily = FontFamily.Monospace,
         )

@@ -101,6 +101,10 @@ class AppSettingsRepository @Inject constructor(
         /** The retired testnet-10 indexer. Testnet has no default indexer now: a saved copy of
          *  this reads as blank (push off, .kachat names from the chain); a custom URL is kept. */
         const val LEGACY_TESTNET_INDEXER_URL = "https://tnkachat.duckdns.org:7443"
+        private val SUPERSEDED_INDEXER_URLS = setOf(
+            LEGACY_DEFAULT_INDEXER_URL, LEGACY_DEFAULT_INDEXER_URL_KASIA_WTF, LEGACY_DEFAULT_INDEXER_URL_DUCKDNS,
+        )
+        private val SUPERSEDED_TESTNET_INDEXER_URLS = setOf(LEGACY_TESTNET_INDEXER_URL)
 
         fun defaultKaspaRestUrl(network: com.kachat.app.util.KaspaNetwork.Type) =
             if (network == com.kachat.app.util.KaspaNetwork.Type.MAINNET) DEFAULT_KASPA_REST_URL else DEFAULT_KASPA_TESTNET_REST_URL
@@ -357,18 +361,19 @@ class AppSettingsRepository @Inject constructor(
     ): Flow<String> = map { (profile, network) -> value(profile, network) }.distinctUntilChanged()
 
     /** A blank field means the network's own default: the mainnet host on mainnet, none on
-     *  testnet (blank: no push service, .kachat names from the chain). A saved retired host
-     *  (kachat.duckdns.org, tnkachat.duckdns.org) counts as blank; a custom URL is kept. */
+     *  testnet (blank: no push service, .kachat names from the chain). A saved retired default
+     *  counts as blank ([isSupersededIndexer]); a custom URL is kept. */
     private fun indexerOrDefault(stored: String?, default: String, network: KaspaNetwork.Type): String {
-        val value = stored?.takeIf { it.isNotBlank() && !isRetiredIndexer(it) }
+        val value = stored?.takeIf { it.isNotBlank() && !isSupersededIndexer(it, network) }
         return value ?: if (network == KaspaNetwork.Type.TESTNET) "" else default
     }
 
-    /** KaChat's retired indexer hosts as they may have been saved (trailing slash, any case). */
-    private fun isRetiredIndexer(url: String): Boolean {
-        val clean = url.trim().trimEnd('/')
-        return clean.equals(LEGACY_DEFAULT_INDEXER_URL_DUCKDNS, ignoreCase = true) ||
-            clean.equals(LEGACY_TESTNET_INDEXER_URL, ignoreCase = true)
+    /** iOS wallet dd8afc4 `AppSettings.migratedIndexerURL`: a retired default as it may have been
+     *  saved (trailing slash, any case) - on mainnet kasia.fyi, kasia.wtf and kachat.duckdns.org
+     *  (they read as indexer.kachat.app), on testnet tnkachat.duckdns.org (it reads as none). */
+    private fun isSupersededIndexer(url: String, network: KaspaNetwork.Type): Boolean {
+        val key = url.trim().trimEnd('/').lowercase()
+        return key in if (network == KaspaNetwork.Type.TESTNET) SUPERSEDED_TESTNET_INDEXER_URLS else SUPERSEDED_INDEXER_URLS
     }
 
     // Transforms away superseded default indexers on read (rather than a one-time write-back
@@ -376,9 +381,7 @@ class AppSettingsRepository @Inject constructor(
     // community default kasia.wtf, or KaChat's own before it moved: kachat.duckdns.org) is moved to
     // the current default (indexer.kachat.app). Custom indexers the user typed are kept as-is.
     private fun resolveIndexerUrl(profile: ConnectionProfile, network: KaspaNetwork.Type): String {
-        val stored = profile.indexerUrl?.takeIf { url -> url.isNotBlank() && !isRetiredIndexer(url) }
-        if (network == KaspaNetwork.Type.TESTNET) return stored.orEmpty()
-        return if (stored == null || stored == LEGACY_DEFAULT_INDEXER_URL || stored == LEGACY_DEFAULT_INDEXER_URL_KASIA_WTF) DEFAULT_INDEXER_URL else stored
+        return indexerOrDefault(profile.indexerUrl, DEFAULT_INDEXER_URL, network)
     }
 
     /**
@@ -411,7 +414,7 @@ class AppSettingsRepository @Inject constructor(
     // Translating a post has nothing to do with which chain the app is on: blank means the
     // shipped service on both networks (iOS 2ca41aa).
     private fun resolveTranslationServiceUrl(profile: ConnectionProfile): String =
-        profile.translationServiceUrl?.takeIf { url -> url.isNotBlank() && !isRetiredIndexer(url) } ?: DEFAULT_TRANSLATION_SERVICE_URL
+        profile.translationServiceUrl?.takeIf { url -> url.isNotBlank() && !isSupersededIndexer(url, KaspaNetwork.Type.MAINNET) } ?: DEFAULT_TRANSLATION_SERVICE_URL
 
     // Falls back to DEFAULT_TRUSTED_NODE_ADDRESS only when the key has never been written at
     // all (a fresh install) - once the user explicitly saves "" (clearing it via the Kaspa Node

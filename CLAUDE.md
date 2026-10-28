@@ -85,7 +85,7 @@ project with `com.kachat.wallet` added - the owner's step.
 
 ## Logo
 
-`tools/make_logo.py` draws the logo and launcher icons (teal wallet, Kaspa's backward K) - the
+`tools/make_logo.py` draws the logo and launcher icons (teal wallet, KaChat's backward K - the shape of KaChat's icon) - the
 iPhone wallet's script with Android's adaptive-icon layers added:
 
 ```bash
