@@ -285,16 +285,9 @@ class NextcloudSyncService @Inject constructor(
 
         var result = RestoreResult()
         if (addressBook != null) {
-            // A backup of an empty Address Book has nothing to add - not a reason to fail the
-            // restore before the Portfolio is merged (iOS's importExport throws `.empty` there).
-            val imported = withContext(Dispatchers.IO) {
-                try {
-                    addressBookManager.get().importExport(addressBook)
-                } catch (e: AddressBookManager.ImportException) {
-                    if (e.reason != AddressBookManager.ImportError.EMPTY) throw e
-                    AddressBookManager.ImportResult(0, 0, 0)
-                }
-            }
+            // As iOS's restoreBackup: an Address Book export that can't be imported (an empty
+            // one included) fails the restore, before the Portfolio is merged.
+            val imported = withContext(Dispatchers.IO) { addressBookManager.get().importExport(addressBook) }
             result = result.copy(addressesAdded = imported.added, addressesUpdated = imported.updated)
         }
         if (portfolio != null) {

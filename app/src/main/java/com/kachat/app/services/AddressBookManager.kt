@@ -356,7 +356,19 @@ class AddressBookManager @Inject constructor(
     /** What an import did: entries added, entries updated, and other-network entries skipped. */
     data class ImportResult(val added: Int, val updated: Int, val skipped: Int)
 
-    class ImportException(val reason: ImportError) : Exception(reason.name)
+    /** The message is iOS's `ImportError.errorDescription`, for where it is shown as is (a
+     *  Nextcloud restore); the Address Book's own import shows [reason]'s translated string. */
+    class ImportException(val reason: ImportError) : Exception(
+        when (reason) {
+            ImportError.NOT_AN_ADDRESS_BOOK -> "That file isn't a KaChat Address Book export."
+            ImportError.EMPTY -> "That Address Book export has no addresses."
+            ImportError.OTHER_NETWORK -> if (com.kachat.app.util.KaspaNetwork.isTestnet) {
+                "Every address in that file is a Mainnet address. KaPay is on Testnet."
+            } else {
+                "Every address in that file is a Testnet address. KaPay is on Mainnet."
+            }
+        }
+    )
 
     /**
      * This wallet's Address Book as an export file: plain JSON, readable by any KaChat (iOS,
