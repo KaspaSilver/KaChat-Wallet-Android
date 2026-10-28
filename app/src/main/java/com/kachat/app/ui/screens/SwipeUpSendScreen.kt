@@ -109,7 +109,9 @@ import kotlin.math.sin
 
 /**
  * The words a swipe-up screen uses: a Kaspa send by default, a .kachat purchase with [Buy], a
- * .kachat claim with [Claim] (iOS 5bab351 `SwipeUpLabels`).
+ * .kachat claim with [Claim] (iOS 5bab351 `SwipeUpLabels`), any other transaction with
+ * [transaction] (iOS 05db583). The `*Override` texts, when set, stand in for their resource (iOS
+ * texts that have no translation yet).
  */
 data class SwipeUpLabels(
     /** The bar (and the title on the sending screen) once the swipe is past halfway. */
@@ -126,6 +128,10 @@ data class SwipeUpLabels(
     @StringRes val recipientLine: Int,
     /** Under "Failed" when the screen has no error of its own. */
     @StringRes val failedFallback: Int,
+    val releaseOverride: String? = null,
+    val doneOverride: String? = null,
+    val hintOverride: String? = null,
+    val failedFallbackOverride: String? = null,
 ) {
     companion object {
         val Send = SwipeUpLabels(
@@ -155,8 +161,36 @@ data class SwipeUpLabels(
             recipientLine = R.string.swipe_for_recipient,
             failedFallback = R.string.swipe_claim_failed_fallback,
         )
+
+        /** Any other transaction (a .kachat listing, transfer, offer, renewal...): [done] is its
+         *  finished title, e.g. "Offer sent" (iOS 05db583 `SwipeUpLabels.transaction(done:)`). */
+        fun transaction(done: String) = SwipeUpLabels(
+            release = R.string.swipe_release_to_send,
+            working = R.string.sending,
+            workingDetail = R.string.swipe_sending_detail,
+            done = R.string.sent,
+            hint = R.string.swipe_hint_send,
+            recipientLine = R.string.swipe_for_recipient,
+            failedFallback = R.string.swipe_send_failed_fallback,
+            releaseOverride = "Release to Confirm",
+            doneOverride = done,
+            hintOverride = "Let go past halfway to confirm.",
+            failedFallbackOverride = "The transaction didn't go out.",
+        )
     }
 }
+
+@Composable
+private fun SwipeUpLabels.releaseText(): String = releaseOverride ?: stringResource(release)
+
+@Composable
+private fun SwipeUpLabels.doneText(): String = doneOverride ?: stringResource(done)
+
+@Composable
+private fun SwipeUpLabels.hintText(): String = hintOverride ?: stringResource(hint)
+
+@Composable
+private fun SwipeUpLabels.failedFallbackText(): String = failedFallbackOverride ?: stringResource(failedFallback)
 
 /** iOS `.spring(response: 0.45, dampingFraction: 0.86)`: stiffness (2*pi/0.45)^2. */
 private val SwipeSettleSpring = spring<Float>(dampingRatio = 0.86f, stiffness = 195f)
@@ -191,6 +225,7 @@ private class SwipeUpController(private val scope: CoroutineScope) {
     var thresholdPx = 0f
     var haptic: (IosHaptic) -> Unit = {}
     var action: () -> Unit = {}
+    /** Puts the keyboard away: on the first lift and again as the send starts. */
     var beforeSend: () -> Unit = {}
 
     var root: LayoutCoordinates? = null
@@ -212,7 +247,11 @@ private class SwipeUpController(private val scope: CoroutineScope) {
 
     fun drag(up: Float) {
         if (!active || sending) return
-        if (lift == 0f && up > 0f) haptic(IosHaptic.IMPACT_LIGHT)
+        if (lift == 0f && up > 0f) {
+            // a keyboard left up would sit over the rising screen (iOS 05db583)
+            beforeSend()
+            haptic(IosHaptic.IMPACT_LIGHT)
+        }
         lift = max(0f, up)
         val past = lift >= thresholdPx
         if (past != armed) {
@@ -292,16 +331,17 @@ private class SwipeUpController(private val scope: CoroutineScope) {
  * Try Again brings the form back as it was. Only the bar answers - scrolling the form never sends.
  * Accessibility services get a plain click action on the bar.
  *
- * It draws its own header (Cancel and [screenTitle]) in place of a top bar, so the header goes up
- * with the rest of the screen. [insets] are the system insets it should keep clear of itself:
+ * It draws its own header ([SendStepHeader]: Cancel and [screenTitle]; with [onBack], a step-by-step
+ * send's review, Back and Cancel on the right - iOS 05db583) in place of a top bar, so the header
+ * goes up with the rest of the screen. [insets] are the system insets it should keep clear of itself:
  * the system bars when it fills the window, none inside a sheet that already pads for them. The
  * keyboard is always kept clear of the bar.
  *
  * The screen owns the send: [onSwipe] starts it (and should go busy at once, or within 0.6 s),
  * [isBusy] is true while it is out, and [sent] / [succeeded] or [failureMessage] report how it
- * ended. Back is Cancel on the form, Try Again after a failure, Done after a send; while it is
- * going out it does nothing (iOS `interactiveDismissDisabled`). [onSendingChange] tells a
- * presenting sheet when to refuse being swiped away.
+ * ended. Back is the header's Back (else Cancel) on the form, Try Again after a failure, Done
+ * after a send; while it is going out it does nothing (iOS `interactiveDismissDisabled`).
+ * [onSendingChange] tells a presenting sheet when to refuse being swiped away.
  */
 @Composable
 fun SwipeUpToSendScreen(
@@ -331,6 +371,11 @@ fun SwipeUpToSendScreen(
     explorerUrl: (String) -> String? = { null },
     insets: WindowInsets = WindowInsets.systemBars,
     onSendingChange: (Boolean) -> Unit = {},
+    /** A step-by-step send's review: the header shows Back, and Cancel on the right. */
+    onBack: (() -> Unit)? = null,
+    /** False (with [onBack]): only Back in the header - a step pushed inside another sheet, which
+     *  Back leaves. */
+    showsCancel: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val colors = LocalAppColors.current
@@ -356,11 +401,11 @@ fun SwipeUpToSendScreen(
     LaunchedEffect(c.sending) { currentOnSendingChange(c.sending) }
 
     val done = c.dagShown && (sent != null || succeeded)
-    val failure = if (c.failed && c.dagShown) (failureMessage ?: stringResource(labels.failedFallback)) else null
+    val failure = if (c.failed && c.dagShown) (failureMessage ?: labels.failedFallbackText()) else null
 
     BackHandler {
         when {
-            !c.sending -> onCancel()
+            !c.sending -> (onBack ?: onCancel)()
             done -> onDone()
             failure != null -> c.returnToForm()
             // going out: nothing to go back to
@@ -415,10 +460,11 @@ fun SwipeUpToSendScreen(
                 .offset { IntOffset(0, -c.lift.roundToInt()) }
                 .background(colors.background),
         ) {
-            SheetNavBar(
+            SendStepHeader(
                 title = screenTitle,
+                onBack = onBack,
+                onCancel = if (showsCancel || onBack == null) onCancel else null,
                 modifier = Modifier.windowInsetsPadding(insets.only(WindowInsetsSides.Top)),
-                leading = { SheetBarButton(stringResource(R.string.cancel), onClick = onCancel) },
             )
             Column(
                 Modifier
@@ -428,7 +474,7 @@ fun SwipeUpToSendScreen(
                 content = content,
             )
             SwipeUpBar(
-                title = if (c.armed) stringResource(labels.release) else barTitle,
+                title = if (c.armed) labels.releaseText() else barTitle,
                 accessibilityTitle = barTitle,
                 armed = c.armed,
                 isEnabled = isEnabled,
@@ -574,15 +620,13 @@ private fun SendProgressScreen(
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Text(
-                stringResource(
-                    when {
-                        done -> labels.done
-                        failure != null -> R.string.swipe_failed
-                        isSending -> labels.working
-                        armed -> labels.release
-                        else -> R.string.swipe_keep_swiping
-                    }
-                ),
+                when {
+                    done -> labels.doneText()
+                    failure != null -> stringResource(R.string.swipe_failed)
+                    isSending -> stringResource(labels.working)
+                    armed -> labels.releaseText()
+                    else -> stringResource(R.string.swipe_keep_swiping)
+                },
                 color = colors.textPrimary,
                 fontWeight = FontWeight.Bold,
                 fontSize = 34.sp,
@@ -608,7 +652,7 @@ private fun SendProgressScreen(
             }
             if (!finished) {
                 Text(
-                    stringResource(if (isSending) labels.workingDetail else labels.hint),
+                    if (isSending) stringResource(labels.workingDetail) else labels.hintText(),
                     color = colors.textSecondary,
                     fontSize = 13.sp,
                     textAlign = TextAlign.Center,

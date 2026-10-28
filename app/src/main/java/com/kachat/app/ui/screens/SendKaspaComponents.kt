@@ -1,9 +1,33 @@
 package com.kachat.app.ui.screens
 
 import com.kachat.app.services.AddressBookManager
-import androidx.compose.material.icons.filled.Book
-import androidx.compose.material.icons.outlined.Book
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.outlined.Badge
 import androidx.compose.foundation.layout.statusBars
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material.icons.automirrored.outlined.Backspace
+import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.Constraints
 
 import androidx.compose.foundation.layout.navigationBarsPadding
 
@@ -98,7 +122,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kachat.app.R
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.TextButton
@@ -123,8 +146,9 @@ import kotlin.math.roundToInt
 // KasSigner's starts with From (SendFromSection): Chatting Address or Choose an Address. Then the
 // recipient (paste, scan a QR, names resolve), the big amount (KAS or your currency, Max), the
 // fee speed and coin control, and a slide-to-send button. Mirrors iOS's
-// Views/Shared/SendKaspaComponents.swift (4d0324f, 6333dd3). Change these pieces rather than one
-// screen, so the screens stay matched.
+// Views/Shared/SendKaspaComponents.swift (4d0324f, 6333dd3; the step pieces - step screens, the
+// keypad, the fee editor, the address list - from 05db583, the Contacts pill from 8118f09; see
+// "Send steps" below). Change these pieces rather than one screen, so the screens stay matched.
 
 /** The frosted card the Send Kaspa pieces sit on (iOS `sendKaspaGlass`). */
 @Composable
@@ -139,7 +163,8 @@ fun Modifier.sendKaspaGlass(cornerRadius: Dp): Modifier {
 // MARK: - Recipient
 
 /**
- * Who the Kaspa goes to: an address or a name, with Paste and Scan QR beside the field and a line
+ * Who the Kaspa goes to: an address or a name, with the labelled Paste, Scan QR and Contacts pills
+ * under the field (always all three, sized to fit one row - iOS 05db583, 8118f09) and a line
  * saying what the input resolved to. The screen keeps its own lookup logic (it watches [input]);
  * this only shows it. With [lockedAddress] (Compound UTXOs) the recipient is fixed.
  */
@@ -160,6 +185,8 @@ fun SendRecipientCard(
     nameResolutions: List<com.kachat.app.services.NameResolution> = emptyList(),
     selectedTld: com.kachat.app.services.NameServiceTLD? = null,
     onSelectResolution: (com.kachat.app.services.NameResolution) -> Unit = {},
+    /** Puts the cursor in the field when it appears empty (a send's first step, iOS 05db583). */
+    focusOnAppear: Boolean = false,
 ) {
     val colors = LocalAppColors.current
     val clipboard = LocalClipboardManager.current
@@ -168,6 +195,13 @@ fun SendRecipientCard(
     var showAddressBook by remember { mutableStateOf(false) }
     if (showAddressBook) {
         AddressBookPickerSheet(onDismiss = { showAddressBook = false }, onSelect = { onInputChange(it.address) })
+    }
+    val focus = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        if (!focusOnAppear || lockedAddress != null || trimmed.isNotEmpty()) return@LaunchedEffect
+        // The field doesn't exist yet on the tap that presented the screen.
+        delay(350)
+        runCatching { focus.requestFocus() }
     }
     Column(
         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -189,73 +223,56 @@ fun SendRecipientCard(
             }
             Text(stringResource(R.string.consolidating_this_address), color = colors.textSecondary, fontSize = 12.sp)
         } else {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                val placeholder = stringResource(R.string.kaspa_qr_or_domain)
-                BasicTextField(
-                    value = input,
-                    onValueChange = onInputChange,
-                    singleLine = true,
-                    enabled = enabled,
-                    textStyle = TextStyle(color = colors.textPrimary, fontSize = 15.sp, fontFamily = FontFamily.Monospace),
-                    cursorBrush = SolidColor(KaspaTeal),
-                    keyboardOptions = KeyboardOptions(
-                        capitalization = KeyboardCapitalization.None,
-                        autoCorrect = false,
-                        keyboardType = KeyboardType.Uri,
-                    ),
-                    modifier = Modifier.weight(1f),
-                    decorationBox = { inner ->
-                        Box {
-                            if (input.isEmpty()) {
-                                Text(placeholder, color = colors.textTertiary, fontSize = 15.sp, fontFamily = FontFamily.Monospace, maxLines = 1)
-                            }
-                            inner()
+            val placeholder = stringResource(R.string.kaspa_qr_or_domain)
+            BasicTextField(
+                value = input,
+                onValueChange = onInputChange,
+                singleLine = true,
+                enabled = enabled,
+                textStyle = TextStyle(color = colors.textPrimary, fontSize = 15.sp, fontFamily = FontFamily.Monospace),
+                cursorBrush = SolidColor(KaspaTeal),
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.None,
+                    autoCorrect = false,
+                    keyboardType = KeyboardType.Uri,
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(focus),
+                decorationBox = { inner ->
+                    Box {
+                        if (input.isEmpty()) {
+                            Text(placeholder, color = colors.textTertiary, fontSize = 15.sp, fontFamily = FontFamily.Monospace, maxLines = 1)
                         }
+                        inner()
+                    }
+                },
+            )
+            // Always all three, as in KaChat: with no contacts yet Contacts opens on the empty
+            // picker (iOS 8118f09).
+            SendRecipientInputPills(
+                pills = listOf(
+                    SendRecipientInputPill(stringResource(R.string.paste), Icons.Default.ContentPaste) {
+                        clipboard.getText()?.text?.let { onInputChange(KaspaAddress.fromScanned(it)) }
                     },
-                )
-                Icon(
-                    Icons.Default.ContentPaste,
-                    contentDescription = stringResource(R.string.paste),
-                    tint = KaspaTeal,
-                    modifier = Modifier
-                        .size(22.dp)
-                        .clip(CircleShape)
-                        .clickable(enabled = enabled, role = Role.Button) {
-                            clipboard.getText()?.text?.let { onInputChange(KaspaAddress.fromScanned(it)) }
-                        },
-                )
-                Icon(
-                    Icons.Default.QrCodeScanner,
-                    contentDescription = stringResource(R.string.scan_qr),
-                    tint = KaspaTeal,
-                    modifier = Modifier
-                        .size(22.dp)
-                        .clip(CircleShape)
-                        .clickable(enabled = enabled, role = Role.Button) { onScan() },
-                )
-                if (addressBook.isNotEmpty()) {
-                    Icon(
-                        Icons.Outlined.Book,
-                        contentDescription = stringResource(R.string.addresses),
-                        tint = KaspaTeal,
-                        modifier = Modifier
-                            .size(22.dp)
-                            .clip(CircleShape)
-                            .clickable(enabled = enabled, role = Role.Button) { showAddressBook = true },
-                    )
-                }
-            }
+                    SendRecipientInputPill(stringResource(R.string.scan_qr), Icons.Default.QrCodeScanner, onScan),
+                    SendRecipientInputPill(stringResource(R.string.ab_address_book), Icons.Outlined.Badge) {
+                        showAddressBook = true
+                    },
+                ),
+                enabled = enabled,
+            )
             // Who the coins are going to - the card Create chat shows (iOS ac0ef19): the domain
             // typed, else the address's own .kachat name (iOS 6ac48a7).
             AddressResolutionCard(address = resolvedAddress ?: trimmed.takeIf { isValidAddress }, domain = resolvedName)
-            // The name it has in your Address Book (iOS 00767a4).
+            // The name it has in your Contacts (iOS 00767a4).
             // Only a name you gave it - an entry without one shows nothing here (iOS 2831fab).
             val savedName = remember(addressBook, resolvedAddress, trimmed) {
                 AddressBookManager.shared?.entry(resolvedAddress ?: trimmed)?.customName
             }
             if (savedName != null) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Icon(Icons.Filled.Book, contentDescription = null, tint = KaspaTeal, modifier = Modifier.size(14.dp))
+                    Icon(Icons.Filled.Badge, contentDescription = null, tint = KaspaTeal, modifier = Modifier.size(14.dp))
                     Text(savedName, color = KaspaTeal, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
@@ -270,6 +287,65 @@ fun SendRecipientCard(
                 )
                 if (!isResolving) {
                     OtherDomainsDropdown(nameResolutions, selectedTld, onSelectResolution)
+                }
+            }
+        }
+    }
+}
+
+/** One of the recipient card's labelled pills (iOS `SendRecipientCard.inputPill`). */
+private class SendRecipientInputPill(val title: String, val icon: ImageVector, val onClick: () -> Unit)
+
+/**
+ * Paste, Scan QR, Contacts under the recipient field (iOS 05db583 / 8118f09 `inputPill`): the
+ * accent label and icon on a faint accent capsule, 6 apart in one row. Like iOS's
+ * `.minimumScaleFactor(0.85)` the labels shrink together, down to 85%, to keep three to a row on
+ * the narrowest phones.
+ */
+@Composable
+private fun SendRecipientInputPills(pills: List<SendRecipientInputPill>, enabled: Boolean) {
+    val haptic = com.kachat.app.util.rememberHaptics()
+    val measurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+    val gap = 6.dp
+    val iconSize = 16.dp
+    val iconGap = 5.dp
+    val paddingH = 10.dp
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val maxWidth = constraints.maxWidth
+        val titles = pills.map { it.title }
+        val scale = remember(titles, maxWidth, density) {
+            val style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+            val textWidth = titles.sumOf { measurer.measure(it, style, maxLines = 1, softWrap = false).size.width }
+            val chrome = with(density) {
+                (paddingH * 2 + iconSize + iconGap).toPx() * titles.size + (gap * (titles.size - 1)).toPx()
+            }
+            val room = maxWidth - chrome
+            if (textWidth <= 0 || room >= textWidth) 1f else (room / textWidth).coerceIn(0.85f, 1f)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(gap), verticalAlignment = Alignment.CenterVertically) {
+            pills.forEach { pill ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(iconGap * scale),
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(KaspaTeal.copy(alpha = 0.15f))
+                        .clickable(enabled = enabled, role = Role.Button) {
+                            haptic(com.kachat.app.util.IosHaptic.IMPACT_LIGHT)
+                            pill.onClick()
+                        }
+                        .padding(horizontal = paddingH, vertical = 8.dp),
+                ) {
+                    Icon(pill.icon, contentDescription = null, tint = KaspaTeal, modifier = Modifier.size(iconSize * scale))
+                    Text(
+                        pill.title,
+                        color = KaspaTeal,
+                        fontSize = 15.sp * scale,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        softWrap = false,
+                    )
                 }
             }
         }
@@ -600,23 +676,29 @@ fun feeTierLabel(tier: ColdFeeTier): String = stringResource(
 /**
  * Network fee (tap the amount to set a custom one, edited in place), the fee speed, and coin
  * control - one card. [feeText] is the fee as shown ("0.0001 KAS"), null while unknown.
+ *
+ * With [onEditFee] (a step-by-step send's review, iOS 05db583) the fee shows as plain text with
+ * an Edit pill that opens the screen's own fee editor ([SendFeeEditorScreen]) instead of being
+ * typed here; [isEditingFee], [customFeeText] and their callbacks are then unused.
  */
 @Composable
 fun SendFeeControls(
     feeTier: ColdFeeTier,
     onFeeTierChange: (ColdFeeTier) -> Unit,
-    isEditingFee: Boolean,
-    customFeeText: String,
-    onCustomFeeTextChange: (String) -> Unit,
+    isEditingFee: Boolean = false,
+    customFeeText: String = "",
+    onCustomFeeTextChange: (String) -> Unit = {},
     isEstimatingFee: Boolean,
     feeText: String?,
-    onStartEditing: () -> Unit,
-    onCommit: () -> Unit,
+    onStartEditing: () -> Unit = {},
+    onCommit: () -> Unit = {},
     showsCoinControl: Boolean = true,
     coinControlSummary: String = "",
     onCoinControl: () -> Unit = {},
+    onEditFee: (() -> Unit)? = null,
 ) {
     val colors = LocalAppColors.current
+    val haptic = com.kachat.app.util.rememberHaptics()
     Column(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier
@@ -628,6 +710,40 @@ fun SendFeeControls(
             Text(stringResource(R.string.network_fee), color = colors.textPrimary, fontSize = 15.sp)
             Spacer(Modifier.weight(1f))
             when {
+                onEditFee != null -> {
+                    if (isEstimatingFee) {
+                        com.kachat.app.ui.theme.IosActivityIndicator(
+                            modifier = Modifier.size(16.dp),
+                            color = colors.textSecondary,
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Text(
+                            feeText ?: "—",
+                            color = if (feeText == null) colors.textSecondary else colors.textPrimary,
+                            fontSize = 15.sp,
+                            maxLines = 1,
+                            style = TextStyle(fontFeatureSettings = "tnum"),
+                        )
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                        modifier = Modifier
+                            .alpha(if (feeText == null) 0.5f else 1f)
+                            .clip(CircleShape)
+                            .background(KaspaTeal.copy(alpha = 0.15f))
+                            .clickable(enabled = feeText != null, role = Role.Button) {
+                                haptic(com.kachat.app.util.IosHaptic.IMPACT_LIGHT)
+                                onEditFee()
+                            }
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = null, tint = KaspaTeal, modifier = Modifier.size(15.dp))
+                        Text(stringResource(R.string.ab_edit), color = KaspaTeal, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                    }
+                }
                 isEditingFee -> {
                     // Not focused on its own: as on iOS, the keyboard comes up when the field is
                     // tapped, not the moment it appears.
@@ -677,7 +793,12 @@ fun SendFeeControls(
             }
         }
         SendFeeTierPicker(feeTier, onFeeTierChange)
-        Text(stringResource(R.string.send_fee_tier_footer), color = colors.textSecondary, fontSize = 12.sp)
+        Text(
+            if (onEditFee == null) stringResource(R.string.send_fee_tier_footer)
+            else "If the network is busy, Fast or Priority pays a higher fee to help this confirm sooner. Edit sets a fee of your own.",
+            color = colors.textSecondary,
+            fontSize = 12.sp,
+        )
 
         if (showsCoinControl) {
             HorizontalDivider(color = colors.divider)
@@ -764,6 +885,662 @@ fun SendInfoPill(
                 .sendKaspaGlass(14.dp)
                 .padding(horizontal = 12.dp, vertical = 6.dp),
             content = content,
+        )
+    }
+}
+
+// MARK: - Send steps
+//
+// Every send is the same steps (iOS 05db583, its CLAUDE.md "Send Kaspa (and every other send)"):
+// 1. To: [SendStepScreen] + [SendStepQuestion] ("Who are you sending to?") + [SendRecipientCard]
+//    (Paste, Scan QR and Contacts under the field). Cancel sits at the bottom beside Continue
+//    ([SendContinueButton]) on a first step; later steps have Back and Cancel in the header
+//    ([SendStepHeader]).
+// 2. From: "Where are you sending from?": the Chatting Address and Choose an Address pills;
+//    Choose an Address lists your addresses right on the screen ([OwnAddressList], no sheet).
+// 3. Amount: [KaspaKeypadAmountEntry], the app's own number pad ([KaspaKeypad],
+//    [KeypadAmountText]), so no system keyboard covers the screen; "To" and "From" chips
+//    ([SendStepChip]), the KAS / currency switch and Max.
+// 4. Review: [SwipeUpToSendScreen] with Back. Only the fee and coin control can change
+//    ([SendFeeControls]); the fee's Edit (`onEditFee`) opens [SendFeeEditorScreen].
+
+/**
+ * The header every send step draws in place of a top bar (iOS 05db583 `SendStepHeader`): Back (or
+ * Cancel on the first step) on the left, the title in the middle, Cancel on the right once there
+ * is a Back. Without [onCancel] (a step whose Cancel sits at the bottom, beside Continue) only the
+ * title and Back show. Back is the accent chevron on a 40 glass disc, Cancel the accent word on a
+ * 40-high glass capsule.
+ */
+@Composable
+fun SendStepHeader(
+    title: String,
+    modifier: Modifier = Modifier,
+    onBack: (() -> Unit)? = null,
+    onCancel: (() -> Unit)? = null,
+) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 6.dp)
+            .heightIn(min = 40.dp),
+    ) {
+        SendFitText(
+            title,
+            style = TextStyle(color = LocalAppColors.current.textPrimary, fontSize = 17.sp, fontWeight = FontWeight.SemiBold),
+            minScale = 0.8f,
+            // room for the buttons only when there are any
+            modifier = Modifier.padding(horizontal = if (onBack != null || onCancel != null) 96.dp else 16.dp),
+        )
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            if (onBack != null) {
+                SheetBarIconButton(
+                    Icons.Filled.ArrowBackIosNew,
+                    contentDescription = stringResource(R.string.back),
+                    onClick = onBack,
+                    modifier = Modifier.size(40.dp),
+                    iconSize = 18.dp,
+                )
+            } else if (onCancel != null) {
+                SheetBarButton(stringResource(R.string.cancel), onClick = onCancel, modifier = Modifier.height(40.dp))
+            }
+            Spacer(Modifier.weight(1f))
+            if (onBack != null && onCancel != null) {
+                SheetBarButton(stringResource(R.string.cancel), onClick = onCancel, modifier = Modifier.height(40.dp))
+            }
+        }
+    }
+}
+
+/**
+ * A send step's Continue (iOS 05db583 `SendContinueButton`): a 56-high accent capsule pinned at
+ * the bottom with black text, faded and inert while [isEnabled] is false; full width, or beside a
+ * glass Cancel capsule when the step has [onCancel] (its header then leaves Cancel out). [title]
+ * defaults to "Continue". Draws its own bar background; the caller pads it for the insets.
+ */
+@Composable
+fun SendContinueButton(
+    isEnabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    title: String? = null,
+    onCancel: (() -> Unit)? = null,
+) {
+    val colors = LocalAppColors.current
+    val haptic = com.kachat.app.util.rememberHaptics()
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .background(colors.background)
+            .padding(horizontal = 20.dp, vertical = 8.dp),
+    ) {
+        if (onCancel != null) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(56.dp)
+                    .clip(CircleShape)
+                    .background(colors.surface)
+                    .border(1.dp, KaspaTeal.copy(alpha = 0.35f), CircleShape)
+                    .clickable(role = Role.Button, onClick = onCancel),
+            ) {
+                Text(stringResource(R.string.cancel), color = colors.textPrimary, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+            }
+        }
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .weight(1f)
+                .height(56.dp)
+                .clip(CircleShape)
+                .background(KaspaTeal.copy(alpha = if (isEnabled) 1f else 0.4f))
+                .clickable(enabled = isEnabled, role = Role.Button) {
+                    haptic(com.kachat.app.util.IosHaptic.IMPACT_LIGHT)
+                    onClick()
+                },
+        ) {
+            Text(
+                title ?: stringResource(R.string.continue_label),
+                color = Color.Black,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+            )
+        }
+    }
+}
+
+/**
+ * One step of a send - who to, from where, how much, a fee, a price (iOS 05db583
+ * `SendStepScreen`): [SendStepHeader], the step's [content] (top-aligned in the height left; it
+ * does not scroll by itself, so a step that can grow puts its own `verticalScroll` inside), and
+ * [SendContinueButton] pinned at the bottom. The first step (no [onBack]) has Cancel beside
+ * Continue; a later one has Back and Cancel in its header. [continueTitle] defaults to "Continue".
+ *
+ * [insets] are the system insets it keeps clear of itself, as on [SwipeUpToSendScreen]: the
+ * system bars when it fills the window, none inside a sheet that already pads for them. The
+ * keyboard is always kept clear of the bottom button. The system Back is the header's Back, or
+ * Cancel on a first step.
+ */
+@Composable
+fun SendStepScreen(
+    title: String,
+    onCancel: () -> Unit,
+    canContinue: Boolean,
+    onContinue: () -> Unit,
+    modifier: Modifier = Modifier,
+    onBack: (() -> Unit)? = null,
+    continueTitle: String? = null,
+    insets: WindowInsets = WindowInsets.systemBars,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    BackHandler { (onBack ?: onCancel)() }
+    Column(
+        modifier
+            .fillMaxSize()
+            .background(LocalAppColors.current.background),
+    ) {
+        SendStepHeader(
+            title = title,
+            onBack = onBack,
+            onCancel = if (onBack == null) null else onCancel,
+            modifier = Modifier.windowInsetsPadding(insets.only(WindowInsetsSides.Top)),
+        )
+        Column(
+            Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+            content = content,
+        )
+        SendContinueButton(
+            isEnabled = canContinue,
+            onClick = onContinue,
+            title = continueTitle,
+            onCancel = if (onBack == null) onCancel else null,
+            modifier = Modifier.windowInsetsPadding(insets.only(WindowInsetsSides.Bottom).union(WindowInsets.ime)),
+        )
+    }
+}
+
+/**
+ * "To alice.kachat", "From Chatting Address": one line of what a step is about, as a glass chip
+ * above its content (the amount step; iOS 05db583 `SendStepChip`). [label] in grey, then [value]
+ * semibold - or, with [isAddress], monospaced and cut in the middle.
+ */
+@Composable
+fun SendStepChip(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    isAddress: Boolean = false,
+) {
+    val colors = LocalAppColors.current
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier
+            .sendKaspaGlass(18.dp)
+            .padding(horizontal = 14.dp, vertical = 9.dp),
+    ) {
+        Text(label, color = colors.textSecondary, fontSize = 15.sp, maxLines = 1)
+        if (isAddress) {
+            MiddleEllipsisText(
+                value,
+                color = colors.textPrimary,
+                fontSize = 15.sp,
+                fontFamily = FontFamily.Monospace,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+        } else {
+            Text(
+                value,
+                color = colors.textPrimary,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+        }
+    }
+}
+
+/** The question a step asks, big, at the top of its content ("Who are you sending to?"): title2
+ *  bold, leading (iOS 05db583 `SendStepQuestion`). */
+@Composable
+fun SendStepQuestion(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text,
+        color = LocalAppColors.current.textPrimary,
+        fontSize = 22.sp,
+        fontWeight = FontWeight.Bold,
+        modifier = modifier.fillMaxWidth(),
+    )
+}
+
+/**
+ * A review's fee editor, opened by its fee row's Edit (iOS 05db583 `SendFeeEditorScreen`): the
+ * whole network fee typed on [KaspaKeypad] (8 decimals), Confirm hands it back in sompi, Cancel
+ * (at the bottom, beside Confirm) leaves it as it was. Says the network's minimum when known
+ * ([minimumSompi]: "The network needs at least 0.0002 KAS. A lower fee is raised to that." - the
+ * caller does the raising) and warns, in orange, at more than ten times [minimumSompi], else ten
+ * times [referenceSompi] (the fee it opened with). Confirm needs a fee above zero.
+ */
+@Composable
+fun SendFeeEditorScreen(
+    draft: String,
+    onDraftChange: (String) -> Unit,
+    onCancel: () -> Unit,
+    onConfirm: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+    minimumSompi: Long? = null,
+    referenceSompi: Long? = null,
+    insets: WindowInsets = WindowInsets.systemBars,
+) {
+    val colors = LocalAppColors.current
+    val haptic = com.kachat.app.util.rememberHaptics()
+    val draftSompi = KaspaUnit.sompiFromUserText(draft)?.takeIf { it > 0L }
+    val reference = minimumSompi ?: referenceSompi
+    val isHigh = draftSompi != null && reference != null && reference > 0L && draftSompi > reference * 10
+    val minimumLine = minimumSompi?.let {
+        KaspaUnit.label("The network needs at least ${KaspaUnit.plain(it)} KAS. A lower fee is raised to that.")
+    }
+    val footnote = if (isHigh) listOfNotNull("This is much more than the network needs.", minimumLine).joinToString(" ") else minimumLine
+    val feeLabel = stringResource(R.string.network_fee)
+
+    SendStepScreen(
+        title = feeLabel,
+        onCancel = onCancel,
+        canContinue = draftSompi != null,
+        onContinue = {
+            if (draftSompi != null) {
+                haptic(com.kachat.app.util.IosHaptic.SUCCESS)
+                onConfirm(draftSompi)
+            }
+        },
+        modifier = modifier,
+        continueTitle = stringResource(R.string.confirm),
+        insets = insets,
+    ) {
+        Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                "Set your network fee",
+                color = colors.textPrimary,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+            Spacer(Modifier.weight(1f).heightIn(min = 8.dp))
+            KeypadAmountText(typed = draft, unit = KaspaUnit.symbol, accessibilityName = feeLabel)
+            Text(
+                footnote ?: " ",
+                color = if (isHigh) colors.warning else colors.textSecondary,
+                fontSize = 13.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 10.dp, start = 24.dp, end = 24.dp),
+            )
+            Spacer(Modifier.weight(1f).heightIn(min = 8.dp))
+            KaspaKeypad(
+                onKey = { key ->
+                    val text = KaspaKeypadKey.applying(key, draft, maxDecimals = 8)
+                    if (text == draft) {
+                        // iOS Haptics.impact(.rigid): the key couldn't apply
+                        haptic(com.kachat.app.util.IosHaptic.IMPACT_MEDIUM)
+                    } else {
+                        onDraftChange(text)
+                    }
+                },
+                modifier = Modifier.padding(horizontal = 12.dp),
+            )
+        }
+    }
+}
+
+/**
+ * The amount on a send's amount step, typed on the app's own number pad ([KaspaKeypad]), so no
+ * system keyboard comes up (iOS 05db583 `KaspaKeypadAmountEntry`): the big amount and its unit
+ * ([KeypadAmountText]), the KAS / your-currency switch and Max, a [footnote] (Available, or why
+ * the amount can't be sent - red with [footnoteIsError]), then the keys. Fills the height it is
+ * given, the amount centred in the room above the keys.
+ *
+ * [fiatAmountState] hands the screen the KAS amount text after every key (its own
+ * `onKasTextChange`, as with [KaspaAmountEntry]); KAS takes up to 8 decimals, your currency 2.
+ * [onKeyTyped] runs on any key that changed the amount (not Max): the screen stops treating the
+ * amount as Max. [showsMax] false leaves Max out (an offer, a price, Request Payment).
+ */
+@Composable
+fun KaspaKeypadAmountEntry(
+    fiatAmountState: KaspaFiatAmountState,
+    priceInCurrency: Double?,
+    currencyCode: String,
+    onMax: () -> Unit,
+    modifier: Modifier = Modifier,
+    isEstimatingMax: Boolean = false,
+    maxEnabled: Boolean = true,
+    showsMax: Boolean = true,
+    footnote: String? = null,
+    footnoteIsError: Boolean = false,
+    onKeyTyped: () -> Unit = {},
+) {
+    val colors = LocalAppColors.current
+    val haptic = com.kachat.app.util.rememberHaptics()
+    Column(modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Spacer(Modifier.weight(1f).heightIn(min = 8.dp))
+        KeypadAmountText(
+            typed = fiatAmountState.displayText,
+            unit = if (fiatAmountState.isFiatMode) currencyCode.uppercase() else KaspaUnit.symbol,
+            accessibilityName = KaspaUnit.label(stringResource(R.string.amount_kas)),
+        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(top = 12.dp),
+        ) {
+            if (priceInCurrency != null) {
+                val switchLabel = stringResource(R.string.payment_switch_currency)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier
+                        .sendKaspaGlass(14.dp)
+                        .clickable { fiatAmountState.toggleMode(priceInCurrency) }
+                        .clearAndSetSemantics {
+                            contentDescription = switchLabel
+                            role = Role.Button
+                        }
+                        .padding(horizontal = 12.dp, vertical = 7.dp),
+                ) {
+                    Icon(Icons.Default.SwapVert, contentDescription = null, tint = colors.textPrimary, modifier = Modifier.size(14.dp))
+                    Text(
+                        fiatAmountState.conversionLabelText(priceInCurrency, currencyCode)
+                            ?: if (fiatAmountState.isFiatMode) KaspaUnit.symbol else currencyCode.uppercase(),
+                        color = colors.textPrimary,
+                        fontSize = 12.sp,
+                    )
+                }
+            }
+            if (showsMax) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .alpha(if (maxEnabled) 1f else 0.5f)
+                        .sendKaspaGlass(14.dp)
+                        .clickable(enabled = maxEnabled && !isEstimatingMax, role = Role.Button) { onMax() }
+                        .padding(horizontal = 14.dp, vertical = 7.dp),
+                ) {
+                    if (isEstimatingMax) {
+                        com.kachat.app.ui.theme.IosActivityIndicator(modifier = Modifier.size(14.dp), color = KaspaTeal, strokeWidth = 2.dp)
+                    } else {
+                        Text(stringResource(R.string.max), color = KaspaTeal, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                    }
+                }
+            }
+        }
+        Text(
+            footnote ?: " ",
+            color = if (footnoteIsError) colors.danger else colors.textSecondary,
+            fontSize = 13.sp,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 10.dp, start = 20.dp, end = 20.dp),
+        )
+        Spacer(Modifier.weight(1f).heightIn(min = 8.dp))
+        KaspaKeypad(
+            onKey = { key ->
+                val typed = fiatAmountState.displayText
+                val text = KaspaKeypadKey.applying(key, typed, maxDecimals = if (fiatAmountState.isFiatMode) 2 else 8)
+                if (text == typed) {
+                    // iOS Haptics.impact(.rigid): the key couldn't apply
+                    haptic(com.kachat.app.util.IosHaptic.IMPACT_MEDIUM)
+                } else {
+                    onKeyTyped()
+                    fiatAmountState.onDisplayTextChange(text, priceInCurrency)
+                }
+            },
+            modifier = Modifier.padding(horizontal = 12.dp),
+        )
+    }
+}
+
+/**
+ * The big number a keypad types into (iOS 05db583 `KeypadAmountText`): [typed] grouped
+ * ("12,345.5" - [KaspaAmountGrouping.grouped]; a grey "0" while empty) in bold rounded digits
+ * and its [unit] at half the size, sharing a baseline, centred. 60sp up to 7 characters, 46 up to
+ * 10, 34 beyond, and shrinking further (to half) rather than being cut. Read out as
+ * [accessibilityName] with the amount as its value.
+ */
+@Composable
+fun KeypadAmountText(
+    typed: String,
+    unit: String,
+    accessibilityName: String,
+    modifier: Modifier = Modifier,
+) {
+    val colors = LocalAppColors.current
+    val measurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+    val display = if (typed.isEmpty()) "0" else KaspaAmountGrouping.grouped(typed)
+    val fontSize = when {
+        display.length <= 7 -> 60.sp
+        display.length <= 10 -> 46.sp
+        else -> 34.sp
+    }
+    val amountStyle = TextStyle(
+        fontSize = fontSize,
+        fontWeight = FontWeight.Bold,
+        fontFamily = IosRoundedFontFamily,
+        fontFeatureSettings = "tnum",
+    )
+    val unitStyle = TextStyle(fontSize = fontSize * 0.5f, fontWeight = FontWeight.SemiBold, fontFamily = IosRoundedFontFamily)
+    BoxWithConstraints(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+            .clearAndSetSemantics {
+                contentDescription = accessibilityName
+                stateDescription = display
+            },
+    ) {
+        val maxWidth = constraints.maxWidth
+        // iOS `.minimumScaleFactor(0.5)` on the amount: the unit and the gap stay as they are.
+        val scale = remember(display, unit, fontSize, maxWidth, density) {
+            if (maxWidth == Constraints.Infinity) {
+                1f
+            } else {
+                val amountWidth = measurer.measure(display, amountStyle, maxLines = 1, softWrap = false).size.width
+                val unitWidth = measurer.measure(unit, unitStyle, maxLines = 1, softWrap = false).size.width
+                val room = maxWidth - unitWidth - with(density) { 8.dp.toPx() }
+                if (amountWidth <= 0 || room >= amountWidth) 1f else (room / amountWidth).coerceIn(0.5f, 1f)
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)) {
+            Text(
+                display,
+                style = amountStyle.copy(
+                    fontSize = fontSize * scale,
+                    color = if (typed.isEmpty()) colors.textSecondary else colors.textPrimary,
+                ),
+                maxLines = 1,
+                softWrap = false,
+                modifier = Modifier.alignByBaseline(),
+            )
+            Text(
+                unit,
+                style = unitStyle.copy(color = colors.textSecondary),
+                maxLines = 1,
+                softWrap = false,
+                modifier = Modifier.alignByBaseline(),
+            )
+        }
+    }
+}
+
+/** A key of [KaspaKeypad] (iOS 05db583 `KaspaKeypad.Key`). [Clear] is a held delete. */
+sealed class KaspaKeypadKey {
+    data class Digit(val value: Int) : KaspaKeypadKey()
+    object Decimal : KaspaKeypadKey()
+    object Delete : KaspaKeypadKey()
+    object Clear : KaspaKeypadKey()
+
+    companion object {
+        /**
+         * The amount text after [key] (iOS `KaspaKeypad.applying`): plain digits with "." as the
+         * point, at most [maxDecimals] decimals (8 for KAS, 2 for a currency) and 11 whole digits
+         * (more than all the Kaspa there will ever be). A leading zero gives way to the next
+         * digit; the point on an empty amount writes "0."; [maxDecimals] 0 takes no point. A key
+         * that can't apply leaves the text as it was (the caller plays a firmer haptic then).
+         */
+        fun applying(key: KaspaKeypadKey, text: String, maxDecimals: Int): String = when (key) {
+            Clear -> ""
+            Delete -> text.dropLast(1)
+            Decimal -> when {
+                text.contains('.') || maxDecimals == 0 -> text
+                text.isEmpty() -> "0."
+                else -> "$text."
+            }
+            is Digit -> {
+                val point = text.indexOf('.')
+                when {
+                    point >= 0 -> if (text.length - point - 1 >= maxDecimals) text else text + key.value
+                    text == "0" -> key.value.toString()
+                    text.length >= 11 -> text
+                    else -> text + key.value
+                }
+            }
+        }
+    }
+}
+
+private val KaspaKeypadRows: List<List<KaspaKeypadKey>> = listOf(
+    listOf(KaspaKeypadKey.Digit(1), KaspaKeypadKey.Digit(2), KaspaKeypadKey.Digit(3)),
+    listOf(KaspaKeypadKey.Digit(4), KaspaKeypadKey.Digit(5), KaspaKeypadKey.Digit(6)),
+    listOf(KaspaKeypadKey.Digit(7), KaspaKeypadKey.Digit(8), KaspaKeypadKey.Digit(9)),
+    listOf(KaspaKeypadKey.Decimal, KaspaKeypadKey.Digit(0), KaspaKeypadKey.Delete),
+)
+
+/**
+ * The app's own number pad (iOS 05db583 `KaspaKeypad`): 1-9, the decimal point (the device's
+ * own, "," or "."), 0 and delete - hold delete to clear ([KaspaKeypadKey.Clear]). Four rows of
+ * three 58-high keys, 4 apart, 30sp rounded digits; a pressed key gets a soft rounded highlight
+ * and shrinks a little. A light haptic on every key. Used where a system keyboard would cover the
+ * screen (a send's amount step, the fee editor); apply a key with [KaspaKeypadKey.applying].
+ */
+@Composable
+fun KaspaKeypad(
+    onKey: (KaspaKeypadKey) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        KaspaKeypadRows.forEach { row ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                row.forEach { key ->
+                    KaspaKeypadKeyButton(key, onKey, Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+private fun KaspaKeypadKeyButton(key: KaspaKeypadKey, onKey: (KaspaKeypadKey) -> Unit, modifier: Modifier) {
+    val colors = LocalAppColors.current
+    val haptic = com.kachat.app.util.rememberHaptics()
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    // iOS KaspaKeypadKeyStyle: .easeOut(duration: 0.12)
+    val pressSpec = androidx.compose.animation.core.tween<Float>(durationMillis = 120, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+    val scale by animateFloatAsState(if (pressed) 0.94f else 1f, animationSpec = pressSpec, label = "keypadKeyScale")
+    val highlight by animateFloatAsState(if (pressed) 0.08f else 0f, animationSpec = pressSpec, label = "keypadKeyHighlight")
+    val shape = RoundedCornerShape(16.dp)
+    val description = when (key) {
+        is KaspaKeypadKey.Digit -> key.value.toString()
+        KaspaKeypadKey.Decimal -> "Decimal point"
+        KaspaKeypadKey.Delete, KaspaKeypadKey.Clear -> stringResource(R.string.delete)
+    }
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .height(58.dp)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clip(shape)
+            .background(colors.textPrimary.copy(alpha = highlight))
+            .combinedClickable(
+                interactionSource = interaction,
+                indication = null,
+                role = Role.Button,
+                onClickLabel = null,
+                onLongClick = if (key == KaspaKeypadKey.Delete) {
+                    {
+                        haptic(com.kachat.app.util.IosHaptic.IMPACT_MEDIUM)
+                        onKey(KaspaKeypadKey.Clear)
+                    }
+                } else null,
+                onClick = {
+                    haptic(com.kachat.app.util.IosHaptic.IMPACT_LIGHT)
+                    onKey(key)
+                },
+            )
+            .clearAndSetSemantics {
+                contentDescription = description
+                role = Role.Button
+                onClick {
+                    onKey(key)
+                    true
+                }
+            },
+    ) {
+        when (key) {
+            is KaspaKeypadKey.Digit, KaspaKeypadKey.Decimal -> Text(
+                if (key is KaspaKeypadKey.Digit) key.value.toString() else KaspaAmountGrouping.decimalPoint().toString(),
+                color = colors.textPrimary,
+                fontSize = 30.sp,
+                fontWeight = FontWeight.Medium,
+                fontFamily = IosRoundedFontFamily,
+            )
+            KaspaKeypadKey.Delete, KaspaKeypadKey.Clear -> Icon(
+                Icons.AutoMirrored.Outlined.Backspace,
+                contentDescription = null,
+                tint = colors.textPrimary,
+                modifier = Modifier.size(26.dp),
+            )
+        }
+    }
+}
+
+/** One line that shrinks to fit its width rather than being cut, down to [minScale] of [style]'s
+ *  size (iOS `.lineLimit(1).minimumScaleFactor`), then ellipsized. */
+@Composable
+private fun SendFitText(
+    text: String,
+    style: TextStyle,
+    minScale: Float,
+    modifier: Modifier = Modifier,
+) {
+    val measurer = rememberTextMeasurer()
+    BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
+        val maxWidth = constraints.maxWidth
+        val scale = remember(text, style, maxWidth) {
+            if (maxWidth == Constraints.Infinity) {
+                1f
+            } else {
+                val width = measurer.measure(text, style, maxLines = 1, softWrap = false).size.width
+                if (width <= maxWidth) 1f else (maxWidth.toFloat() / width).coerceIn(minScale, 1f)
+            }
+        }
+        Text(
+            text,
+            style = style.copy(fontSize = style.fontSize * scale),
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
@@ -941,11 +1718,79 @@ fun SendFromSection(
 }
 
 /**
- * Your addresses to pick from (iOS 6333dd3 `OwnAddressPicker`) - the chatting address, then the
- * spending addresses (the ones Manage Addresses shows, plus hidden ones holding Kaspa) - each with
- * its name, balance and whether it was ever used: a balance means used, else the cached answer,
- * else a history lookup, eight at a time; "Checking" until answered, never a possibly-wrong
- * "Unused". A send's Choose an Address, and Request Payment's.
+ * The amount step's From (iOS 05db583 `SendFromCompactRow`): the two pills of [SendFromSection] -
+ * Chatting Address and Choose an Address (any of your addresses, in [OwnAddressPicker]'s sheet;
+ * once picked, the pill shows its name) - after a grey FROM, without the address card under them,
+ * so a keypad has room. The balance it loads ([onAvailableSompiChange], null while it loads) is
+ * the amount's Available. With [isLocked] (opened from one address's own page) that address is
+ * the one pill.
+ */
+@Composable
+fun SendFromCompactRow(
+    source: SendSource,
+    onSourceChange: (SendSource) -> Unit,
+    onAvailableSompiChange: (Long?) -> Unit,
+    walletViewModel: WalletViewModel,
+    modifier: Modifier = Modifier,
+    isLocked: Boolean = false,
+) {
+    val colors = LocalAppColors.current
+    val chattingAddress by walletViewModel.address.collectAsState()
+    var showPicker by remember { mutableStateOf(false) }
+    val sourceAddress = source.address(chattingAddress)
+    val currentOnAvailable by rememberUpdatedState(onAvailableSompiChange)
+    LaunchedEffect(source, chattingAddress) {
+        currentOnAvailable(null)
+        val address = sourceAddress ?: return@LaunchedEffect
+        currentOnAvailable(walletViewModel.addressBalanceSompi(address))
+    }
+    val chattingTitle = stringResource(R.string.chatting_address)
+
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Text(
+            stringResource(R.string.from).uppercase(),
+            color = colors.textSecondary,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+        )
+        if (isLocked) {
+            SelectablePill(
+                title = (source as? SendSource.Spending)?.label ?: chattingTitle,
+                selected = true,
+                modifier = Modifier.weight(1f),
+            ) {}
+        } else {
+            SelectablePill(
+                title = chattingTitle,
+                selected = source is SendSource.Chatting,
+                modifier = Modifier.weight(1f),
+            ) { onSourceChange(SendSource.Chatting) }
+            SelectablePill(
+                title = (source as? SendSource.Spending)?.label ?: stringResource(R.string.pr_choose_an_address),
+                selected = source !is SendSource.Chatting,
+                modifier = Modifier.weight(1f),
+            ) { showPicker = true }
+        }
+    }
+
+    if (showPicker) {
+        OwnAddressPicker(
+            title = stringResource(R.string.send_from),
+            selected = sourceAddress,
+            walletViewModel = walletViewModel,
+            onPick = onSourceChange,
+            onDismiss = { showPicker = false },
+        )
+    }
+}
+
+/**
+ * Your addresses to pick from, as a sheet (iOS 6333dd3 / 05db583 `OwnAddressPicker`): a send's
+ * Choose an Address. The list itself is [OwnAddressList]; picking a row closes the sheet.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -960,6 +1805,75 @@ fun OwnAddressPicker(
     excludeQuantum: Boolean = false,
 ) {
     val halfScreen = (androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp / 2).dp
+    val pick: (SendSource) -> Unit = { source ->
+        onPick(source)
+        onDismiss()
+    }
+
+    com.kachat.app.ui.theme.IosSheetColors(grouped = true) {
+        val colors = LocalAppColors.current
+        // Floats on its height detent, as iOS 26's does, settling onto the edges as it grows.
+        var sheetFloat by remember { androidx.compose.runtime.mutableFloatStateOf(1f) }
+        ModalBottomSheet(
+            scrimColor = com.kachat.app.ui.theme.IosSheetScrim,
+            modifier = Modifier.iosFloatingSheet(sheetFloat),
+            shape = iosFloatingSheetShape(sheetFloat),
+            tonalElevation = com.kachat.app.ui.theme.IosSheetTonalElevation,
+            windowInsets = androidx.compose.foundation.layout.WindowInsets.statusBars,
+            onDismissRequest = onDismiss,
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = colors.background,
+            dragHandle = null,
+        ) {
+            Column(Modifier.navigationBarsPadding()) {
+                IosSheetDetents(height = halfScreen, largeDetent = true, onFloat = { sheetFloat = it }) {
+                    Column(Modifier.fillMaxWidth().fillMaxHeight()) {
+                        SheetNavBar(
+                            title = title,
+                            leading = { SheetBarButton(stringResource(R.string.cancel), onClick = onDismiss) },
+                        )
+                        Column(
+                            Modifier
+                                .fillMaxWidth()
+                                .fillMaxHeight()
+                                .verticalScroll(androidx.compose.foundation.rememberScrollState())
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                        ) {
+                            OwnAddressList(
+                                selected = selected,
+                                walletViewModel = walletViewModel,
+                                onPick = pick,
+                                excludeQuantum = excludeQuantum,
+                            )
+                        }
+                    }
+                    IosSheetGrabber(Modifier.align(Alignment.TopCenter))
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Your addresses as a list to sit on a screen - Request Payment's "Where do you want to be
+ * paid?", a send's From step - or in [OwnAddressPicker]'s sheet (iOS 05db583 `OwnAddressList`):
+ * the chatting address, then the spending addresses (the ones Manage Addresses shows, plus hidden
+ * ones holding Kaspa), each a tappable glass card with its name, Used / Unused, the shortened
+ * address and the balance; the [selected] one has a filled check and an accent edge, the rest an
+ * empty circle. Whether an address was ever used: a balance means used, else the cached answer,
+ * else a history lookup, eight at a time; "Checking" until answered, never a possibly-wrong
+ * "Unused". Not scrollable itself: put it in the screen's scroll.
+ */
+@Composable
+fun OwnAddressList(
+    selected: String?,
+    walletViewModel: WalletViewModel,
+    onPick: (SendSource) -> Unit,
+    modifier: Modifier = Modifier,
+    /** Leaves quantum-safe (KIP-22) addresses out (the .kachat market, iOS `excludeQuantum`). */
+    excludeQuantum: Boolean = false,
+) {
+    val colors = LocalAppColors.current
     val chattingAddress by walletViewModel.address.collectAsState()
     val chattingBalance by walletViewModel.balanceSompi.collectAsState()
     val allEntries by walletViewModel.manageAddresses.collectAsState()
@@ -1007,98 +1921,55 @@ fun OwnAddressPicker(
         }
     }
 
-    val pick: (SendSource) -> Unit = { source ->
-        onPick(source)
-        onDismiss()
-    }
-
-    com.kachat.app.ui.theme.IosSheetColors(grouped = true) {
-        val colors = LocalAppColors.current
-        // Floats on its height detent, as iOS 26's does, settling onto the edges as it grows.
-        var sheetFloat by remember { androidx.compose.runtime.mutableFloatStateOf(1f) }
-        ModalBottomSheet(
-            scrimColor = com.kachat.app.ui.theme.IosSheetScrim,
-            modifier = Modifier.iosFloatingSheet(sheetFloat),
-            shape = iosFloatingSheetShape(sheetFloat),
-            tonalElevation = com.kachat.app.ui.theme.IosSheetTonalElevation,
-            windowInsets = androidx.compose.foundation.layout.WindowInsets.statusBars,
-            onDismissRequest = onDismiss,
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            containerColor = colors.background,
-            dragHandle = null,
-        ) {
-            Column(Modifier.navigationBarsPadding()) {
-                IosSheetDetents(height = halfScreen, largeDetent = true, onFloat = { sheetFloat = it }) {
-                    Column(Modifier.fillMaxWidth().fillMaxHeight()) {
-                        SheetNavBar(
-                            title = title,
-                            leading = { SheetBarButton(stringResource(R.string.cancel), onClick = onDismiss) },
-                        )
-                        Column(
-                            Modifier
-                                .fillMaxWidth()
-                                .fillMaxHeight()
-                                .verticalScroll(androidx.compose.foundation.rememberScrollState())
-                                .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp),
-                        ) {
-                            val chatting = chattingAddress
-                            if (chatting != null) {
-                                OwnAddressPickerSectionHeader(stringResource(R.string.chatting_address))
-                                Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(colors.surface)) {
-                                    OwnAddressPickerRow(
-                                        title = stringResource(R.string.chatting_address),
-                                        address = chatting,
-                                        balance = chattingBalance,
-                                        used = used[chatting],
-                                        isSelected = chatting == selected,
-                                        onClick = { pick(SendSource.Chatting) },
-                                    )
-                                }
-                                Box(Modifier.size(12.dp))
-                            }
-                            OwnAddressPickerSectionHeader(stringResource(R.string.pr_spending_addresses))
-                            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(colors.surface)) {
-                                if (entries.isEmpty() && !loaded) {
-                                    Box(Modifier.fillMaxWidth().padding(vertical = 14.dp), contentAlignment = Alignment.Center) {
-                                        com.kachat.app.ui.theme.IosActivityIndicator(color = colors.textSecondary)
-                                    }
-                                } else {
-                                    entries.forEachIndexed { i, entry ->
-                                        if (i > 0) IosListRowDivider()
-                                        val label = spendingAddressDisplayLabel(entry.index, entry.label)
-                                        OwnAddressPickerRow(
-                                            title = label,
-                                            address = entry.address,
-                                            balance = entry.balanceSompi,
-                                            used = used[entry.address],
-                                            isSelected = entry.address == selected,
-                                            onClick = { pick(SendSource.Spending(entry.index, entry.address, label)) },
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    IosSheetGrabber(Modifier.align(Alignment.TopCenter))
-                }
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        val chatting = chattingAddress
+        if (chatting != null) {
+            OwnAddressListSectionTitle(stringResource(R.string.chatting_address))
+            OwnAddressListRow(
+                title = stringResource(R.string.chatting_address),
+                address = chatting,
+                balance = chattingBalance,
+                used = used[chatting],
+                isSelected = chatting == selected,
+                onClick = { onPick(SendSource.Chatting) },
+            )
+        }
+        OwnAddressListSectionTitle(stringResource(R.string.pr_spending_addresses), Modifier.padding(top = 8.dp))
+        if (entries.isEmpty() && !loaded) {
+            Box(Modifier.fillMaxWidth().padding(vertical = 12.dp), contentAlignment = Alignment.Center) {
+                com.kachat.app.ui.theme.IosActivityIndicator(color = colors.textSecondary)
+            }
+        } else {
+            entries.forEach { entry ->
+                val label = spendingAddressDisplayLabel(entry.index, entry.label)
+                OwnAddressListRow(
+                    title = label,
+                    address = entry.address,
+                    balance = entry.balanceSompi,
+                    used = used[entry.address],
+                    isSelected = entry.address == selected,
+                    onClick = { onPick(SendSource.Spending(entry.index, entry.address, label)) },
+                )
             }
         }
     }
 }
 
+/** A section title of [OwnAddressList]: caption, semibold, grey, upper case. */
 @Composable
-private fun OwnAddressPickerSectionHeader(title: String) {
+private fun OwnAddressListSectionTitle(title: String, modifier: Modifier = Modifier) {
     Text(
         title.uppercase(),
         color = LocalAppColors.current.textSecondary,
-        fontSize = 13.sp,
-        modifier = Modifier.padding(start = 16.dp, top = 4.dp),
+        fontSize = 12.sp,
+        fontWeight = FontWeight.SemiBold,
+        modifier = modifier,
     )
 }
 
+/** One address of [OwnAddressList]: a glass card, edged in the accent when [isSelected]. */
 @Composable
-private fun OwnAddressPickerRow(
+private fun OwnAddressListRow(
     title: String,
     address: String,
     balance: Long?,
@@ -1107,11 +1978,19 @@ private fun OwnAddressPickerRow(
     onClick: () -> Unit,
 ) {
     val colors = LocalAppColors.current
+    val haptic = com.kachat.app.util.rememberHaptics()
+    val shape = RoundedCornerShape(16.dp)
     Row(
         Modifier
             .fillMaxWidth()
-            .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 11.dp),
+            .sendKaspaGlass(16.dp)
+            .border(1.5.dp, KaspaTeal.copy(alpha = if (isSelected) 0.9f else 0f), shape)
+            .clickable(role = Role.Button) {
+                haptic(com.kachat.app.util.IosHaptic.IMPACT_LIGHT)
+                onClick()
+            }
+            .semantics { this.selected = isSelected }
+            .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -1145,9 +2024,12 @@ private fun OwnAddressPickerRow(
                 style = TextStyle(fontFeatureSettings = "tnum"),
             )
         }
-        if (isSelected) {
-            Icon(Icons.Default.Check, contentDescription = null, tint = KaspaTeal, modifier = Modifier.size(20.dp))
-        }
+        Icon(
+            if (isSelected) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
+            contentDescription = null,
+            tint = if (isSelected) KaspaTeal else colors.textSecondary,
+            modifier = Modifier.size(22.dp),
+        )
     }
 }
 
