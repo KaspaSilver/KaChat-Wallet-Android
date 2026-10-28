@@ -109,8 +109,8 @@ class NextcloudHttpException(val code: Int) : NextcloudException("Nextcloud retu
  * - [PORTFOLIO_FILE_NAME]: every portfolio with its transactions and fees, plus what was deleted
  *   ([PortfolioBackupFile]), so two devices merge without bringing a deletion back.
  * KaChat's chat backup (`kachat-backup.json`) may share the folder; the wallet never reads,
- * writes or deletes it. A restore falls back to the pre-rename [LEGACY_ADDRESS_BOOK_FILE_NAME] /
- * [LEGACY_PORTFOLIO_FILE_NAME]. When and what to upload - Automatic Backup, Back Up Now, Restore,
+ * writes or deletes it. A restore falls back to the earlier names, [LEGACY_ADDRESS_BOOK_FILE_NAMES] /
+ * [LEGACY_PORTFOLIO_FILE_NAMES]. When and what to upload - Automatic Backup, Back Up Now, Restore,
  * the restore on a fresh connection - is [NextcloudSyncService]'s; this class holds the account,
  * the per-wallet settings and the WebDAV calls. Import / Export in the Address Book and the
  * Portfolio also reach the KaChat folder ([uploadToKaChatFolder], [downloadFile], [listFolder]).
@@ -179,12 +179,14 @@ class NextcloudService @Inject constructor(
         const val MEDIA_FOLDER_PATH = "$BACKUP_FOLDER_NAME/Media"
 
         /** The wallet's own backup files (iOS 5bab351). */
-        const val ADDRESS_BOOK_FILE_NAME = "KaPay Address Book.json"
+        const val ADDRESS_BOOK_FILE_NAME = "KaPay Contacts.json"
         const val PORTFOLIO_FILE_NAME = "KaPay Portfolio.json"
-        /** The names the backup had while the app was called KaChat Wallet (until 2026-10-27).
-         *  Read when there is no backup under the new name yet; the next backup writes the new one. */
-        const val LEGACY_ADDRESS_BOOK_FILE_NAME = "KaChat Wallet Address Book.json"
-        const val LEGACY_PORTFOLIO_FILE_NAME = "KaChat Wallet Portfolio.json"
+        /** The names the backup had before: "KaPay Address Book.json" (the Address Book became
+         *  Contacts, 2026-10-28) and the KaChat Wallet names (the app's name until 2026-10-27).
+         *  Read, newest first, when there is no backup under the current name yet; the next
+         *  backup writes the current one (iOS wallet 8118f09). */
+        val LEGACY_ADDRESS_BOOK_FILE_NAMES = listOf("KaPay Address Book.json", "KaChat Wallet Address Book.json")
+        val LEGACY_PORTFOLIO_FILE_NAMES = listOf("KaChat Wallet Portfolio.json")
 
         /** A backup file is read whole; this bounds it (iOS `maxBytes: 50_000_000`). */
         const val BACKUP_MAX_BYTES = 50_000_000L
@@ -533,17 +535,19 @@ class NextcloudService @Inject constructor(
      *  A missing folder lists as a 404, which also just means "no backup yet". */
     suspend fun fetchWalletBackupInfo(): BackupInfo {
         val listing = runCatching { listFolder(BACKUP_FOLDER_NAME) }.getOrNull() ?: return BackupInfo()
-        fun file(name: String) = listing.firstOrNull { it.name == name && !it.isDirectory }
+        fun file(names: List<String>) = names.firstNotNullOfOrNull { name ->
+            listing.firstOrNull { it.name == name && !it.isDirectory }
+        }
         return BackupInfo(
-            addressBook = file(ADDRESS_BOOK_FILE_NAME) ?: file(LEGACY_ADDRESS_BOOK_FILE_NAME),
-            portfolio = file(PORTFOLIO_FILE_NAME) ?: file(LEGACY_PORTFOLIO_FILE_NAME),
+            addressBook = file(listOf(ADDRESS_BOOK_FILE_NAME) + LEGACY_ADDRESS_BOOK_FILE_NAMES),
+            portfolio = file(listOf(PORTFOLIO_FILE_NAME) + LEGACY_PORTFOLIO_FILE_NAMES),
         )
     }
 
-    /** A backup file under [name], else under the name it had before the rename ([legacy]); null
-     *  when neither is there (iOS `downloadBackupFile`). Any other failure throws. */
-    suspend fun downloadBackupFile(name: String, legacy: String): ByteArray? {
-        for (candidate in listOf(name, legacy)) {
+    /** A backup file under [name], else under a name it had before ([legacy], newest first); null
+     *  when none is there (iOS `downloadBackupFile`). Any other failure throws. */
+    suspend fun downloadBackupFile(name: String, legacy: List<String>): ByteArray? {
+        for (candidate in listOf(name) + legacy) {
             try {
                 return downloadFile("$BACKUP_FOLDER_NAME/$candidate", maxBytes = BACKUP_MAX_BYTES)
             } catch (e: NextcloudHttpException) {
@@ -554,13 +558,13 @@ class NextcloudService @Inject constructor(
     }
 
     /**
-     * Deletes the Address Book and Portfolio backups (both names each) from the user's Nextcloud.
+     * Deletes the contacts and Portfolio backups (every name each has had) from the user's Nextcloud.
      * Only ever on the user's say-so - the Delete Account option that names it. KaChat's chat
      * backup in the same folder is left alone. A 404 is the state being asked for.
      */
     suspend fun deleteRemoteBackup(): Unit = withContext(Dispatchers.IO) {
         val account = requireAccount()
-        for (name in listOf(ADDRESS_BOOK_FILE_NAME, PORTFOLIO_FILE_NAME, LEGACY_ADDRESS_BOOK_FILE_NAME, LEGACY_PORTFOLIO_FILE_NAME)) {
+        for (name in listOf(ADDRESS_BOOK_FILE_NAME, PORTFOLIO_FILE_NAME) + LEGACY_ADDRESS_BOOK_FILE_NAMES + LEGACY_PORTFOLIO_FILE_NAMES) {
             val request = Request.Builder()
                 .url(davUrl(account, "$BACKUP_FOLDER_NAME/$name"))
                 .delete()

@@ -1064,21 +1064,21 @@
     <string name="kn_detail_grace_resolves">已过期。在宽限期结束前，它仍解析到其所有者，所有者仍可续期。</string>
     <string name="kn_detail_grace_mine_resolves">已过期 - 续期以保留它。在宽限期结束前，它仍解析到你，其他人无法获取。</string>
     <!-- Address Book (iOS 00767a4) -->
-    <string name="ab_address_book">地址簿</string>
-    <string name="ab_add_to_address_book">添加到地址簿</string>
+    <string name="ab_address_book">联系人</string>
+    <string name="ab_add_to_address_book">添加联系人</string>
     <string name="ab_search_prompt">搜索名称和地址</string>
     <string name="ab_empty_body">用你认得出的名字保存常用的 Kaspa 地址。它们只保存在 KaPay 中，仅限这个钱包，绝不会进入手机通讯录。</string>
-    <string name="ab_add_address">添加地址</string>
+    <string name="ab_add_address">添加联系人</string>
     <string name="ab_copied">已复制</string>
     <string name="ab_share_address">分享地址</string>
     <string name="ab_edit">编辑</string>
-    <string name="ab_delete_from">从地址簿删除</string>
-    <string name="ab_delete_confirm">要从地址簿删除 %1$s 吗？</string>
-    <string name="ab_not_in_book">不在你的地址簿中</string>
+    <string name="ab_delete_from">删除联系人</string>
+    <string name="ab_delete_confirm">要从联系人中删除 %1$s 吗？</string>
+    <string name="ab_not_in_book">不在你的联系人中</string>
     <string name="ab_note_optional">备注（可选）</string>
     <string name="ab_editor_footer">仅为这个钱包保存在 KaPay 中。绝不会添加到手机通讯录。</string>
-    <string name="ab_remove_from">从地址簿移除</string>
-    <string name="ab_edit_address">编辑地址</string>
+    <string name="ab_remove_from">删除联系人</string>
+    <string name="ab_edit_address">编辑联系人</string>
     <string name="ab_err_no_wallet">请先打开一个钱包。</string>
     <string name="ab_err_empty_name">请输入名称。</string>
     <string name="ab_err_invalid_address">请输入有效的 Kaspa 地址。</string>
@@ -1089,9 +1089,9 @@
     <string name="ab_remove_photo">移除照片</string>
     <string name="ab_photo_failed">无法使用这张照片。</string>
     <string name="ab_photo_footer">没有你自己设定的照片时，这里显示对方在个人资料中设置的头像。</string>
-    <string name="ab_photos_title">地址簿照片</string>
-    <string name="ab_photos_remove">移除地址簿照片</string>
-    <string name="ab_photos_remove_question">要移除地址簿照片吗？</string>
+    <string name="ab_photos_title">联系人照片</string>
+    <string name="ab_photos_remove">移除联系人照片</string>
+    <string name="ab_photos_remove_question">要移除联系人照片吗？</string>
     <string name="ab_photos_frees">将释放 %1$s。已保存的地址保留名称，改为显示其所有者设置的头像。</string>
     <!-- Chats: long-press Address Book tile (iOS 98f3728) -->
     <string name="ab_row_add_subtitle">用你认得出的名字保存这个地址。</string>
@@ -1107,18 +1107,18 @@
     <string name="ab_import_or_export">导入或导出</string>
     <string name="ab_import_file">导入文件</string>
     <string name="ab_export_file">导出到文件</string>
-    <string name="ab_import_file_sub">从地址簿导出文件中添加地址。</string>
-    <string name="ab_export_file_sub">将此地址簿连同照片保存到文件。</string>
-    <string name="ab_nc_import_sub">从你的 Nextcloud 中选择一个地址簿导出文件。</string>
+    <string name="ab_import_file_sub">从联系人导出文件添加联系人。</string>
+    <string name="ab_export_file_sub">将你的联系人及其照片保存到文件。</string>
+    <string name="ab_nc_import_sub">从你的 Nextcloud 选择一个联系人导出文件。</string>
     <string name="ab_nc_export_sub">保存到 Nextcloud 的 KaChat 文件夹，可在任何设备上导入。</string>
     <string name="ab_nc_connect_hint">在 设置 &gt; 存储 中连接 Nextcloud，即可同时保存到那里并在其他设备上导入。</string>
     <string name="ab_couldnt_read_file">无法读取该文件。</string>
-    <string name="ab_nothing_to_export">还没有可导出的内容。请先添加一个地址。</string>
+    <string name="ab_nothing_to_export">还没有可导出的内容。请先添加一个联系人。</string>
     <string name="ab_export_failed">导出失败。无法写入文件。</string>
     <string name="ab_already_up_to_date">已是最新。文件中的地址都已保存。</string>
     <string name="ab_imported_counts">已导入：新增 %1$d 个，更新 %2$d 个。</string>
-    <string name="ab_err_not_an_export">该文件不是 KaChat 地址簿导出文件。</string>
-    <string name="ab_err_export_empty">该导出文件中没有地址。</string>
+    <string name="ab_err_not_an_export">该文件不是联系人导出文件。</string>
+    <string name="ab_err_export_empty">该联系人导出文件中没有联系人。</string>
     <!-- .kachat: fees, busy network, progress receipt (iOS e426432) -->
     <string name="kn_busy_title">网络繁忙</string>
     <string name="kn_busy_body">普通速度可能要等一会儿。快速或优先多付一点，更快进入区块。</string>
@@ -1176,7 +1176,6 @@
     <!-- Bare names resolve to .kachat only (iOS 5a5122d) -->
     <string name="kachat_names_not_live_here">.kachat 名称尚未在此网络上线</string>
     <!-- Nextcloud sync carries portfolios -->
-    <string name="nextcloud_sync_address_book_portfolios">你的地址簿和投资组合也在同一份备份中,并以同样方式在你的设备之间同步。</string>
     <!-- Your Domains > .kachat card: grace end (iOS 72b7dc7) -->
     <string name="kn_grace_ends">宽限期结束 %1$s</string>
     <!-- .kachat on mainnet (iOS ef6b21e) -->
@@ -1378,4 +1377,6 @@
     <string name="no_active_nodes">没有活跃节点</string>
     <string name="no_nodes_discovered">未发现节点</string>
     <string name="kaspa_node_settings_footer">自动扫描会找到并连接最佳可用节点。选择特定节点只会连接该节点，不会切换到其他节点。不影响其他标签页中的索引器、域名或浏览器。将你的地址添加到下方的 IP 地址簿后即可在此选择。</string>
+    <string name="ab_picker_empty_body">在 钱包 > 联系人 中添加联系人。</string>
+    <string name="ab_no_contacts">还没有联系人</string>
 </resources>

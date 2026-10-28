@@ -7,7 +7,7 @@ Guidance for Claude Code in this repository.
 KaPay (named KaChat Wallet until 2026-10-27) is a standalone Android Kaspa wallet, split out of
 KaChat so KaChat can stay focused on 1:1 and group chats - the Android counterpart of the iPhone's
 KaPay (`KaspaSilver/KaChat-Wallet-iPhone`), which it matches screen for screen. It keeps KaChat's
-wallet features: Portfolio, Cold Storage, the .kachat names marketplace, the Address Book and the
+wallet features: Portfolio, Cold Storage, the .kachat names marketplace, Contacts and the
 account's Wallet tab (receive, send, request payment, addresses, domains, help, about).
 
 The source started as a copy of KaChat-Android (`KaspaSilver/KaChat-Android`) at commit `9289fad8`
@@ -20,6 +20,11 @@ KaChat.
 When the iPhone wallet changes, the same change lands here: its commits name the iOS files, and
 the Android ones usually have the same names (Swift `FooView` -> Kotlin `FooScreen`).
 
+Saved addresses are **Contacts** in everything people read (named the Address Book until
+2026-10-28, iOS 8118f09): the Wallet tab's Contacts row, the Contacts pill under a recipient
+field, Settings > Storage's Contact Photos; the icon is `Icons.Outlined.Badge` (iOS
+`person.text.rectangle`). The code keeps its names (`AddressBookManager`, `AddressBookScreen`).
+
 ## Dock
 
 Five fixed tabs, `WALLET_DOCK` in `app/src/main/java/com/kachat/app/ui/KaChatApp.kt` (rendered by
@@ -29,7 +34,7 @@ Five fixed tabs, `WALLET_DOCK` in `app/src/main/java/com/kachat/app/ui/KaChatApp
 |---|---|
 | Portfolio | `PortfolioScreen` - one floating + sheet for every add, import and export |
 | Storage | `ColdStorageListScreen` |
-| Wallet | `ProfileScreen` (`ui/screens/Screens.kt`, route `profile`) - the home tab: receive, Chatting Address, Manage Addresses, Your Domains, Address Book (`AddressBookScreen`, pushed), Help, About; a floating up/down button opens Send and Receive (`WalletActions.kt`: Send Kaspa, Receive Kaspa, Request Payment) |
+| Wallet | `ProfileScreen` (`ui/screens/Screens.kt`, route `profile`) - the home tab: receive, Chatting Address, Manage Addresses, Your Domains, Contacts (`AddressBookScreen`, pushed), Help, About; a floating up/down button opens Send and Receive (`WalletActions.kt`: Send Kaspa, Receive Kaspa, Request Payment) |
 | .kachat | `KaChatHubSections.kt` `KachatMarketScreen` + `KachatNamesLiveScreens.kt` - the full .kachat names marketplace, swiping between its tabs; dock icon is the name tag with an @ (`dockIconPainter` in `ui/ChessTabIcon.kt`) |
 | Settings | `SettingsScreen(isDockTab = true)` - no Done button; Log Out is its last row |
 
@@ -51,12 +56,13 @@ chat sync (`ChatRepository`, `GroupRepository`, `BroadcastRepository`, `ChatView
 screen, service and util they used, with their tests). `WalletService` keeps the node connection,
 sending and the REST reads; `SettingsViewModel` has the Kaspa Explorer choice and the diagnostics
 export; `WalletViewModel` the onboarding hold and the own-address activity events. Nextcloud backs
-up only the Address Book and the Portfolio. Push keeps its registration shape: the chat fields go
+up only Contacts and the Portfolio (`KaPay Contacts.json`, `KaPay Portfolio.json`; a restore falls
+back to `KaPay Address Book.json`, then the `KaChat Wallet …` names). Push keeps its registration shape: the chat fields go
 out empty (`PushRegistrationManager.register`).
 
 Room (`services/database/KaChatDatabase.kt`, version 43) holds only the Portfolio:
 `portfolio_transactions` and `portfolios`. `MIGRATION_42_43` drops KaChat's chat tables and keeps
-those two; anything older is rebuilt empty. The Address Book lives in SharedPreferences
+those two; anything older is rebuilt empty. Contacts live in SharedPreferences
 (`AddressBookManager`), settings in DataStore (`AppSettingsRepository`, which still has KaChat's
 unused chat keys).
 

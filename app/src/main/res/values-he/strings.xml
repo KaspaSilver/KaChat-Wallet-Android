@@ -1064,21 +1064,21 @@
     <string name="kn_detail_grace_resolves">פג תוקף. השם עדיין מפנה לבעלים עד שתקופת החסד מסתיימת, והבעלים עדיין יכול לחדש אותו.</string>
     <string name="kn_detail_grace_mine_resolves">פג תוקף - חדש כדי לשמור עליו. עד שתקופת החסד מסתיימת הוא עדיין מפנה אליך ואף אחד אחר לא יכול לקחת אותו.</string>
     <!-- Address Book (iOS 00767a4) -->
-    <string name="ab_address_book">פנקס כתובות</string>
-    <string name="ab_add_to_address_book">הוספה לפנקס הכתובות</string>
+    <string name="ab_address_book">אנשי קשר</string>
+    <string name="ab_add_to_address_book">הוסף איש קשר</string>
     <string name="ab_search_prompt">חיפוש שמות וכתובות</string>
     <string name="ab_empty_body">שמרו את כתובות ה-Kaspa שבהן אתם משתמשים בשם שתזהו. הן נשארות ב-KaPay, רק עבור הארנק הזה, ולעולם לא נכנסות לאנשי הקשר בטלפון.</string>
-    <string name="ab_add_address">הוסף כתובת</string>
+    <string name="ab_add_address">הוסף איש קשר</string>
     <string name="ab_copied">הועתק</string>
     <string name="ab_share_address">שיתוף כתובת</string>
     <string name="ab_edit">עריכה</string>
-    <string name="ab_delete_from">מחיקה מפנקס הכתובות</string>
-    <string name="ab_delete_confirm">למחוק את %1$s מפנקס הכתובות?</string>
-    <string name="ab_not_in_book">לא בפנקס הכתובות שלך</string>
+    <string name="ab_delete_from">מחיקת איש קשר</string>
+    <string name="ab_delete_confirm">למחוק את %1$s מאנשי הקשר שלך?</string>
+    <string name="ab_not_in_book">לא באנשי הקשר שלך</string>
     <string name="ab_note_optional">הערה (רשות)</string>
     <string name="ab_editor_footer">נשמר ב-KaPay עבור הארנק הזה בלבד. לעולם לא נוסף לאנשי הקשר בטלפון.</string>
-    <string name="ab_remove_from">הסרה מפנקס הכתובות</string>
-    <string name="ab_edit_address">עריכת כתובת</string>
+    <string name="ab_remove_from">מחיקת איש קשר</string>
+    <string name="ab_edit_address">עריכת איש קשר</string>
     <string name="ab_err_no_wallet">פתחו קודם ארנק.</string>
     <string name="ab_err_empty_name">הזינו שם.</string>
     <string name="ab_err_invalid_address">הזינו כתובת Kaspa תקינה.</string>
@@ -1089,9 +1089,9 @@
     <string name="ab_remove_photo">הסרת תמונה</string>
     <string name="ab_photo_failed">לא ניתן להשתמש בתמונה הזו.</string>
     <string name="ab_photo_footer">בלי תמונה משלך, כאן מוצג האווטאר שהוגדר בפרופיל שלהם.</string>
-    <string name="ab_photos_title">תמונות פנקס הכתובות</string>
-    <string name="ab_photos_remove">הסרת תמונות פנקס הכתובות</string>
-    <string name="ab_photos_remove_question">להסיר את תמונות פנקס הכתובות?</string>
+    <string name="ab_photos_title">תמונות אנשי קשר</string>
+    <string name="ab_photos_remove">הסרת תמונות אנשי קשר</string>
+    <string name="ab_photos_remove_question">להסיר את תמונות אנשי הקשר?</string>
     <string name="ab_photos_frees">משחרר %1$s. הכתובות השמורות שומרות על השמות שלהן ומציגות במקום זאת את האווטאר שהבעלים הגדירו.</string>
     <!-- Chats: long-press Address Book tile (iOS 98f3728) -->
     <string name="ab_row_add_subtitle">שמרו את הכתובת הזו בשם שתזהו.</string>
@@ -1107,18 +1107,18 @@
     <string name="ab_import_or_export">ייבוא או ייצוא</string>
     <string name="ab_import_file">ייבוא קובץ</string>
     <string name="ab_export_file">ייצוא קובץ</string>
-    <string name="ab_import_file_sub">הוספת כתובות מייצוא של פנקס הכתובות.</string>
-    <string name="ab_export_file_sub">שמירת פנקס הכתובות הזה, עם התמונות, בקובץ.</string>
-    <string name="ab_nc_import_sub">בחרו ייצוא של פנקס הכתובות מה-Nextcloud שלכם.</string>
+    <string name="ab_import_file_sub">הוספת אנשי קשר מקובץ ייצוא של אנשי קשר.</string>
+    <string name="ab_export_file_sub">שמירת אנשי הקשר שלך, עם התמונות, בקובץ.</string>
+    <string name="ab_nc_import_sub">בחירת קובץ ייצוא של אנשי קשר מה-Nextcloud שלך.</string>
     <string name="ab_nc_export_sub">שמרו בתיקיית KaChat ב-Nextcloud כדי לייבא בכל מכשיר.</string>
     <string name="ab_nc_connect_hint">חברו Nextcloud בהגדרות &gt; אחסון כדי לשמור גם שם ולייבא במכשיר אחר.</string>
     <string name="ab_couldnt_read_file">לא ניתן לקרוא את הקובץ.</string>
-    <string name="ab_nothing_to_export">אין עדיין מה לייצא. הוסיפו קודם כתובת.</string>
+    <string name="ab_nothing_to_export">עדיין אין מה לייצא. קודם צריך להוסיף איש קשר.</string>
     <string name="ab_export_failed">הייצוא נכשל. לא ניתן לכתוב את הקובץ.</string>
     <string name="ab_already_up_to_date">כבר מעודכן. כל הכתובות בקובץ שמורות.</string>
     <string name="ab_imported_counts">יובאו: %1$d נוספו, %2$d עודכנו.</string>
-    <string name="ab_err_not_an_export">הקובץ אינו ייצוא של פנקס הכתובות של KaChat.</string>
-    <string name="ab_err_export_empty">בייצוא הזה אין כתובות.</string>
+    <string name="ab_err_not_an_export">הקובץ הזה אינו קובץ ייצוא של אנשי קשר.</string>
+    <string name="ab_err_export_empty">בקובץ הייצוא הזה אין אנשי קשר.</string>
     <!-- .kachat: fees, busy network, progress receipt (iOS e426432) -->
     <string name="kn_busy_title">הרשת עמוסה</string>
     <string name="kn_busy_body">ב\'רגיל\' זה עלול להתעכב. \'מהיר\' או \'עדיפות\' משלמים מעט יותר כדי להיכנס לבלוק מוקדם יותר.</string>
@@ -1176,7 +1176,6 @@
     <!-- Bare names resolve to .kachat only (iOS 5a5122d) -->
     <string name="kachat_names_not_live_here">שמות .kachat עדיין לא פעילים ברשת הזו</string>
     <!-- Nextcloud sync carries portfolios -->
-    <string name="nextcloud_sync_address_book_portfolios">פנקס הכתובות והתיקים שלך נמצאים באותו גיבוי ומסתנכרנים בין המכשירים שלך באותו אופן.</string>
     <!-- Your Domains > .kachat card: grace end (iOS 72b7dc7) -->
     <string name="kn_grace_ends">תקופת החסד מסתיימת %1$s</string>
     <!-- .kachat on mainnet (iOS ef6b21e) -->
@@ -1378,4 +1377,6 @@
     <string name="no_active_nodes">אין צמתים פעילים</string>
     <string name="no_nodes_discovered">לא נמצאו צמתים</string>
     <string name="kaspa_node_settings_footer">סריקה אוטומטית מוצאת את הצמתים הטובים ביותר ומתחברת אליהם. בחירת צומת מסוים מתחברת רק אליו, בלי מעבר לאחרים. לא משפיע על האינדקסרים, הדומיינים או הסייר בלשוניות האחרות. הוסיפו כתובות משלכם לפנקס כתובות ה-IP למטה כדי לבחור אותן כאן.</string>
+    <string name="ab_picker_empty_body">אפשר להוסיף אנשי קשר בארנק > אנשי קשר.</string>
+    <string name="ab_no_contacts">עדיין אין אנשי קשר</string>
 </resources>

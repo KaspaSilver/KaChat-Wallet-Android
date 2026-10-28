@@ -360,8 +360,8 @@ class AddressBookManager @Inject constructor(
      *  Nextcloud restore); the Address Book's own import shows [reason]'s translated string. */
     class ImportException(val reason: ImportError) : Exception(
         when (reason) {
-            ImportError.NOT_AN_ADDRESS_BOOK -> "That file isn't a KaChat Address Book export."
-            ImportError.EMPTY -> "That Address Book export has no addresses."
+            ImportError.NOT_AN_ADDRESS_BOOK -> "That file isn't a contacts export."
+            ImportError.EMPTY -> "That contacts export has no contacts."
             ImportError.OTHER_NETWORK -> if (com.kachat.app.util.KaspaNetwork.isTestnet) {
                 "Every address in that file is a Mainnet address. KaPay is on Testnet."
             } else {
@@ -579,9 +579,9 @@ class AddressBookManager @Inject constructor(
         const val EXPORT_KIND = "kachat-address-book"
 
         /** The export's file name, with the time so several exports don't overwrite each other:
-         *  "KaChat Address Book 2026-10-08T18-37-50Z.json", exactly as iOS names it. */
+         *  "KaPay Contacts 2026-10-08T18-37-50Z.json", exactly as iOS names it (8118f09). */
         fun exportFileName(epochMs: Long = System.currentTimeMillis()): String =
-            "KaChat Address Book ${isoSeconds(epochMs).replace(":", "-")}.json"
+            "KaPay Contacts ${isoSeconds(epochMs).replace(":", "-")}.json"
 
         @Volatile private var instance: AddressBookManager? = null
 

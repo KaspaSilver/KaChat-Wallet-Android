@@ -58,7 +58,7 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.ContentPaste
-import androidx.compose.material.icons.outlined.Book
+import androidx.compose.material.icons.outlined.Badge
 import androidx.compose.material.icons.outlined.IosShare
 import androidx.compose.material.icons.outlined.Circle
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -355,7 +355,7 @@ private fun AddressBookActions(show: Boolean, onAdd: () -> Unit, onDismiss: () -
 
     if (show) {
         ActionSheetContainer(
-            title = stringResource(R.string.addresses),
+            title = stringResource(R.string.ab_address_book),
             subtitle = null,
             onDismiss = onDismiss,
         ) {
@@ -493,8 +493,9 @@ private fun AddressBookEmptyState(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterVertically),
     ) {
-        Icon(Icons.Outlined.Book, contentDescription = null, tint = iconTint, modifier = Modifier.size(iconSize * 1.25f))
-        Text(stringResource(R.string.no_saved_addresses), color = colors.textPrimary, fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
+        // KaChat's contact card (iOS person.text.rectangle, 8118f09).
+        Icon(Icons.Outlined.Badge, contentDescription = null, tint = iconTint, modifier = Modifier.size(iconSize * 1.25f))
+        Text(stringResource(R.string.ab_no_contacts), color = colors.textPrimary, fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
         Text(body, color = colors.textSecondary, fontSize = 15.sp, textAlign = TextAlign.Center)
         action?.invoke()
     }

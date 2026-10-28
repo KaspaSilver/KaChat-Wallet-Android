@@ -1061,21 +1061,21 @@
     <string name="kn_detail_grace_resolves">Abgelaufen. Bis zum Ende der Kulanzfrist wird er weiterhin zum Inhaber aufgelöst, und der Inhaber kann ihn noch verlängern.</string>
     <string name="kn_detail_grace_mine_resolves">Abgelaufen - verlängere ihn, um ihn zu behalten. Bis zum Ende der Kulanzfrist wird er weiterhin zu dir aufgelöst, und niemand sonst kann ihn nehmen.</string>
     <!-- Address Book (iOS 00767a4) -->
-    <string name="ab_address_book">Adressbuch</string>
-    <string name="ab_add_to_address_book">Zum Adressbuch hinzufügen</string>
+    <string name="ab_address_book">Kontakte</string>
+    <string name="ab_add_to_address_book">Kontakt hinzufügen</string>
     <string name="ab_search_prompt">Namen und Adressen suchen</string>
     <string name="ab_empty_body">Speichere die Kaspa-Adressen, die du nutzt, unter einem Namen, den du wiedererkennst. Sie bleiben in KaPay, nur für diese Wallet, und landen nie in den Kontakten deines Telefons.</string>
-    <string name="ab_add_address">Adresse hinzufügen</string>
+    <string name="ab_add_address">Kontakt hinzufügen</string>
     <string name="ab_copied">Kopiert</string>
     <string name="ab_share_address">Adresse teilen</string>
     <string name="ab_edit">Bearbeiten</string>
-    <string name="ab_delete_from">Aus dem Adressbuch löschen</string>
-    <string name="ab_delete_confirm">%1$s aus deinem Adressbuch löschen?</string>
-    <string name="ab_not_in_book">Nicht in deinem Adressbuch</string>
+    <string name="ab_delete_from">Kontakt löschen</string>
+    <string name="ab_delete_confirm">%1$s aus deinen Kontakten löschen?</string>
+    <string name="ab_not_in_book">Nicht in deinen Kontakten</string>
     <string name="ab_note_optional">Notiz (optional)</string>
     <string name="ab_editor_footer">Nur für diese Wallet in KaPay gespeichert. Wird nie zu den Kontakten deines Telefons hinzugefügt.</string>
-    <string name="ab_remove_from">Aus dem Adressbuch entfernen</string>
-    <string name="ab_edit_address">Adresse bearbeiten</string>
+    <string name="ab_remove_from">Kontakt löschen</string>
+    <string name="ab_edit_address">Kontakt bearbeiten</string>
     <string name="ab_err_no_wallet">Öffne zuerst eine Wallet.</string>
     <string name="ab_err_empty_name">Gib einen Namen ein.</string>
     <string name="ab_err_invalid_address">Gib eine gültige Kaspa-Adresse ein.</string>
@@ -1086,9 +1086,9 @@
     <string name="ab_remove_photo">Foto entfernen</string>
     <string name="ab_photo_failed">Dieses Foto ließ sich nicht verwenden.</string>
     <string name="ab_photo_footer">Ohne eigenes Foto siehst du hier den Avatar, den die Person in ihrem Profil festgelegt hat.</string>
-    <string name="ab_photos_title">Adressbuch-Fotos</string>
-    <string name="ab_photos_remove">Adressbuch-Fotos entfernen</string>
-    <string name="ab_photos_remove_question">Adressbuch-Fotos entfernen?</string>
+    <string name="ab_photos_title">Kontaktfotos</string>
+    <string name="ab_photos_remove">Kontaktfotos entfernen</string>
+    <string name="ab_photos_remove_question">Kontaktfotos entfernen?</string>
     <string name="ab_photos_frees">Gibt %1$s frei. Gespeicherte Adressen behalten ihre Namen und zeigen stattdessen den Avatar, den ihr Inhaber festgelegt hat.</string>
     <!-- Chats: long-press Address Book tile (iOS 98f3728) -->
     <string name="ab_row_add_subtitle">Speichere diese Adresse unter einem Namen, den du wiedererkennst.</string>
@@ -1104,18 +1104,18 @@
     <string name="ab_import_or_export">Importieren oder Exportieren</string>
     <string name="ab_import_file">Datei importieren</string>
     <string name="ab_export_file">Datei exportieren</string>
-    <string name="ab_import_file_sub">Adressen aus einem Adressbuch-Export hinzufügen.</string>
-    <string name="ab_export_file_sub">Dieses Adressbuch samt Fotos in einer Datei speichern.</string>
-    <string name="ab_nc_import_sub">Wähle einen Adressbuch-Export aus deiner Nextcloud.</string>
+    <string name="ab_import_file_sub">Kontakte aus einem Kontakte-Export hinzufügen.</string>
+    <string name="ab_export_file_sub">Deine Kontakte samt Fotos in einer Datei speichern.</string>
+    <string name="ab_nc_import_sub">Wähle einen Kontakte-Export aus deiner Nextcloud.</string>
     <string name="ab_nc_export_sub">Im KaChat-Ordner deiner Nextcloud speichern, um es auf jedem Gerät zu importieren.</string>
     <string name="ab_nc_connect_hint">Verbinde Nextcloud unter Einstellungen &gt; Speicher, um es auch dort zu speichern und auf einem anderen Gerät zu importieren.</string>
     <string name="ab_couldnt_read_file">Die Datei konnte nicht gelesen werden.</string>
-    <string name="ab_nothing_to_export">Noch nichts zu exportieren. Füge zuerst eine Adresse hinzu.</string>
+    <string name="ab_nothing_to_export">Noch nichts zu exportieren. Füge zuerst einen Kontakt hinzu.</string>
     <string name="ab_export_failed">Export fehlgeschlagen. Die Datei konnte nicht geschrieben werden.</string>
     <string name="ab_already_up_to_date">Bereits aktuell. Jede Adresse aus der Datei ist gespeichert.</string>
     <string name="ab_imported_counts">Importiert: %1$d hinzugefügt, %2$d aktualisiert.</string>
-    <string name="ab_err_not_an_export">Diese Datei ist kein KaChat-Adressbuch-Export.</string>
-    <string name="ab_err_export_empty">Dieser Adressbuch-Export enthält keine Adressen.</string>
+    <string name="ab_err_not_an_export">Diese Datei ist kein Kontakte-Export.</string>
+    <string name="ab_err_export_empty">Dieser Kontakte-Export enthält keine Kontakte.</string>
     <!-- .kachat: fees, busy network, progress receipt (iOS e426432) -->
     <string name="kn_busy_title">Das Netzwerk ist ausgelastet</string>
     <string name="kn_busy_body">Mit Normal kann es eine Weile dauern. Schnell oder Priorität zahlt etwas mehr und kommt früher in einen Block.</string>
@@ -1173,7 +1173,6 @@
     <!-- Bare names resolve to .kachat only (iOS 5a5122d) -->
     <string name="kachat_names_not_live_here">.kachat-Namen sind in diesem Netzwerk noch nicht verfügbar</string>
     <!-- Nextcloud sync carries portfolios -->
-    <string name="nextcloud_sync_address_book_portfolios">Dein Adressbuch und deine Portfolios sind im selben Backup und werden genauso zwischen deinen Geräten synchronisiert.</string>
     <!-- Your Domains > .kachat card: grace end (iOS 72b7dc7) -->
     <string name="kn_grace_ends">Kulanz endet %1$s</string>
     <!-- .kachat on mainnet (iOS ef6b21e) -->
@@ -1375,4 +1374,6 @@
     <string name="no_active_nodes">Keine aktiven Nodes</string>
     <string name="no_nodes_discovered">Keine Nodes entdeckt</string>
     <string name="kaspa_node_settings_footer">Automatische Suche findet die besten verfügbaren Nodes und verbindet sich mit ihnen. Ein bestimmter Node verbindet nur mit diesem, ohne Ausweichen auf andere. Betrifft nicht die Indexer, Domains oder den Explorer in den anderen Tabs. Füge unten im IP-Adressbuch eigene Adressen hinzu, um sie hier auszuwählen.</string>
+    <string name="ab_picker_empty_body">Füge Kontakte unter Wallet > Kontakte hinzu.</string>
+    <string name="ab_no_contacts">Noch keine Kontakte</string>
 </resources>

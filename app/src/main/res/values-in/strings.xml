@@ -937,21 +937,21 @@
     <string name="kn_detail_grace_resolves">Kedaluwarsa. Nama ini masih mengarah ke pemiliknya sampai masa tenggang berakhir, dan pemilik masih bisa memperpanjangnya.</string>
     <string name="kn_detail_grace_mine_resolves">Kedaluwarsa - perpanjang untuk mempertahankannya. Sampai masa tenggang berakhir, nama ini masih mengarah ke Anda dan tidak ada orang lain yang bisa mengambilnya.</string>
     <!-- Address Book (iOS 00767a4) -->
-    <string name="ab_address_book">Buku Alamat</string>
-    <string name="ab_add_to_address_book">Tambahkan ke Buku Alamat</string>
+    <string name="ab_address_book">Kontak</string>
+    <string name="ab_add_to_address_book">Tambah Kontak</string>
     <string name="ab_search_prompt">Cari nama dan alamat</string>
     <string name="ab_empty_body">Simpan alamat Kaspa yang Anda pakai dengan nama yang mudah dikenali. Alamat itu tetap di KaPay, hanya untuk dompet ini, dan tidak pernah masuk ke Kontak ponsel Anda.</string>
-    <string name="ab_add_address">Tambah Alamat</string>
+    <string name="ab_add_address">Tambah Kontak</string>
     <string name="ab_copied">Disalin</string>
     <string name="ab_share_address">Bagikan Alamat</string>
     <string name="ab_edit">Edit</string>
-    <string name="ab_delete_from">Hapus dari Buku Alamat</string>
-    <string name="ab_delete_confirm">Hapus %1$s dari Buku Alamat Anda?</string>
-    <string name="ab_not_in_book">Tidak ada di Buku Alamat Anda</string>
+    <string name="ab_delete_from">Hapus kontak</string>
+    <string name="ab_delete_confirm">Hapus %1$s dari kontakmu?</string>
+    <string name="ab_not_in_book">Tidak ada di kontakmu</string>
     <string name="ab_note_optional">Catatan (opsional)</string>
     <string name="ab_editor_footer">Disimpan di KaPay hanya untuk dompet ini. Tidak pernah ditambahkan ke Kontak ponsel Anda.</string>
-    <string name="ab_remove_from">Hapus dari Buku Alamat</string>
-    <string name="ab_edit_address">Edit Alamat</string>
+    <string name="ab_remove_from">Hapus kontak</string>
+    <string name="ab_edit_address">Edit kontak</string>
     <string name="ab_err_no_wallet">Buka dompet terlebih dahulu.</string>
     <string name="ab_err_empty_name">Masukkan nama.</string>
     <string name="ab_err_invalid_address">Masukkan alamat Kaspa yang valid.</string>
@@ -962,9 +962,9 @@
     <string name="ab_remove_photo">Hapus Foto</string>
     <string name="ab_photo_failed">Foto itu tidak bisa digunakan.</string>
     <string name="ab_photo_footer">Tanpa foto pilihan Anda, di sini tampil avatar yang mereka pasang di profilnya.</string>
-    <string name="ab_photos_title">Foto Buku Alamat</string>
-    <string name="ab_photos_remove">Hapus Foto Buku Alamat</string>
-    <string name="ab_photos_remove_question">Hapus foto Buku Alamat?</string>
+    <string name="ab_photos_title">Foto kontak</string>
+    <string name="ab_photos_remove">Hapus foto kontak</string>
+    <string name="ab_photos_remove_question">Hapus foto kontak?</string>
     <string name="ab_photos_frees">Membebaskan %1$s. Alamat tersimpan tetap memakai namanya dan menampilkan avatar yang dipasang pemiliknya.</string>
     <!-- Chats: long-press Address Book tile (iOS 98f3728) -->
     <string name="ab_row_add_subtitle">Simpan alamat ini dengan nama yang mudah dikenali.</string>
@@ -980,18 +980,18 @@
     <string name="ab_import_or_export">Impor atau Ekspor</string>
     <string name="ab_import_file">Impor File</string>
     <string name="ab_export_file">Ekspor File</string>
-    <string name="ab_import_file_sub">Tambahkan alamat dari ekspor Buku Alamat.</string>
-    <string name="ab_export_file_sub">Simpan Buku Alamat ini, beserta fotonya, ke file.</string>
-    <string name="ab_nc_import_sub">Pilih ekspor Buku Alamat dari Nextcloud Anda.</string>
+    <string name="ab_import_file_sub">Tambahkan kontak dari ekspor kontak.</string>
+    <string name="ab_export_file_sub">Simpan kontakmu beserta fotonya ke sebuah file.</string>
+    <string name="ab_nc_import_sub">Pilih ekspor kontak dari Nextcloud-mu.</string>
     <string name="ab_nc_export_sub">Simpan ke folder KaChat di Nextcloud Anda, untuk diimpor di perangkat mana pun.</string>
     <string name="ab_nc_connect_hint">Hubungkan Nextcloud di Pengaturan &gt; Penyimpanan agar bisa disimpan di sana dan diimpor di perangkat lain.</string>
     <string name="ab_couldnt_read_file">File itu tidak bisa dibaca.</string>
-    <string name="ab_nothing_to_export">Belum ada yang bisa diekspor. Tambahkan alamat dulu.</string>
+    <string name="ab_nothing_to_export">Belum ada yang bisa diekspor. Tambahkan kontak dulu.</string>
     <string name="ab_export_failed">Ekspor gagal. File tidak bisa ditulis.</string>
     <string name="ab_already_up_to_date">Sudah terbaru. Semua alamat di file sudah tersimpan.</string>
     <string name="ab_imported_counts">Diimpor: %1$d ditambahkan, %2$d diperbarui.</string>
-    <string name="ab_err_not_an_export">File itu bukan ekspor Buku Alamat KaChat.</string>
-    <string name="ab_err_export_empty">Ekspor itu tidak berisi alamat.</string>
+    <string name="ab_err_not_an_export">File itu bukan ekspor kontak.</string>
+    <string name="ab_err_export_empty">Ekspor kontak itu tidak berisi kontak.</string>
     <!-- .kachat: fees, busy network, progress receipt (iOS e426432) -->
     <string name="kn_busy_title">Jaringan sedang sibuk</string>
     <string name="kn_busy_body">Dengan Normal bisa agak lama. Cepat atau Prioritas membayar sedikit lebih untuk masuk blok lebih cepat.</string>
@@ -1049,7 +1049,6 @@
     <!-- Bare names resolve to .kachat only (iOS 5a5122d) -->
     <string name="kachat_names_not_live_here">Nama .kachat belum aktif di jaringan ini</string>
     <!-- Nextcloud sync carries portfolios -->
-    <string name="nextcloud_sync_address_book_portfolios">Buku Alamat dan portofolio Anda ada di cadangan yang sama dan tersinkron antarperangkat dengan cara yang sama.</string>
     <!-- Your Domains > .kachat card: grace end (iOS 72b7dc7) -->
     <string name="kn_grace_ends">Tenggang berakhir %1$s</string>
     <!-- .kachat on mainnet (iOS ef6b21e) -->
@@ -1253,4 +1252,6 @@
     <string name="no_nodes_discovered">Tidak ada node yang ditemukan</string>
     <string name="kaspa_node_settings_footer">Pemindaian Otomatis menemukan dan terhubung ke node terbaik yang tersedia. Memilih node tertentu hanya terhubung ke node itu, tanpa beralih ke yang lain. Tidak memengaruhi pengindeks, domain, atau penjelajah di tab lain. Tambahkan alamatmu ke Buku Alamat IP di bawah untuk memilihnya di sini.</string>
     <string name="fee_usd_optional">Biaya (opsional)</string>
+    <string name="ab_picker_empty_body">Tambahkan kontak di Dompet > Kontak.</string>
+    <string name="ab_no_contacts">Belum ada kontak</string>
 </resources>

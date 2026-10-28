@@ -1064,21 +1064,21 @@
     <string name="kn_detail_grace_resolves">Истекло. До конца льготного периода имя по-прежнему указывает на владельца, и владелец ещё может его продлить.</string>
     <string name="kn_detail_grace_mine_resolves">Истекло - продлите, чтобы сохранить. До конца льготного периода имя по-прежнему указывает на вас, и никто другой не может его занять.</string>
     <!-- Address Book (iOS 00767a4) -->
-    <string name="ab_address_book">Адресная книга</string>
-    <string name="ab_add_to_address_book">Добавить в адресную книгу</string>
+    <string name="ab_address_book">Контакты</string>
+    <string name="ab_add_to_address_book">Добавить контакт</string>
     <string name="ab_search_prompt">Поиск по именам и адресам</string>
     <string name="ab_empty_body">Сохраняйте адреса Kaspa, которыми пользуетесь, под понятными именами. Они хранятся в KaPay, только для этого кошелька, и никогда не попадают в контакты телефона.</string>
-    <string name="ab_add_address">Добавить адрес</string>
+    <string name="ab_add_address">Добавить контакт</string>
     <string name="ab_copied">Скопировано</string>
     <string name="ab_share_address">Поделиться адресом</string>
     <string name="ab_edit">Изменить</string>
-    <string name="ab_delete_from">Удалить из адресной книги</string>
-    <string name="ab_delete_confirm">Удалить %1$s из адресной книги?</string>
-    <string name="ab_not_in_book">Нет в вашей адресной книге</string>
+    <string name="ab_delete_from">Удалить контакт</string>
+    <string name="ab_delete_confirm">Удалить %1$s из контактов?</string>
+    <string name="ab_not_in_book">Нет в ваших контактах</string>
     <string name="ab_note_optional">Заметка (необязательно)</string>
     <string name="ab_editor_footer">Хранится в KaPay только для этого кошелька. Никогда не добавляется в контакты телефона.</string>
-    <string name="ab_remove_from">Убрать из адресной книги</string>
-    <string name="ab_edit_address">Изменить адрес</string>
+    <string name="ab_remove_from">Удалить контакт</string>
+    <string name="ab_edit_address">Изменить контакт</string>
     <string name="ab_err_no_wallet">Сначала откройте кошелёк.</string>
     <string name="ab_err_empty_name">Введите имя.</string>
     <string name="ab_err_invalid_address">Введите правильный адрес Kaspa.</string>
@@ -1089,9 +1089,9 @@
     <string name="ab_remove_photo">Убрать фото</string>
     <string name="ab_photo_failed">Не удалось использовать это фото.</string>
     <string name="ab_photo_footer">Без вашего фото здесь показывается аватар, который владелец указал в своём профиле.</string>
-    <string name="ab_photos_title">Фото адресной книги</string>
-    <string name="ab_photos_remove">Убрать фото адресной книги</string>
-    <string name="ab_photos_remove_question">Убрать фото адресной книги?</string>
+    <string name="ab_photos_title">Фото контактов</string>
+    <string name="ab_photos_remove">Удалить фото контактов</string>
+    <string name="ab_photos_remove_question">Удалить фото контактов?</string>
     <string name="ab_photos_frees">Освободит %1$s. Сохранённые адреса сохранят имена и будут показывать аватар, указанный владельцем.</string>
     <!-- Chats: long-press Address Book tile (iOS 98f3728) -->
     <string name="ab_row_add_subtitle">Сохраните этот адрес под понятным именем.</string>
@@ -1107,18 +1107,18 @@
     <string name="ab_import_or_export">Импорт или экспорт</string>
     <string name="ab_import_file">Импорт из файла</string>
     <string name="ab_export_file">Экспорт в файл</string>
-    <string name="ab_import_file_sub">Добавить адреса из экспорта адресной книги.</string>
-    <string name="ab_export_file_sub">Сохранить эту адресную книгу вместе с фото в файл.</string>
-    <string name="ab_nc_import_sub">Выберите экспорт адресной книги в своём Nextcloud.</string>
+    <string name="ab_import_file_sub">Добавить контакты из экспорта контактов.</string>
+    <string name="ab_export_file_sub">Сохранить контакты вместе с фото в файл.</string>
+    <string name="ab_nc_import_sub">Выберите экспорт контактов в вашем Nextcloud.</string>
     <string name="ab_nc_export_sub">Сохранить в папку KaChat в Nextcloud, чтобы импортировать на любом устройстве.</string>
     <string name="ab_nc_connect_hint">Подключите Nextcloud в Настройки &gt; Хранилище, чтобы сохранять туда и импортировать на другом устройстве.</string>
     <string name="ab_couldnt_read_file">Не удалось прочитать этот файл.</string>
-    <string name="ab_nothing_to_export">Пока нечего экспортировать. Сначала добавьте адрес.</string>
+    <string name="ab_nothing_to_export">Пока нечего экспортировать. Сначала добавьте контакт.</string>
     <string name="ab_export_failed">Экспорт не удался. Не получилось записать файл.</string>
     <string name="ab_already_up_to_date">Уже актуально. Все адреса из файла сохранены.</string>
     <string name="ab_imported_counts">Импортировано: добавлено %1$d, обновлено %2$d.</string>
-    <string name="ab_err_not_an_export">Это не экспорт адресной книги KaChat.</string>
-    <string name="ab_err_export_empty">В этом экспорте нет адресов.</string>
+    <string name="ab_err_not_an_export">Этот файл не является экспортом контактов.</string>
+    <string name="ab_err_export_empty">В этом экспорте контактов нет контактов.</string>
     <!-- .kachat: fees, busy network, progress receipt (iOS e426432) -->
     <string name="kn_busy_title">Сеть загружена</string>
     <string name="kn_busy_body">С обычной комиссией это может затянуться. Быстрая или приоритетная платит чуть больше и раньше попадает в блок.</string>
@@ -1176,7 +1176,6 @@
     <!-- Bare names resolve to .kachat only (iOS 5a5122d) -->
     <string name="kachat_names_not_live_here">Имена .kachat в этой сети пока не работают</string>
     <!-- Nextcloud sync carries portfolios -->
-    <string name="nextcloud_sync_address_book_portfolios">Адресная книга и портфели хранятся в той же резервной копии и так же синхронизируются между устройствами.</string>
     <!-- Your Domains > .kachat card: grace end (iOS 72b7dc7) -->
     <string name="kn_grace_ends">Льготный период до %1$s</string>
     <!-- .kachat on mainnet (iOS ef6b21e) -->
@@ -1378,4 +1377,6 @@
     <string name="no_active_nodes">Нет активных узлов</string>
     <string name="no_nodes_discovered">Узлы не обнаружены</string>
     <string name="kaspa_node_settings_footer">Автопоиск находит лучшие доступные узлы и подключается к ним. Выбор конкретного узла подключает только к нему, без перехода на другие. Не влияет на индексаторы, домены и обозреватель на других вкладках. Добавьте свои адреса в адресную книгу IP ниже, чтобы выбрать их здесь.</string>
+    <string name="ab_picker_empty_body">Добавляйте контакты в разделе Кошелёк > Контакты.</string>
+    <string name="ab_no_contacts">Пока нет контактов</string>
 </resources>

@@ -1064,21 +1064,21 @@
     <string name="kn_detail_grace_resolves">Süresi doldu. Ek süre bitene kadar hâlâ sahibine çözümlenir ve sahibi hâlâ yenileyebilir.</string>
     <string name="kn_detail_grace_mine_resolves">Süresi doldu - korumak için yenileyin. Ek süre bitene kadar hâlâ size çözümlenir ve başka kimse alamaz.</string>
     <!-- Address Book (iOS 00767a4) -->
-    <string name="ab_address_book">Adres Defteri</string>
-    <string name="ab_add_to_address_book">Adres Defterine Ekle</string>
+    <string name="ab_address_book">Kişiler</string>
+    <string name="ab_add_to_address_book">Kişi Ekle</string>
     <string name="ab_search_prompt">Ad ve adres ara</string>
     <string name="ab_empty_body">Kullandığın Kaspa adreslerini tanıyacağın bir adla kaydet. KaPay\'te, yalnızca bu cüzdan için kalırlar ve telefonunun Kişiler\'ine asla girmezler.</string>
-    <string name="ab_add_address">Adres Ekle</string>
+    <string name="ab_add_address">Kişi Ekle</string>
     <string name="ab_copied">Kopyalandı</string>
     <string name="ab_share_address">Adresi Paylaş</string>
     <string name="ab_edit">Düzenle</string>
-    <string name="ab_delete_from">Adres Defterinden Sil</string>
-    <string name="ab_delete_confirm">%1$s adres defterinden silinsin mi?</string>
-    <string name="ab_not_in_book">Adres defterinde yok</string>
+    <string name="ab_delete_from">Kişiyi sil</string>
+    <string name="ab_delete_confirm">%1$s kişilerinden silinsin mi?</string>
+    <string name="ab_not_in_book">Kişilerinde değil</string>
     <string name="ab_note_optional">Not (isteğe bağlı)</string>
     <string name="ab_editor_footer">Yalnızca bu cüzdan için KaPay\'te kaydedilir. Telefonunun Kişiler\'ine asla eklenmez.</string>
-    <string name="ab_remove_from">Adres Defterinden Kaldır</string>
-    <string name="ab_edit_address">Adresi Düzenle</string>
+    <string name="ab_remove_from">Kişiyi sil</string>
+    <string name="ab_edit_address">Kişiyi düzenle</string>
     <string name="ab_err_no_wallet">Önce bir cüzdan aç.</string>
     <string name="ab_err_empty_name">Bir ad gir.</string>
     <string name="ab_err_invalid_address">Geçerli bir Kaspa adresi gir.</string>
@@ -1089,9 +1089,9 @@
     <string name="ab_remove_photo">Fotoğrafı Kaldır</string>
     <string name="ab_photo_failed">Bu fotoğraf kullanılamadı.</string>
     <string name="ab_photo_footer">Kendi fotoğrafın yoksa burada kişinin profilinde ayarladığı avatar görünür.</string>
-    <string name="ab_photos_title">Adres Defteri Fotoğrafları</string>
-    <string name="ab_photos_remove">Adres Defteri Fotoğraflarını Kaldır</string>
-    <string name="ab_photos_remove_question">Adres defteri fotoğrafları kaldırılsın mı?</string>
+    <string name="ab_photos_title">Kişi fotoğrafları</string>
+    <string name="ab_photos_remove">Kişi fotoğraflarını kaldır</string>
+    <string name="ab_photos_remove_question">Kişi fotoğrafları kaldırılsın mı?</string>
     <string name="ab_photos_frees">%1$s boşaltır. Kayıtlı adresler adlarını korur ve onun yerine sahibinin ayarladığı avatarı gösterir.</string>
     <!-- Chats: long-press Address Book tile (iOS 98f3728) -->
     <string name="ab_row_add_subtitle">Bu adresi tanıyacağın bir adla kaydet.</string>
@@ -1107,18 +1107,18 @@
     <string name="ab_import_or_export">İçe veya Dışa Aktar</string>
     <string name="ab_import_file">Dosya İçe Aktar</string>
     <string name="ab_export_file">Dosya Dışa Aktar</string>
-    <string name="ab_import_file_sub">Bir Adres Defteri dışa aktarımından adres ekle.</string>
-    <string name="ab_export_file_sub">Bu Adres Defterini fotoğraflarıyla bir dosyaya kaydet.</string>
-    <string name="ab_nc_import_sub">Nextcloud\'undan bir Adres Defteri dışa aktarımı seç.</string>
+    <string name="ab_import_file_sub">Bir kişi dışa aktarımından kişi ekle.</string>
+    <string name="ab_export_file_sub">Kişilerini fotoğraflarıyla birlikte bir dosyaya kaydet.</string>
+    <string name="ab_nc_import_sub">Nextcloud\'undan bir kişi dışa aktarımı seç.</string>
     <string name="ab_nc_export_sub">Herhangi bir cihazda içe aktarmak için Nextcloud\'undaki KaChat klasörüne kaydet.</string>
     <string name="ab_nc_connect_hint">Oraya da kaydedip başka bir cihazda içe aktarmak için Ayarlar &gt; Depolama\'da Nextcloud\'u bağla.</string>
     <string name="ab_couldnt_read_file">Bu dosya okunamadı.</string>
-    <string name="ab_nothing_to_export">Henüz dışa aktaracak bir şey yok. Önce bir adres ekle.</string>
+    <string name="ab_nothing_to_export">Henüz dışa aktarılacak bir şey yok. Önce bir kişi ekle.</string>
     <string name="ab_export_failed">Dışa aktarma başarısız. Dosya yazılamadı.</string>
     <string name="ab_already_up_to_date">Zaten güncel. Dosyadaki tüm adresler kayıtlı.</string>
     <string name="ab_imported_counts">İçe aktarıldı: %1$d eklendi, %2$d güncellendi.</string>
-    <string name="ab_err_not_an_export">Bu dosya bir KaChat Adres Defteri dışa aktarımı değil.</string>
-    <string name="ab_err_export_empty">Bu dışa aktarımda adres yok.</string>
+    <string name="ab_err_not_an_export">Bu dosya bir kişi dışa aktarımı değil.</string>
+    <string name="ab_err_export_empty">Bu kişi dışa aktarımında kişi yok.</string>
     <!-- .kachat: fees, busy network, progress receipt (iOS e426432) -->
     <string name="kn_busy_title">Ağ yoğun</string>
     <string name="kn_busy_body">Normal ile biraz sürebilir. Hızlı veya Öncelikli biraz daha ödeyip bloğa daha erken girer.</string>
@@ -1176,7 +1176,6 @@
     <!-- Bare names resolve to .kachat only (iOS 5a5122d) -->
     <string name="kachat_names_not_live_here">.kachat adları bu ağda henüz etkin değil</string>
     <!-- Nextcloud sync carries portfolios -->
-    <string name="nextcloud_sync_address_book_portfolios">Adres Defteriniz ve portföyleriniz aynı yedektedir ve cihazlarınız arasında aynı şekilde eşitlenir.</string>
     <!-- Your Domains > .kachat card: grace end (iOS 72b7dc7) -->
     <string name="kn_grace_ends">Ek süre bitişi %1$s</string>
     <!-- .kachat on mainnet (iOS ef6b21e) -->
@@ -1378,4 +1377,6 @@
     <string name="no_active_nodes">Aktif düğüm yok</string>
     <string name="no_nodes_discovered">Düğüm keşfedilmedi</string>
     <string name="kaspa_node_settings_footer">Otomatik Tarama en iyi düğümleri bulur ve bağlanır. Belirli bir düğüm seçmek yalnızca ona bağlanır, başkalarına geçmez. Diğer sekmelerdeki dizinleyicileri, alan adlarını veya gezgini etkilemez. Burada seçmek için kendi adreslerini aşağıdaki IP Adres Defteri\'ne ekle.</string>
+    <string name="ab_picker_empty_body">Kişileri Cüzdan > Kişiler bölümünden ekle.</string>
+    <string name="ab_no_contacts">Henüz kişi yok</string>
 </resources>

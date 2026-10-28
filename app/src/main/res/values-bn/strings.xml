@@ -1064,21 +1064,21 @@
     <string name="kn_detail_grace_resolves">মেয়াদ শেষ। গ্রেস পিরিয়ড শেষ না হওয়া পর্যন্ত এটি এখনও মালিকের ঠিকানায় রিজলভ হয়, এবং মালিক এখনও এটি নবায়ন করতে পারেন।</string>
     <string name="kn_detail_grace_mine_resolves">মেয়াদ শেষ - রাখতে নবায়ন করুন। গ্রেস পিরিয়ড শেষ না হওয়া পর্যন্ত এটি এখনও আপনার ঠিকানায় রিজলভ হয় এবং অন্য কেউ এটি নিতে পারবে না।</string>
     <!-- Address Book (iOS 00767a4) -->
-    <string name="ab_address_book">ঠিকানা বই</string>
-    <string name="ab_add_to_address_book">ঠিকানা বইয়ে যোগ করুন</string>
+    <string name="ab_address_book">কন্টাক্ট</string>
+    <string name="ab_add_to_address_book">কন্টাক্ট যোগ করুন</string>
     <string name="ab_search_prompt">নাম ও ঠিকানা খুঁজুন</string>
     <string name="ab_empty_body">আপনি যে Kaspa ঠিকানাগুলো ব্যবহার করেন সেগুলো চেনা নামে সংরক্ষণ করুন। এগুলো KaPay-এ থাকে, শুধু এই ওয়ালেটের জন্য, এবং কখনো আপনার ফোনের কন্টাক্টসে যায় না।</string>
-    <string name="ab_add_address">ঠিকানা যোগ করুন</string>
+    <string name="ab_add_address">কন্টাক্ট যোগ করুন</string>
     <string name="ab_copied">কপি হয়েছে</string>
     <string name="ab_share_address">ঠিকানা শেয়ার করুন</string>
     <string name="ab_edit">সম্পাদনা</string>
-    <string name="ab_delete_from">ঠিকানা বই থেকে মুছুন</string>
-    <string name="ab_delete_confirm">ঠিকানা বই থেকে %1$s মুছবেন?</string>
-    <string name="ab_not_in_book">আপনার ঠিকানা বইয়ে নেই</string>
+    <string name="ab_delete_from">কন্টাক্ট মুছুন</string>
+    <string name="ab_delete_confirm">%1$s কে আপনার কন্টাক্ট থেকে মুছবেন?</string>
+    <string name="ab_not_in_book">আপনার কন্টাক্টে নেই</string>
     <string name="ab_note_optional">নোট (ঐচ্ছিক)</string>
     <string name="ab_editor_footer">শুধু এই ওয়ালেটের জন্য KaPay-এ সংরক্ষিত। কখনো আপনার ফোনের কন্টাক্টসে যোগ হয় না।</string>
-    <string name="ab_remove_from">ঠিকানা বই থেকে সরান</string>
-    <string name="ab_edit_address">ঠিকানা সম্পাদনা</string>
+    <string name="ab_remove_from">কন্টাক্ট মুছুন</string>
+    <string name="ab_edit_address">কন্টাক্ট এডিট করুন</string>
     <string name="ab_err_no_wallet">প্রথমে একটি ওয়ালেট খুলুন।</string>
     <string name="ab_err_empty_name">একটি নাম লিখুন।</string>
     <string name="ab_err_invalid_address">একটি বৈধ Kaspa ঠিকানা লিখুন।</string>
@@ -1089,9 +1089,9 @@
     <string name="ab_remove_photo">ছবি সরান</string>
     <string name="ab_photo_failed">ওই ছবিটি ব্যবহার করা গেল না।</string>
     <string name="ab_photo_footer">আপনার নিজের কোনো ছবি না থাকলে, এখানে তাদের প্রোফাইলে সেট করা অবতার দেখায়।</string>
-    <string name="ab_photos_title">ঠিকানা বইয়ের ছবি</string>
-    <string name="ab_photos_remove">ঠিকানা বইয়ের ছবি সরান</string>
-    <string name="ab_photos_remove_question">ঠিকানা বইয়ের ছবি সরাবেন?</string>
+    <string name="ab_photos_title">কন্ট্যাক্টের ছবি</string>
+    <string name="ab_photos_remove">কন্টাক্টের ছবি সরান</string>
+    <string name="ab_photos_remove_question">কন্টাক্টের ছবি সরাবেন?</string>
     <string name="ab_photos_frees">%1$s খালি হবে। সংরক্ষিত ঠিকানাগুলোর নাম থাকবে; বদলে মালিকের সেট করা অবতার দেখাবে।</string>
     <!-- Chats: long-press Address Book tile (iOS 98f3728) -->
     <string name="ab_row_add_subtitle">এই ঠিকানাটি চেনা নামে সংরক্ষণ করুন।</string>
@@ -1107,18 +1107,18 @@
     <string name="ab_import_or_export">ইমপোর্ট বা এক্সপোর্ট</string>
     <string name="ab_import_file">ফাইল ইমপোর্ট</string>
     <string name="ab_export_file">ফাইল এক্সপোর্ট</string>
-    <string name="ab_import_file_sub">ঠিকানা বইয়ের এক্সপোর্ট থেকে ঠিকানা যোগ করুন।</string>
-    <string name="ab_export_file_sub">এই ঠিকানা বই, ছবিসহ, একটি ফাইলে সংরক্ষণ করুন।</string>
-    <string name="ab_nc_import_sub">আপনার Nextcloud থেকে একটি ঠিকানা বই এক্সপোর্ট বেছে নিন।</string>
+    <string name="ab_import_file_sub">কন্টাক্ট এক্সপোর্ট ফাইল থেকে কন্টাক্ট যোগ করুন।</string>
+    <string name="ab_export_file_sub">আপনার কন্টাক্টগুলো ছবিসহ একটি ফাইলে সেভ করুন।</string>
+    <string name="ab_nc_import_sub">আপনার Nextcloud থেকে একটি কন্টাক্ট এক্সপোর্ট ফাইল বেছে নিন।</string>
     <string name="ab_nc_export_sub">আপনার Nextcloud-এর KaChat ফোল্ডারে সংরক্ষণ করুন, যেকোনো ডিভাইসে ইমপোর্ট করতে।</string>
     <string name="ab_nc_connect_hint">সেটিংস &gt; স্টোরেজ-এ Nextcloud যুক্ত করুন, যাতে সেখানেও সংরক্ষণ করে অন্য ডিভাইসে ইমপোর্ট করা যায়।</string>
     <string name="ab_couldnt_read_file">ফাইলটি পড়া গেল না।</string>
-    <string name="ab_nothing_to_export">এখনো এক্সপোর্ট করার কিছু নেই। আগে একটি ঠিকানা যোগ করুন।</string>
+    <string name="ab_nothing_to_export">এখনো এক্সপোর্ট করার কিছু নেই। আগে একটি কন্টাক্ট যোগ করুন।</string>
     <string name="ab_export_failed">এক্সপোর্ট ব্যর্থ। ফাইল লেখা গেল না।</string>
     <string name="ab_already_up_to_date">ইতিমধ্যে হালনাগাদ। ফাইলের সব ঠিকানা সংরক্ষিত আছে।</string>
     <string name="ab_imported_counts">ইমপোর্ট হয়েছে: %1$d যোগ, %2$d হালনাগাদ।</string>
-    <string name="ab_err_not_an_export">এটি KaChat ঠিকানা বইয়ের এক্সপোর্ট নয়।</string>
-    <string name="ab_err_export_empty">এই এক্সপোর্টে কোনো ঠিকানা নেই।</string>
+    <string name="ab_err_not_an_export">এই ফাইলটি কন্টাক্ট এক্সপোর্ট নয়।</string>
+    <string name="ab_err_export_empty">এই কন্টাক্ট এক্সপোর্টে কোনো কন্টাক্ট নেই।</string>
     <!-- .kachat: fees, busy network, progress receipt (iOS e426432) -->
     <string name="kn_busy_title">নেটওয়ার্ক ব্যস্ত</string>
     <string name="kn_busy_body">সাধারণ ফি-তে অপেক্ষা করতে হতে পারে। দ্রুত বা অগ্রাধিকার একটু বেশি দিয়ে দ্রুত ব্লকে ঢোকে।</string>
@@ -1176,7 +1176,6 @@
     <!-- Bare names resolve to .kachat only (iOS 5a5122d) -->
     <string name="kachat_names_not_live_here">.kachat নাম এই নেটওয়ার্কে এখনো চালু হয়নি</string>
     <!-- Nextcloud sync carries portfolios -->
-    <string name="nextcloud_sync_address_book_portfolios">আপনার অ্যাড্রেস বুক ও পোর্টফোলিও একই ব্যাকআপে থাকে এবং একইভাবে আপনার ডিভাইসগুলোর মধ্যে সিঙ্ক হয়।</string>
     <!-- Your Domains > .kachat card: grace end (iOS 72b7dc7) -->
     <string name="kn_grace_ends">গ্রেস পিরিয়ড শেষ %1$s</string>
     <!-- .kachat on mainnet (iOS ef6b21e) -->
@@ -1378,4 +1377,6 @@
     <string name="no_active_nodes">কোনো সক্রিয় নোড নেই</string>
     <string name="no_nodes_discovered">কোনো নোড পাওয়া যায়নি</string>
     <string name="kaspa_node_settings_footer">স্বয়ংক্রিয় স্ক্যান সেরা উপলব্ধ নোড খুঁজে সংযোগ করে। নির্দিষ্ট নোড বাছলে শুধু সেটিতেই সংযোগ করে, অন্যটিতে যায় না। অন্য ট্যাবের ইনডেক্সার, ডোমেইন বা এক্সপ্লোরারে প্রভাব ফেলে না। এখানে বাছতে নিচের IP ঠিকানা বইয়ে আপনার ঠিকানা যোগ করুন।</string>
+    <string name="ab_picker_empty_body">ওয়ালেট > কন্টাক্ট থেকে কন্টাক্ট যোগ করুন।</string>
+    <string name="ab_no_contacts">এখনো কোনো কন্টাক্ট নেই</string>
 </resources>

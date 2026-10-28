@@ -1064,21 +1064,21 @@
     <string name="kn_detail_grace_resolves">만료되었습니다. 유예 기간이 끝날 때까지 여전히 소유자 주소로 연결되며, 소유자는 아직 갱신할 수 있습니다.</string>
     <string name="kn_detail_grace_mine_resolves">만료되었습니다 - 유지하려면 갱신하세요. 유예 기간이 끝날 때까지 여전히 내 주소로 연결되며 다른 사람은 가져갈 수 없습니다.</string>
     <!-- Address Book (iOS 00767a4) -->
-    <string name="ab_address_book">주소록</string>
-    <string name="ab_add_to_address_book">주소록에 추가</string>
+    <string name="ab_address_book">연락처</string>
+    <string name="ab_add_to_address_book">연락처 추가</string>
     <string name="ab_search_prompt">이름과 주소 검색</string>
     <string name="ab_empty_body">자주 쓰는 Kaspa 주소를 알아보기 쉬운 이름으로 저장하세요. KaPay 안에만, 이 지갑 전용으로 저장되며 휴대폰 연락처에는 절대 들어가지 않습니다.</string>
-    <string name="ab_add_address">주소 추가</string>
+    <string name="ab_add_address">연락처 추가</string>
     <string name="ab_copied">복사됨</string>
     <string name="ab_share_address">주소 공유</string>
     <string name="ab_edit">편집</string>
-    <string name="ab_delete_from">주소록에서 삭제</string>
-    <string name="ab_delete_confirm">주소록에서 %1$s 님을 삭제할까요?</string>
-    <string name="ab_not_in_book">주소록에 없음</string>
+    <string name="ab_delete_from">연락처 삭제</string>
+    <string name="ab_delete_confirm">%1$s을(를) 연락처에서 삭제할까요?</string>
+    <string name="ab_not_in_book">연락처에 없음</string>
     <string name="ab_note_optional">메모 (선택)</string>
     <string name="ab_editor_footer">이 지갑 전용으로 KaPay에 저장됩니다. 휴대폰 연락처에는 추가되지 않습니다.</string>
-    <string name="ab_remove_from">주소록에서 제거</string>
-    <string name="ab_edit_address">주소 편집</string>
+    <string name="ab_remove_from">연락처 삭제</string>
+    <string name="ab_edit_address">연락처 편집</string>
     <string name="ab_err_no_wallet">먼저 지갑을 여세요.</string>
     <string name="ab_err_empty_name">이름을 입력하세요.</string>
     <string name="ab_err_invalid_address">올바른 Kaspa 주소를 입력하세요.</string>
@@ -1089,9 +1089,9 @@
     <string name="ab_remove_photo">사진 제거</string>
     <string name="ab_photo_failed">그 사진을 사용할 수 없습니다.</string>
     <string name="ab_photo_footer">직접 지정한 사진이 없으면 그 사람이 프로필에 설정한 아바타가 표시됩니다.</string>
-    <string name="ab_photos_title">주소록 사진</string>
-    <string name="ab_photos_remove">주소록 사진 제거</string>
-    <string name="ab_photos_remove_question">주소록 사진을 제거할까요?</string>
+    <string name="ab_photos_title">연락처 사진</string>
+    <string name="ab_photos_remove">연락처 사진 삭제</string>
+    <string name="ab_photos_remove_question">연락처 사진을 삭제할까요?</string>
     <string name="ab_photos_frees">%1$s 확보됩니다. 저장한 주소의 이름은 유지되고, 대신 주인이 설정한 아바타가 표시됩니다.</string>
     <!-- Chats: long-press Address Book tile (iOS 98f3728) -->
     <string name="ab_row_add_subtitle">이 주소를 알아보기 쉬운 이름으로 저장합니다.</string>
@@ -1107,18 +1107,18 @@
     <string name="ab_import_or_export">가져오기 또는 내보내기</string>
     <string name="ab_import_file">파일 가져오기</string>
     <string name="ab_export_file">파일로 내보내기</string>
-    <string name="ab_import_file_sub">주소록 내보내기 파일에서 주소를 추가합니다.</string>
-    <string name="ab_export_file_sub">이 주소록을 사진과 함께 파일로 저장합니다.</string>
-    <string name="ab_nc_import_sub">Nextcloud에서 주소록 내보내기 파일을 고르세요.</string>
+    <string name="ab_import_file_sub">연락처 내보내기 파일에서 연락처를 추가합니다.</string>
+    <string name="ab_export_file_sub">연락처를 사진과 함께 파일로 저장합니다.</string>
+    <string name="ab_nc_import_sub">Nextcloud에서 연락처 내보내기 파일을 선택하세요.</string>
     <string name="ab_nc_export_sub">Nextcloud의 KaChat 폴더에 저장해 어느 기기에서든 가져올 수 있습니다.</string>
     <string name="ab_nc_connect_hint">설정 &gt; 저장 공간에서 Nextcloud를 연결하면 그곳에도 저장하고 다른 기기에서 가져올 수 있습니다.</string>
     <string name="ab_couldnt_read_file">그 파일을 읽을 수 없습니다.</string>
-    <string name="ab_nothing_to_export">아직 내보낼 항목이 없습니다. 먼저 주소를 추가하세요.</string>
+    <string name="ab_nothing_to_export">아직 내보낼 항목이 없습니다. 먼저 연락처를 추가하세요.</string>
     <string name="ab_export_failed">내보내기에 실패했습니다. 파일을 쓸 수 없습니다.</string>
     <string name="ab_already_up_to_date">이미 최신입니다. 파일의 모든 주소가 저장되어 있습니다.</string>
     <string name="ab_imported_counts">가져옴: %1$d개 추가, %2$d개 업데이트.</string>
-    <string name="ab_err_not_an_export">그 파일은 KaChat 주소록 내보내기 파일이 아닙니다.</string>
-    <string name="ab_err_export_empty">그 내보내기 파일에 주소가 없습니다.</string>
+    <string name="ab_err_not_an_export">이 파일은 연락처 내보내기 파일이 아닙니다.</string>
+    <string name="ab_err_export_empty">이 연락처 내보내기 파일에는 연락처가 없습니다.</string>
     <!-- .kachat: fees, busy network, progress receipt (iOS e426432) -->
     <string name="kn_busy_title">네트워크가 혼잡합니다</string>
     <string name="kn_busy_body">보통으로는 오래 걸릴 수 있습니다. 빠름이나 우선은 조금 더 내고 더 빨리 블록에 들어갑니다.</string>
@@ -1176,7 +1176,6 @@
     <!-- Bare names resolve to .kachat only (iOS 5a5122d) -->
     <string name="kachat_names_not_live_here">이 네트워크에서는 아직 .kachat 이름을 사용할 수 없습니다</string>
     <!-- Nextcloud sync carries portfolios -->
-    <string name="nextcloud_sync_address_book_portfolios">주소록과 포트폴리오도 같은 백업에 포함되며 같은 방식으로 기기 간에 동기화됩니다.</string>
     <!-- Your Domains > .kachat card: grace end (iOS 72b7dc7) -->
     <string name="kn_grace_ends">유예 기간 종료 %1$s</string>
     <!-- .kachat on mainnet (iOS ef6b21e) -->
@@ -1378,4 +1377,6 @@
     <string name="no_active_nodes">활성 노드 없음</string>
     <string name="no_nodes_discovered">발견된 노드 없음</string>
     <string name="kaspa_node_settings_footer">자동 검색은 사용 가능한 최적의 노드를 찾아 연결합니다. 특정 노드를 선택하면 다른 노드로 전환하지 않고 그 노드에만 연결합니다. 다른 탭의 인덱서, 도메인, 탐색기에는 영향이 없습니다. 여기서 선택하려면 아래 IP 주소록에 주소를 추가하세요.</string>
+    <string name="ab_picker_empty_body">지갑 > 연락처에서 연락처를 추가하세요.</string>
+    <string name="ab_no_contacts">아직 연락처가 없습니다</string>
 </resources>

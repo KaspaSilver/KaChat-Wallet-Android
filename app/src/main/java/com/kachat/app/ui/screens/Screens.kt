@@ -67,7 +67,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Book
-import androidx.compose.material.icons.outlined.Book
+import androidx.compose.material.icons.outlined.Badge
 import androidx.compose.material.icons.outlined.Brush
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.SaveAlt
@@ -799,7 +799,7 @@ fun ProfileScreen(
             // wallet 040f91a addressBookSection).
             ProfileLinkRow(
                 label = stringResource(R.string.ab_address_book),
-                icon = Icons.Outlined.Book,
+                icon = Icons.Outlined.Badge,
                 onClick = { navController.navigate(com.kachat.app.ui.Screen.AddressBook.route) },
             )
 
@@ -5954,7 +5954,7 @@ fun SettingsScreen(
                                 .padding(horizontal = 16.dp, vertical = 14.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Outlined.Book, contentDescription = null, tint = KaspaTeal, modifier = Modifier.size(24.dp))
+                            Icon(Icons.Outlined.Badge, contentDescription = null, tint = KaspaTeal, modifier = Modifier.size(24.dp))
                             Spacer(modifier = Modifier.width(16.dp))
                             Text(stringResource(R.string.ab_photos_title), color = LocalAppColors.current.textPrimary, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
                             val bytes = addressBookPhotoBytes

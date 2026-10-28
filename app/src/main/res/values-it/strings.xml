@@ -1064,21 +1064,21 @@
     <string name="kn_detail_grace_resolves">Scaduto. Continua a risolversi al suo proprietario fino alla fine del periodo di grazia, e il proprietario può ancora rinnovarlo.</string>
     <string name="kn_detail_grace_mine_resolves">Scaduto - rinnovalo per tenerlo. Fino alla fine del periodo di grazia continua a risolversi a te e nessun altro può prenderlo.</string>
     <!-- Address Book (iOS 00767a4) -->
-    <string name="ab_address_book">Rubrica indirizzi</string>
-    <string name="ab_add_to_address_book">Aggiungi alla rubrica</string>
+    <string name="ab_address_book">Contatti</string>
+    <string name="ab_add_to_address_book">Aggiungi contatto</string>
     <string name="ab_search_prompt">Cerca nomi e indirizzi</string>
     <string name="ab_empty_body">Salva gli indirizzi Kaspa che usi con un nome che riconosci. Restano in KaPay, solo per questo wallet, e non finiscono mai nei contatti del telefono.</string>
-    <string name="ab_add_address">Aggiungi indirizzo</string>
+    <string name="ab_add_address">Aggiungi contatto</string>
     <string name="ab_copied">Copiato</string>
     <string name="ab_share_address">Condividi indirizzo</string>
     <string name="ab_edit">Modifica</string>
-    <string name="ab_delete_from">Elimina dalla rubrica</string>
-    <string name="ab_delete_confirm">Eliminare %1$s dalla rubrica?</string>
-    <string name="ab_not_in_book">Non è nella tua rubrica</string>
+    <string name="ab_delete_from">Elimina contatto</string>
+    <string name="ab_delete_confirm">Eliminare %1$s dai tuoi contatti?</string>
+    <string name="ab_not_in_book">Non è nei tuoi contatti</string>
     <string name="ab_note_optional">Nota (facoltativa)</string>
     <string name="ab_editor_footer">Salvato in KaPay solo per questo wallet. Mai aggiunto ai contatti del telefono.</string>
-    <string name="ab_remove_from">Rimuovi dalla rubrica</string>
-    <string name="ab_edit_address">Modifica indirizzo</string>
+    <string name="ab_remove_from">Elimina contatto</string>
+    <string name="ab_edit_address">Modifica contatto</string>
     <string name="ab_err_no_wallet">Apri prima un wallet.</string>
     <string name="ab_err_empty_name">Inserisci un nome.</string>
     <string name="ab_err_invalid_address">Inserisci un indirizzo Kaspa valido.</string>
@@ -1089,9 +1089,9 @@
     <string name="ab_remove_photo">Rimuovi foto</string>
     <string name="ab_photo_failed">Impossibile usare quella foto.</string>
     <string name="ab_photo_footer">Senza una tua foto, qui vedi l\'avatar impostato nel suo profilo.</string>
-    <string name="ab_photos_title">Foto della rubrica</string>
-    <string name="ab_photos_remove">Rimuovi le foto della rubrica</string>
-    <string name="ab_photos_remove_question">Rimuovere le foto della rubrica?</string>
+    <string name="ab_photos_title">Foto dei contatti</string>
+    <string name="ab_photos_remove">Rimuovi foto dei contatti</string>
+    <string name="ab_photos_remove_question">Rimuovere le foto dei contatti?</string>
     <string name="ab_photos_frees">Libera %1$s. Gli indirizzi salvati mantengono il nome e mostrano invece l\'avatar scelto dal proprietario.</string>
     <!-- Chats: long-press Address Book tile (iOS 98f3728) -->
     <string name="ab_row_add_subtitle">Salva questo indirizzo con un nome che riconosci.</string>
@@ -1107,18 +1107,18 @@
     <string name="ab_import_or_export">Importa o esporta</string>
     <string name="ab_import_file">Importa file</string>
     <string name="ab_export_file">Esporta file</string>
-    <string name="ab_import_file_sub">Aggiungi indirizzi da un\'esportazione della rubrica.</string>
-    <string name="ab_export_file_sub">Salva questa rubrica, con le sue foto, in un file.</string>
-    <string name="ab_nc_import_sub">Scegli un\'esportazione della rubrica dal tuo Nextcloud.</string>
+    <string name="ab_import_file_sub">Aggiungi contatti da un\'esportazione di contatti.</string>
+    <string name="ab_export_file_sub">Salva i tuoi contatti, con le loro foto, in un file.</string>
+    <string name="ab_nc_import_sub">Scegli un\'esportazione di contatti dal tuo Nextcloud.</string>
     <string name="ab_nc_export_sub">Salvala nella cartella KaChat del tuo Nextcloud, per importarla su qualsiasi dispositivo.</string>
     <string name="ab_nc_connect_hint">Collega Nextcloud in Impostazioni &gt; Spazio per salvarla anche lì e importarla su un altro dispositivo.</string>
     <string name="ab_couldnt_read_file">Impossibile leggere quel file.</string>
-    <string name="ab_nothing_to_export">Ancora niente da esportare. Aggiungi prima un indirizzo.</string>
+    <string name="ab_nothing_to_export">Niente da esportare per ora. Aggiungi prima un contatto.</string>
     <string name="ab_export_failed">Esportazione non riuscita. Impossibile scrivere il file.</string>
     <string name="ab_already_up_to_date">Già aggiornata. Tutti gli indirizzi del file sono salvati.</string>
     <string name="ab_imported_counts">Importati: %1$d aggiunti, %2$d aggiornati.</string>
-    <string name="ab_err_not_an_export">Quel file non è un\'esportazione della rubrica KaChat.</string>
-    <string name="ab_err_export_empty">Quell\'esportazione non contiene indirizzi.</string>
+    <string name="ab_err_not_an_export">Quel file non è un\'esportazione di contatti.</string>
+    <string name="ab_err_export_empty">Quell\'esportazione di contatti non contiene contatti.</string>
     <!-- .kachat: fees, busy network, progress receipt (iOS e426432) -->
     <string name="kn_busy_title">La rete è congestionata</string>
     <string name="kn_busy_body">Con Normale potrebbe volerci un po\'. Veloce o Priorità paga un po\' di più per entrare prima in un blocco.</string>
@@ -1176,7 +1176,6 @@
     <!-- Bare names resolve to .kachat only (iOS 5a5122d) -->
     <string name="kachat_names_not_live_here">I nomi .kachat non sono ancora attivi su questa rete</string>
     <!-- Nextcloud sync carries portfolios -->
-    <string name="nextcloud_sync_address_book_portfolios">La tua rubrica e i tuoi portafogli sono nello stesso backup e si sincronizzano allo stesso modo tra i tuoi dispositivi.</string>
     <!-- Your Domains > .kachat card: grace end (iOS 72b7dc7) -->
     <string name="kn_grace_ends">Tolleranza fino al %1$s</string>
     <!-- .kachat on mainnet (iOS ef6b21e) -->
@@ -1378,4 +1377,6 @@
     <string name="no_active_nodes">Nessun nodo attivo</string>
     <string name="no_nodes_discovered">Nessun nodo scoperto</string>
     <string name="kaspa_node_settings_footer">La scansione automatica trova i migliori nodi disponibili e vi si connette. Scegliere un nodo specifico si connette solo a quello, senza ripiegare su altri. Non influisce su indicizzatori, domini o explorer delle altre schede. Aggiungi i tuoi indirizzi alla rubrica IP qui sotto per sceglierli qui.</string>
+    <string name="ab_picker_empty_body">Aggiungi contatti in Portafoglio > Contatti.</string>
+    <string name="ab_no_contacts">Ancora nessun contatto</string>
 </resources>

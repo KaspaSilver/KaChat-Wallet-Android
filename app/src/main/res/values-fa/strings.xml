@@ -1092,21 +1092,21 @@
     <string name="kn_detail_grace_resolves">منقضی شده. تا پایان دوره مهلت همچنان به مالک خود اشاره می‌کند و مالک هنوز می‌تواند آن را تمدید کند.</string>
     <string name="kn_detail_grace_mine_resolves">منقضی شده - برای نگه داشتن آن را تمدید کنید. تا پایان دوره مهلت همچنان به شما اشاره می‌کند و هیچ‌کس دیگری نمی‌تواند آن را بگیرد.</string>
     <!-- Address Book (iOS 00767a4) -->
-    <string name="ab_address_book">دفترچه نشانی</string>
-    <string name="ab_add_to_address_book">افزودن به دفترچه نشانی</string>
+    <string name="ab_address_book">مخاطبین</string>
+    <string name="ab_add_to_address_book">افزودن مخاطب</string>
     <string name="ab_search_prompt">جستجوی نام‌ها و نشانی‌ها</string>
     <string name="ab_empty_body">نشانی‌های Kaspa که استفاده می‌کنید را با نامی که می‌شناسید ذخیره کنید. آن‌ها در KaPay می‌مانند، فقط برای این کیف پول، و هرگز به مخاطبین گوشی شما نمی‌روند.</string>
-    <string name="ab_add_address">افزودن آدرس</string>
+    <string name="ab_add_address">افزودن مخاطب</string>
     <string name="ab_copied">کپی شد</string>
     <string name="ab_share_address">اشتراک‌گذاری نشانی</string>
     <string name="ab_edit">ویرایش</string>
-    <string name="ab_delete_from">حذف از دفترچه نشانی</string>
-    <string name="ab_delete_confirm">%1$s از دفترچه نشانی حذف شود؟</string>
-    <string name="ab_not_in_book">در دفترچه نشانی شما نیست</string>
+    <string name="ab_delete_from">حذف مخاطب</string>
+    <string name="ab_delete_confirm">%1$s از مخاطبین شما حذف شود؟</string>
+    <string name="ab_not_in_book">در مخاطبین شما نیست</string>
     <string name="ab_note_optional">یادداشت (اختیاری)</string>
     <string name="ab_editor_footer">فقط برای این کیف پول در KaPay ذخیره می‌شود. هرگز به مخاطبین گوشی شما اضافه نمی‌شود.</string>
-    <string name="ab_remove_from">برداشتن از دفترچه نشانی</string>
-    <string name="ab_edit_address">ویرایش نشانی</string>
+    <string name="ab_remove_from">حذف مخاطب</string>
+    <string name="ab_edit_address">ویرایش مخاطب</string>
     <string name="ab_err_no_wallet">ابتدا یک کیف پول باز کنید.</string>
     <string name="ab_err_empty_name">یک نام وارد کنید.</string>
     <string name="ab_err_invalid_address">یک نشانی معتبر Kaspa وارد کنید.</string>
@@ -1117,9 +1117,9 @@
     <string name="ab_remove_photo">حذف عکس</string>
     <string name="ab_photo_failed">نشد از آن عکس استفاده کرد.</string>
     <string name="ab_photo_footer">بدون عکسی از خودتان، اینجا آواتاری نمایش داده می‌شود که آن شخص در نمایه‌اش گذاشته است.</string>
-    <string name="ab_photos_title">عکس‌های دفترچه نشانی</string>
-    <string name="ab_photos_remove">حذف عکس‌های دفترچه نشانی</string>
-    <string name="ab_photos_remove_question">عکس‌های دفترچه نشانی حذف شوند؟</string>
+    <string name="ab_photos_title">عکس مخاطبان</string>
+    <string name="ab_photos_remove">حذف عکس‌های مخاطبین</string>
+    <string name="ab_photos_remove_question">عکس‌های مخاطبین حذف شوند؟</string>
     <string name="ab_photos_frees">%1$s آزاد می‌شود. نشانی‌های ذخیره‌شده نامشان را نگه می‌دارند و به جای آن آواتاری را نشان می‌دهند که صاحبشان گذاشته است.</string>
     <!-- Chats: long-press Address Book tile (iOS 98f3728) -->
     <string name="ab_row_add_subtitle">این نشانی را با نامی که می‌شناسید ذخیره کنید.</string>
@@ -1135,18 +1135,18 @@
     <string name="ab_import_or_export">وارد یا صادر کردن</string>
     <string name="ab_import_file">وارد کردن فایل</string>
     <string name="ab_export_file">صادر کردن فایل</string>
-    <string name="ab_import_file_sub">نشانی‌ها را از یک فایل صادرشده دفترچه نشانی اضافه کنید.</string>
-    <string name="ab_export_file_sub">این دفترچه نشانی را همراه عکس‌هایش در یک فایل ذخیره کنید.</string>
-    <string name="ab_nc_import_sub">یک فایل صادرشده دفترچه نشانی را از Nextcloud انتخاب کنید.</string>
+    <string name="ab_import_file_sub">افزودن مخاطبین از فایل خروجی مخاطبین.</string>
+    <string name="ab_export_file_sub">مخاطبین خود را همراه با عکس‌هایشان در یک فایل ذخیره کنید.</string>
+    <string name="ab_nc_import_sub">یک فایل خروجی مخاطبین را از Nextcloud خود انتخاب کنید.</string>
     <string name="ab_nc_export_sub">آن را در پوشه KaChat در Nextcloud ذخیره کنید تا روی هر دستگاهی وارد شود.</string>
     <string name="ab_nc_connect_hint">Nextcloud را در تنظیمات &gt; فضای ذخیره‌سازی وصل کنید تا آنجا هم ذخیره و روی دستگاه دیگری وارد شود.</string>
     <string name="ab_couldnt_read_file">خواندن آن فایل ممکن نشد.</string>
-    <string name="ab_nothing_to_export">هنوز چیزی برای صادر کردن نیست. ابتدا یک نشانی اضافه کنید.</string>
+    <string name="ab_nothing_to_export">هنوز چیزی برای خروجی گرفتن نیست. اول یک مخاطب اضافه کنید.</string>
     <string name="ab_export_failed">صدور ناموفق بود. نوشتن فایل ممکن نشد.</string>
     <string name="ab_already_up_to_date">به‌روز است. همه نشانی‌های فایل ذخیره شده‌اند.</string>
     <string name="ab_imported_counts">وارد شد: %1$d افزوده، %2$d به‌روزرسانی.</string>
-    <string name="ab_err_not_an_export">آن فایل یک فایل صادرشده دفترچه نشانی KaChat نیست.</string>
-    <string name="ab_err_export_empty">این فایل صادرشده هیچ نشانی‌ای ندارد.</string>
+    <string name="ab_err_not_an_export">این فایل خروجی مخاطبین نیست.</string>
+    <string name="ab_err_export_empty">این فایل خروجی مخاطبین هیچ مخاطبی ندارد.</string>
     <!-- .kachat: fees, busy network, progress receipt (iOS e426432) -->
     <string name="kn_busy_title">شبکه شلوغ است</string>
     <string name="kn_busy_body">با کارمزد عادی ممکن است طول بکشد. سریع یا اولویت کمی بیشتر می‌پردازد تا زودتر وارد بلوک شود.</string>
@@ -1204,7 +1204,6 @@
     <!-- Bare names resolve to .kachat only (iOS 5a5122d) -->
     <string name="kachat_names_not_live_here">نام‌های .kachat هنوز در این شبکه فعال نیستند</string>
     <!-- Nextcloud sync carries portfolios -->
-    <string name="nextcloud_sync_address_book_portfolios">دفترچه نشانی و پرتفوهای شما در همین پشتیبان هستند و به همین شکل بین دستگاه‌هایتان همگام می‌شوند.</string>
     <!-- Your Domains > .kachat card: grace end (iOS 72b7dc7) -->
     <string name="kn_grace_ends">پایان مهلت %1$s</string>
     <!-- .kachat on mainnet (iOS ef6b21e) -->
@@ -1405,4 +1404,6 @@
     <string name="no_active_nodes">هیچ گره فعالی وجود ندارد</string>
     <string name="no_nodes_discovered">هیچ گره‌ای کشف نشد</string>
     <string name="kaspa_node_settings_footer">اسکن خودکار بهترین گره‌های موجود را پیدا کرده و به آن‌ها وصل می‌شود. انتخاب یک گره مشخص فقط به همان وصل می‌شود و به گره دیگری نمی‌رود. روی نمایه‌سازها، دامنه‌ها یا کاوشگر در زبانه‌های دیگر اثری ندارد. برای انتخاب در اینجا، آدرس‌های خود را به دفترچه آدرس IP زیر اضافه کنید.</string>
+    <string name="ab_picker_empty_body">مخاطبین را از کیف پول > مخاطبین اضافه کنید.</string>
+    <string name="ab_no_contacts">هنوز مخاطبی نیست</string>
 </resources>

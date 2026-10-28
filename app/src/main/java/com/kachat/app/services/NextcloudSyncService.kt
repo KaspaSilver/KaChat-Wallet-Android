@@ -250,7 +250,7 @@ class NextcloudSyncService @Inject constructor(
         )
         if (nextcloudService.activeWalletAddress != walletAtStart) return@withLock
         nextcloudService.recordBackupFinished()
-        Log.i(TAG, "Address Book and Portfolio backed up")
+        Log.i(TAG, "Contacts and Portfolio backed up")
         Unit
     }
 
@@ -277,7 +277,7 @@ class NextcloudSyncService @Inject constructor(
         val walletAtStart = nextcloudService.activeWalletAddress
             ?: throw NextcloudException("Sign in to an account before connecting Nextcloud.")
         val addressBook = nextcloudService.downloadBackupFile(
-            NextcloudService.ADDRESS_BOOK_FILE_NAME, NextcloudService.LEGACY_ADDRESS_BOOK_FILE_NAME
+            NextcloudService.ADDRESS_BOOK_FILE_NAME, NextcloudService.LEGACY_ADDRESS_BOOK_FILE_NAMES
         )
         val portfolio = downloadPortfolioBackup()
         if (addressBook == null && portfolio == null) throw NextcloudException("No backup was found in the KaChat folder.")
@@ -299,7 +299,7 @@ class NextcloudSyncService @Inject constructor(
     /** The Portfolio backup on the server, or null when there is none yet. */
     private suspend fun downloadPortfolioBackup(): PortfolioSync? {
         val data = nextcloudService.downloadBackupFile(
-            NextcloudService.PORTFOLIO_FILE_NAME, NextcloudService.LEGACY_PORTFOLIO_FILE_NAME
+            NextcloudService.PORTFOLIO_FILE_NAME, NextcloudService.LEGACY_PORTFOLIO_FILE_NAMES
         ) ?: return null
         return PortfolioBackupFile.decode(data)
     }

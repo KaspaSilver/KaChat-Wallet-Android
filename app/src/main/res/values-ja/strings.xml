@@ -1064,21 +1064,21 @@
     <string name="kn_detail_grace_resolves">期限切れです。猶予期間が終わるまでは引き続き所有者のアドレスに解決され、所有者はまだ更新できます。</string>
     <string name="kn_detail_grace_mine_resolves">期限切れです - 保持するには更新してください。猶予期間が終わるまでは引き続きあなたのアドレスに解決され、他の人は取得できません。</string>
     <!-- Address Book (iOS 00767a4) -->
-    <string name="ab_address_book">アドレス帳</string>
-    <string name="ab_add_to_address_book">アドレス帳に追加</string>
+    <string name="ab_address_book">連絡先</string>
+    <string name="ab_add_to_address_book">連絡先を追加</string>
     <string name="ab_search_prompt">名前とアドレスを検索</string>
     <string name="ab_empty_body">よく使うKaspaアドレスを、分かりやすい名前で保存できます。KaPayの中だけに、このウォレット専用で保存され、電話の連絡先には一切入りません。</string>
-    <string name="ab_add_address">アドレスを追加</string>
+    <string name="ab_add_address">連絡先を追加</string>
     <string name="ab_copied">コピーしました</string>
     <string name="ab_share_address">アドレスを共有</string>
     <string name="ab_edit">編集</string>
-    <string name="ab_delete_from">アドレス帳から削除</string>
-    <string name="ab_delete_confirm">%1$sをアドレス帳から削除しますか？</string>
-    <string name="ab_not_in_book">アドレス帳にありません</string>
+    <string name="ab_delete_from">連絡先を削除</string>
+    <string name="ab_delete_confirm">%1$s を連絡先から削除しますか？</string>
+    <string name="ab_not_in_book">連絡先にありません</string>
     <string name="ab_note_optional">メモ（任意）</string>
     <string name="ab_editor_footer">このウォレット専用にKaPayに保存されます。電話の連絡先には追加されません。</string>
-    <string name="ab_remove_from">アドレス帳から削除</string>
-    <string name="ab_edit_address">アドレスを編集</string>
+    <string name="ab_remove_from">連絡先を削除</string>
+    <string name="ab_edit_address">連絡先を編集</string>
     <string name="ab_err_no_wallet">先にウォレットを開いてください。</string>
     <string name="ab_err_empty_name">名前を入力してください。</string>
     <string name="ab_err_invalid_address">有効なKaspaアドレスを入力してください。</string>
@@ -1089,9 +1089,9 @@
     <string name="ab_remove_photo">写真を削除</string>
     <string name="ab_photo_failed">その写真は使えませんでした。</string>
     <string name="ab_photo_footer">自分で写真を設定しない場合、相手がプロフィールに設定したアバターが表示されます。</string>
-    <string name="ab_photos_title">アドレス帳の写真</string>
-    <string name="ab_photos_remove">アドレス帳の写真を削除</string>
-    <string name="ab_photos_remove_question">アドレス帳の写真を削除しますか？</string>
+    <string name="ab_photos_title">連絡先の写真</string>
+    <string name="ab_photos_remove">連絡先の写真を削除</string>
+    <string name="ab_photos_remove_question">連絡先の写真を削除しますか？</string>
     <string name="ab_photos_frees">%1$s が空きます。保存したアドレスの名前はそのままで、代わりに持ち主が設定したアバターが表示されます。</string>
     <!-- Chats: long-press Address Book tile (iOS 98f3728) -->
     <string name="ab_row_add_subtitle">このアドレスを分かりやすい名前で保存します。</string>
@@ -1107,18 +1107,18 @@
     <string name="ab_import_or_export">インポートまたはエクスポート</string>
     <string name="ab_import_file">ファイルをインポート</string>
     <string name="ab_export_file">ファイルにエクスポート</string>
-    <string name="ab_import_file_sub">アドレス帳のエクスポートからアドレスを追加します。</string>
-    <string name="ab_export_file_sub">このアドレス帳を写真ごとファイルに保存します。</string>
-    <string name="ab_nc_import_sub">Nextcloud からアドレス帳のエクスポートを選びます。</string>
+    <string name="ab_import_file_sub">連絡先の書き出しファイルから連絡先を追加します。</string>
+    <string name="ab_export_file_sub">連絡先を写真ごとファイルに保存します。</string>
+    <string name="ab_nc_import_sub">Nextcloud から連絡先の書き出しファイルを選んでください。</string>
     <string name="ab_nc_export_sub">Nextcloud の KaChat フォルダに保存し、どのデバイスでもインポートできます。</string>
     <string name="ab_nc_connect_hint">設定 &gt; ストレージで Nextcloud を接続すると、そこにも保存して別のデバイスでインポートできます。</string>
     <string name="ab_couldnt_read_file">そのファイルを読み込めませんでした。</string>
-    <string name="ab_nothing_to_export">まだエクスポートするものがありません。先にアドレスを追加してください。</string>
+    <string name="ab_nothing_to_export">まだ書き出すものがありません。先に連絡先を追加してください。</string>
     <string name="ab_export_failed">エクスポートに失敗しました。ファイルを書き込めませんでした。</string>
     <string name="ab_already_up_to_date">すでに最新です。ファイルのアドレスはすべて保存済みです。</string>
     <string name="ab_imported_counts">インポート完了：追加 %1$d 件、更新 %2$d 件。</string>
-    <string name="ab_err_not_an_export">そのファイルは KaChat アドレス帳のエクスポートではありません。</string>
-    <string name="ab_err_export_empty">そのエクスポートにはアドレスがありません。</string>
+    <string name="ab_err_not_an_export">このファイルは連絡先の書き出しファイルではありません。</string>
+    <string name="ab_err_export_empty">この連絡先の書き出しファイルには連絡先がありません。</string>
     <!-- .kachat: fees, busy network, progress receipt (iOS e426432) -->
     <string name="kn_busy_title">ネットワークが混雑しています</string>
     <string name="kn_busy_body">通常では時間がかかる場合があります。高速または優先は少し多く払い、早くブロックに入ります。</string>
@@ -1176,7 +1176,6 @@
     <!-- Bare names resolve to .kachat only (iOS 5a5122d) -->
     <string name="kachat_names_not_live_here">このネットワークでは.kachatの名前はまだ利用できません</string>
     <!-- Nextcloud sync carries portfolios -->
-    <string name="nextcloud_sync_address_book_portfolios">アドレス帳とポートフォリオも同じバックアップに含まれ、同じようにデバイス間で同期されます。</string>
     <!-- Your Domains > .kachat card: grace end (iOS 72b7dc7) -->
     <string name="kn_grace_ends">猶予期間の終了 %1$s</string>
     <!-- .kachat on mainnet (iOS ef6b21e) -->
@@ -1378,4 +1377,6 @@
     <string name="no_active_nodes">アクティブなノードがありません</string>
     <string name="no_nodes_discovered">ノードが見つかりません</string>
     <string name="kaspa_node_settings_footer">自動スキャンは利用可能な最適なノードを見つけて接続します。特定のノードを選ぶとそのノードのみに接続し、他には切り替えません。他のタブのインデクサ、ドメイン、エクスプローラには影響しません。ここで選ぶには、下の IP アドレス帳に独自のアドレスを追加してください。</string>
+    <string name="ab_picker_empty_body">ウォレット > 連絡先 で連絡先を追加できます。</string>
+    <string name="ab_no_contacts">連絡先はまだありません</string>
 </resources>

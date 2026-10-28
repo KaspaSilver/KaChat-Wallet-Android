@@ -411,7 +411,7 @@
     <string name="explorer">Explorer</string>
     <string name="export_csv">Export CSV</string>
     <string name="exports_a_plaintext_json_file_of">Exports a plaintext JSON file of your decrypted chat history for this account. It is not encrypted, so only share it somewhere you trust. Importing merges into your existing history without overwriting anything.</string>
-    <string name="exports_app_device_info_connection_settings">Exports the app version, Android version, the wallet\'s settings and connection state, the Kaspa node pool and the app\'s recent logs as a zip, for troubleshooting with support. No private keys, seed phrases, addresses, Address Book entries or portfolios are included.</string>
+    <string name="exports_app_device_info_connection_settings">Exports the app version, Android version, the wallet\'s settings and connection state, the Kaspa node pool and the app\'s recent logs as a zip, for troubleshooting with support. No private keys, seed phrases, addresses, contacts or portfolios are included.</string>
     <string name="generate_more_addresses">Generate More Addresses</string>
     <string name="generate_new_spending_address">Generate New Spending Address</string>
     <string name="github">GitHub</string>
@@ -1273,22 +1273,22 @@
     <string name="kn_detail_grace_resolves">Expired. It still resolves to its owner until the grace period ends, and the owner can still renew it.</string>
     <string name="kn_detail_grace_mine_resolves">Expired - renew to keep it. Until the grace period ends it still resolves to you and nobody else can take it.</string>
     <!-- Address Book (iOS 00767a4) -->
-    <string name="ab_address_book">Address Book</string>
-    <string name="ab_add_to_address_book">Add to Address Book</string>
+    <string name="ab_address_book">Contacts</string>
+    <string name="ab_add_to_address_book">Add Contact</string>
     <string name="ab_search_prompt">Search names and addresses</string>
     <string name="ab_empty_body">Save the Kaspa addresses you use with a name you\'ll recognize. They stay in KaPay, for this wallet only, and never go into your phone\'s Contacts.</string>
-    <string name="ab_add_address">Add Address</string>
+    <string name="ab_add_address">Add Contact</string>
     <string name="ab_copied">Copied</string>
     <string name="ab_share_address">Share Address</string>
     <string name="ab_edit">Edit</string>
-    <string name="ab_delete_from">Delete from Address Book</string>
-    <string name="ab_delete_confirm">Delete %1$s from your Address Book?</string>
-    <string name="ab_not_in_book">Not in your Address Book</string>
+    <string name="ab_delete_from">Delete Contact</string>
+    <string name="ab_delete_confirm">Delete %1$s from your contacts?</string>
+    <string name="ab_not_in_book">Not in your contacts</string>
     <string name="ab_note_optional">Note (optional)</string>
     <string name="ab_editor_footer">Saved in KaPay for this wallet only. Never added to your phone\'s Contacts.</string>
-    <string name="ab_remove_from">Remove from Address Book</string>
-    <string name="ab_edit_address">Edit Address</string>
-    <string name="ab_picker_empty_body">Add addresses in Wallet > Address Book.</string>
+    <string name="ab_remove_from">Delete Contact</string>
+    <string name="ab_edit_address">Edit Contact</string>
+    <string name="ab_picker_empty_body">Add contacts in Wallet > Contacts.</string>
     <string name="ab_err_no_wallet">Open a wallet first.</string>
     <string name="ab_err_empty_name">Enter a name.</string>
     <string name="ab_err_invalid_address">Enter a valid Kaspa address.</string>
@@ -1299,10 +1299,10 @@
     <string name="ab_remove_photo">Remove Photo</string>
     <string name="ab_photo_failed">Couldn\'t use that photo.</string>
     <string name="ab_photo_footer">Without a photo of your own, this shows the avatar they set on their profile.</string>
-    <string name="ab_photos_title">Address Book Photos</string>
-    <string name="ab_photos_remove">Remove Address Book Photos</string>
-    <string name="ab_photos_remove_question">Remove Address Book Photos?</string>
-    <string name="ab_photos_footer">Photos you assigned to saved addresses, for every wallet on this device. They\'re kept until you remove them, and they\'re included in your Address Book backup.</string>
+    <string name="ab_photos_title">Contact Photos</string>
+    <string name="ab_photos_remove">Remove Contact Photos</string>
+    <string name="ab_photos_remove_question">Remove Contact Photos?</string>
+    <string name="ab_photos_footer">Photos you assigned to contacts, for every wallet on this device. They\'re kept until you remove them, and they\'re included in your contacts backup.</string>
     <string name="ab_photos_frees">Frees %1$s. Saved addresses keep their names; they show the avatar their owner set instead.</string>
     <!-- Chats: long-press Address Book tile (iOS 98f3728) -->
     <string name="ab_row_add_subtitle">Save this address with a name you\'ll recognize.</string>
@@ -1319,18 +1319,18 @@
     <string name="ab_import_or_export">Import or Export</string>
     <string name="ab_import_file">Import File</string>
     <string name="ab_export_file">Export File</string>
-    <string name="ab_import_file_sub">Add addresses from an Address Book export.</string>
-    <string name="ab_export_file_sub">Save this Address Book, with its photos, to a file.</string>
-    <string name="ab_nc_import_sub">Pick an Address Book export from your Nextcloud.</string>
+    <string name="ab_import_file_sub">Add contacts from a contacts export.</string>
+    <string name="ab_export_file_sub">Save your contacts, with their photos, to a file.</string>
+    <string name="ab_nc_import_sub">Pick a contacts export from your Nextcloud.</string>
     <string name="ab_nc_export_sub">Save it to the KaChat folder in your Nextcloud, to import on any device.</string>
     <string name="ab_nc_connect_hint">Connect Nextcloud in Settings &gt; Storage to also save it there and import it on another device.</string>
     <string name="ab_couldnt_read_file">Couldn\'t read that file.</string>
-    <string name="ab_nothing_to_export">Nothing to export yet. Add an address first.</string>
+    <string name="ab_nothing_to_export">Nothing to export yet. Add a contact first.</string>
     <string name="ab_export_failed">Export failed. Couldn\'t write the file.</string>
     <string name="ab_already_up_to_date">Already up to date. Every address in the file is saved.</string>
     <string name="ab_imported_counts">Imported: %1$d added, %2$d updated.</string>
-    <string name="ab_err_not_an_export">That file isn\'t a KaChat Address Book export.</string>
-    <string name="ab_err_export_empty">That Address Book export has no addresses.</string>
+    <string name="ab_err_not_an_export">That file isn\'t a contacts export.</string>
+    <string name="ab_err_export_empty">That contacts export has no contacts.</string>
     <!-- .kachat: fees, busy network, progress receipt (iOS e426432) -->
     <string name="kn_busy_title">The network is busy</string>
     <string name="kn_busy_body">At Normal this may wait a while. Fast or Priority pays a little more to get into a block sooner.</string>
@@ -1388,7 +1388,7 @@
     <!-- Bare names resolve to .kachat only (iOS 5a5122d) -->
     <string name="kachat_names_not_live_here">.kachat names aren\'t live on this network yet</string>
     <!-- Nextcloud sync carries portfolios -->
-    <string name="nextcloud_sync_address_book_portfolios">Your Address Book and portfolios are in the same backup and sync between your devices the same way.</string>
+    <string name="nextcloud_sync_address_book_portfolios">Your contacts and portfolios are in the same backup and sync between your devices the same way.</string>
     <!-- Your Domains > .kachat card: grace end (iOS 72b7dc7) -->
     <string name="kn_grace_ends">Grace ends %1$s</string>
     <!-- .kachat on mainnet (iOS ef6b21e) -->
@@ -1690,28 +1690,29 @@
     <string name="pf_import_csv_sub">Read transactions in from a file.</string>
     <string name="pf_export_csv_sub">Write this portfolio\'s transactions out to a file.</string>
     <!-- Settings > Storage > Nextcloud: the Address Book and Portfolio backup (iOS wallet 59593af, 5bab351) -->
-    <string name="ncw_server_footer">Connect your own Nextcloud to back up your Address Book and Portfolio to its KaChat folder. Create an app password in Nextcloud under Settings → Security → Devices &amp; sessions — don\'t use your account password. It is stored in the device\'s encrypted storage.</string>
+    <string name="ncw_server_footer">Connect your own Nextcloud to back up your contacts and Portfolio to its KaChat folder. Create an app password in Nextcloud under Settings → Security → Devices &amp; sessions — don\'t use your account password. It is stored in the device\'s encrypted storage.</string>
     <string name="ncw_backup">Backup</string>
     <string name="ncw_automatic_backup">Automatic Backup</string>
     <string name="ncw_back_up_now">Back Up Now</string>
     <string name="ncw_restore_backup">Restore Backup</string>
     <string name="ncw_backed_up">Backed up</string>
     <string name="ncw_not_backed_up_yet">Not backed up yet</string>
-    <string name="ncw_backup_footer">Your Address Book (names, notes and photos) is saved as \"%1$s\" and your portfolios with their transactions as \"%2$s\", both in the %3$s folder. Automatic Backup uploads them a few seconds after you change either. Restoring merges the backup into this device: no address is deleted, and a portfolio or transaction deleted on another device is removed here too. Connecting a wallet to a server that has a backup restores it once by itself.</string>
+    <string name="ncw_backup_footer">Your contacts (names, notes and photos) are saved as \"%1$s\" and your portfolios with their transactions as \"%2$s\", both in the %3$s folder. Automatic Backup uploads them a few seconds after you change either. Restoring merges the backup into this device: no address is deleted, and a portfolio or transaction deleted on another device is removed here too. Connecting a wallet to a server that has a backup restores it once by itself.</string>
     <string name="ncw_disconnect_footer">Disconnecting removes the stored app password from this device. The backup stays on your Nextcloud server.</string>
-    <string name="ncw_restore_message">The Address Book and Portfolio from the backup are merged into this device. No address is deleted; portfolios and transactions deleted on another device are removed here too.</string>
-    <string name="ncw_backed_up_message">Address Book and Portfolio backed up.</string>
+    <string name="ncw_restore_message">Your contacts and Portfolio from the backup are merged into this device. No contact is deleted; portfolios and transactions deleted on another device are removed here too.</string>
+    <string name="ncw_backed_up_message">Contacts and Portfolio backed up.</string>
     <string name="ncw_already_up_to_date">Already up to date. Everything in the backup is on this device.</string>
-    <string name="ncw_restored_address_book_counts">Address Book: %1$d added, %2$d updated.</string>
+    <string name="ncw_restored_address_book_counts">Contacts: %1$d added, %2$d updated.</string>
     <string name="ncw_portfolio_restored">Portfolio restored.</string>
     <string name="ncw_restored_addresses_and_portfolio_toast">Restored %1$d addresses and your Portfolio from Nextcloud.</string>
     <string name="ncw_restored_addresses_toast">Restored %1$d addresses from Nextcloud.</string>
     <string name="ncw_restored_portfolio_toast">Restored your Portfolio from Nextcloud.</string>
     <string name="ncw_off_on_testnet_footer">The backup works on mainnet only, so testnet can never overwrite your mainnet backup. Turn off Testnet in Settings > Connection and your Nextcloud connection comes back as it was.</string>
     <!-- Settings > Storage hub, the Nextcloud row's footer (iOS wallet 59593af), for Screens.kt -->
-    <string name="storage_nextcloud_footer">Back up your Address Book and Portfolio to the KaChat folder on your own Nextcloud server. Nothing is stored with Google or Apple.</string>
+    <string name="storage_nextcloud_footer">Back up your contacts and Portfolio to the KaChat folder on your own Nextcloud server. Nothing is stored with Google or Apple.</string>
     <string name="cold_name_this_account">Name This Account</string>
     <string name="kaspa_node_settings_footer">Automatic Scan discovers and connects to the best available nodes. Choosing a specific node connects only to it, without falling back to others. Doesn\'t affect the indexers, domains or explorer on the other tabs. Add custom addresses to the IP Address Book below to select them here.</string>
     <string name="compound_utxos_spending_description">Combines this address\'s UTXOs to reduce the inputs a future send needs. A single transaction can only merge so many at once, so if this address has a very large number, tap Compound again after it confirms to keep reducing.</string>
     <string name="address_visibility_derive_failed">These addresses couldn\'t be derived right now. Go back a page or reopen this screen to retry.</string>
+    <string name="ab_no_contacts">No contacts yet</string>
 </resources>

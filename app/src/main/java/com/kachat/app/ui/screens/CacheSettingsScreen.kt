@@ -196,7 +196,7 @@ fun CacheSettingsScreen(
         ConfirmActionSheet(
             title = "Clear All Cache?",
             confirmTitle = "Clear All",
-            confirmSubtitle = "Frees ${CacheManager.formatted(total)}. Your Address Book and keys are not touched.",
+            confirmSubtitle = "Frees ${CacheManager.formatted(total)}. Your contacts and keys are not touched.",
             confirmIcon = Icons.Outlined.Delete,
             onConfirm = { scope.launch { cacheManager.clearAll(); refresh() } },
             onDismiss = { showClearAll = false },

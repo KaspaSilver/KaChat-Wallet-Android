@@ -1064,21 +1064,21 @@
     <string name="kn_detail_grace_resolves">Đã hết hạn. Tên vẫn trỏ đến chủ sở hữu cho đến khi hết thời gian ân hạn, và chủ sở hữu vẫn có thể gia hạn.</string>
     <string name="kn_detail_grace_mine_resolves">Đã hết hạn - hãy gia hạn để giữ. Cho đến khi hết thời gian ân hạn, tên vẫn trỏ đến bạn và không ai khác có thể lấy.</string>
     <!-- Address Book (iOS 00767a4) -->
-    <string name="ab_address_book">Sổ địa chỉ</string>
-    <string name="ab_add_to_address_book">Thêm vào sổ địa chỉ</string>
+    <string name="ab_address_book">Danh bạ</string>
+    <string name="ab_add_to_address_book">Thêm liên hệ</string>
     <string name="ab_search_prompt">Tìm tên và địa chỉ</string>
     <string name="ab_empty_body">Lưu các địa chỉ Kaspa bạn hay dùng với một cái tên dễ nhận ra. Chúng nằm trong KaPay, chỉ cho ví này, và không bao giờ vào danh bạ điện thoại của bạn.</string>
-    <string name="ab_add_address">Thêm địa chỉ</string>
+    <string name="ab_add_address">Thêm liên hệ</string>
     <string name="ab_copied">Đã sao chép</string>
     <string name="ab_share_address">Chia sẻ địa chỉ</string>
     <string name="ab_edit">Sửa</string>
-    <string name="ab_delete_from">Xóa khỏi sổ địa chỉ</string>
-    <string name="ab_delete_confirm">Xóa %1$s khỏi sổ địa chỉ?</string>
-    <string name="ab_not_in_book">Không có trong sổ địa chỉ</string>
+    <string name="ab_delete_from">Xóa liên hệ</string>
+    <string name="ab_delete_confirm">Xóa %1$s khỏi danh bạ của bạn?</string>
+    <string name="ab_not_in_book">Không có trong danh bạ của bạn</string>
     <string name="ab_note_optional">Ghi chú (tùy chọn)</string>
     <string name="ab_editor_footer">Lưu trong KaPay chỉ cho ví này. Không bao giờ được thêm vào danh bạ điện thoại.</string>
-    <string name="ab_remove_from">Gỡ khỏi sổ địa chỉ</string>
-    <string name="ab_edit_address">Sửa địa chỉ</string>
+    <string name="ab_remove_from">Xóa liên hệ</string>
+    <string name="ab_edit_address">Sửa liên hệ</string>
     <string name="ab_err_no_wallet">Hãy mở một ví trước.</string>
     <string name="ab_err_empty_name">Nhập tên.</string>
     <string name="ab_err_invalid_address">Nhập một địa chỉ Kaspa hợp lệ.</string>
@@ -1089,9 +1089,9 @@
     <string name="ab_remove_photo">Gỡ ảnh</string>
     <string name="ab_photo_failed">Không dùng được ảnh đó.</string>
     <string name="ab_photo_footer">Nếu bạn không đặt ảnh, nơi này hiển thị ảnh đại diện mà họ đặt trên hồ sơ.</string>
-    <string name="ab_photos_title">Ảnh sổ địa chỉ</string>
-    <string name="ab_photos_remove">Gỡ ảnh sổ địa chỉ</string>
-    <string name="ab_photos_remove_question">Gỡ ảnh sổ địa chỉ?</string>
+    <string name="ab_photos_title">Ảnh danh bạ</string>
+    <string name="ab_photos_remove">Xóa ảnh liên hệ</string>
+    <string name="ab_photos_remove_question">Xóa ảnh liên hệ?</string>
     <string name="ab_photos_frees">Giải phóng %1$s. Các địa chỉ đã lưu vẫn giữ tên và sẽ hiển thị ảnh đại diện do chủ sở hữu đặt.</string>
     <!-- Chats: long-press Address Book tile (iOS 98f3728) -->
     <string name="ab_row_add_subtitle">Lưu địa chỉ này với một cái tên dễ nhận ra.</string>
@@ -1107,18 +1107,18 @@
     <string name="ab_import_or_export">Nhập hoặc xuất</string>
     <string name="ab_import_file">Nhập tệp</string>
     <string name="ab_export_file">Xuất tệp</string>
-    <string name="ab_import_file_sub">Thêm địa chỉ từ một bản xuất sổ địa chỉ.</string>
-    <string name="ab_export_file_sub">Lưu sổ địa chỉ này, kèm ảnh, vào một tệp.</string>
-    <string name="ab_nc_import_sub">Chọn một bản xuất sổ địa chỉ từ Nextcloud của bạn.</string>
+    <string name="ab_import_file_sub">Thêm liên hệ từ một bản xuất danh bạ.</string>
+    <string name="ab_export_file_sub">Lưu danh bạ của bạn, kèm ảnh, vào một tệp.</string>
+    <string name="ab_nc_import_sub">Chọn một bản xuất danh bạ từ Nextcloud của bạn.</string>
     <string name="ab_nc_export_sub">Lưu vào thư mục KaChat trên Nextcloud để nhập trên mọi thiết bị.</string>
     <string name="ab_nc_connect_hint">Kết nối Nextcloud trong Cài đặt &gt; Lưu trữ để lưu ở đó và nhập trên thiết bị khác.</string>
     <string name="ab_couldnt_read_file">Không đọc được tệp đó.</string>
-    <string name="ab_nothing_to_export">Chưa có gì để xuất. Hãy thêm một địa chỉ trước.</string>
+    <string name="ab_nothing_to_export">Chưa có gì để xuất. Hãy thêm một liên hệ trước.</string>
     <string name="ab_export_failed">Xuất thất bại. Không ghi được tệp.</string>
     <string name="ab_already_up_to_date">Đã cập nhật. Mọi địa chỉ trong tệp đều đã được lưu.</string>
     <string name="ab_imported_counts">Đã nhập: thêm %1$d, cập nhật %2$d.</string>
-    <string name="ab_err_not_an_export">Tệp đó không phải bản xuất sổ địa chỉ KaChat.</string>
-    <string name="ab_err_export_empty">Bản xuất đó không có địa chỉ nào.</string>
+    <string name="ab_err_not_an_export">Tệp đó không phải là bản xuất danh bạ.</string>
+    <string name="ab_err_export_empty">Bản xuất danh bạ đó không có liên hệ nào.</string>
     <!-- .kachat: fees, busy network, progress receipt (iOS e426432) -->
     <string name="kn_busy_title">Mạng đang bận</string>
     <string name="kn_busy_body">Với Bình thường có thể phải chờ. Nhanh hoặc Ưu tiên trả nhiều hơn một chút để vào khối sớm hơn.</string>
@@ -1176,7 +1176,6 @@
     <!-- Bare names resolve to .kachat only (iOS 5a5122d) -->
     <string name="kachat_names_not_live_here">Tên .kachat chưa hoạt động trên mạng này</string>
     <!-- Nextcloud sync carries portfolios -->
-    <string name="nextcloud_sync_address_book_portfolios">Sổ địa chỉ và danh mục đầu tư của bạn nằm trong cùng bản sao lưu và được đồng bộ giữa các thiết bị theo cùng cách.</string>
     <!-- Your Domains > .kachat card: grace end (iOS 72b7dc7) -->
     <string name="kn_grace_ends">Hết ân hạn %1$s</string>
     <!-- .kachat on mainnet (iOS ef6b21e) -->
@@ -1378,4 +1377,6 @@
     <string name="no_active_nodes">Không có nút đang hoạt động</string>
     <string name="no_nodes_discovered">Không phát hiện được nút nào</string>
     <string name="kaspa_node_settings_footer">Quét tự động tìm và kết nối với các node tốt nhất. Chọn một node cụ thể chỉ kết nối với node đó, không chuyển sang node khác. Không ảnh hưởng đến trình lập chỉ mục, tên miền hay trình khám phá ở các tab khác. Thêm địa chỉ của bạn vào Sổ địa chỉ IP bên dưới để chọn ở đây.</string>
+    <string name="ab_picker_empty_body">Thêm liên hệ trong Ví > Danh bạ.</string>
+    <string name="ab_no_contacts">Chưa có liên hệ nào</string>
 </resources>

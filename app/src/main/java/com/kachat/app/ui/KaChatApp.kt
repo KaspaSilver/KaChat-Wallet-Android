@@ -17,7 +17,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
-import androidx.compose.material.icons.outlined.Book
+import androidx.compose.material.icons.outlined.Badge
 import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.filled.AccountCircle
@@ -113,7 +113,7 @@ sealed class Screen(val route: String, val label: String, val icon: ImageVector)
     // addresses with names, per wallet, kept in KaChat (it replaced syncing with the phone's
     // Contacts). Your own saved addresses, so Simple Mode shows it.
     // "Address Book" again since it left the dock for the Wallet tab (iOS wallet 040f91a).
-    object AddressBook : Screen("address_book", "Address Book", Icons.Outlined.Book)
+    object AddressBook : Screen("address_book", "Contacts", Icons.Outlined.Badge)
     // The chat tabs (Chats, KaPosts, Public Chats, Chess, Swap, Stats, Bots) and Kaspa Hub went
     // with the chats (iOS wallet 301ebfb).
 }
