@@ -75,9 +75,8 @@ android {
 
     defaultConfig {
         // KaPay's own package, the one registered for it in Play Console (the iPhone wallet's
-        // bundle is com.kachat.wallet; push still names the app that way, see
-        // PushRegistrationManager). It installs beside KaChat and never shares its storage,
-        // keystore entries or push registration. The Kotlin namespace stays com.kachat.app so the
+        // bundle is com.kachat.wallet), and its name on the push service. It installs beside
+        // KaChat and never shares its storage, keystore entries or push registration. The Kotlin namespace stays com.kachat.app so the
         // code still lines up with KaChat-Android's for porting fixes across.
         applicationId = "kapay.kachat.app"
         minSdk = 26

@@ -21,11 +21,10 @@ wallet's `PUSH_SERVICE.md` for the service side. It asks for only two kinds of p
   and the Cold Storage addresses whose account notifies - at most 200
   (`AddressActivityNotifier.pushWatchOnlyAddresses`). With Address Activity off there is nothing
   to watch there, and the device stays registered for .kachat events through `primary_address`.
-- `apns_topic`: `"com.kachat.wallet"`, the iPhone wallet's bundle, named outright
-  (`PushRegistrationManager.WALLET_APNS_TOPIC`) since the Android package is `kapay.kachat.app`.
-  FCM delivery doesn't use it; the service reads it to send
-  a wallet device only `address_activity` and `name_event` pushes (`WALLET_PUSH_TYPES`). The
-  service keeps it only when `com.kachat.wallet` is one of its allowed topics.
+- `apns_topic`: `"kapay.kachat.app"`, the app's own package (debug builds send it too). FCM
+  delivery doesn't use it; the service reads it to send a wallet device only `address_activity`
+  and `name_event` pushes (`WALLET_PUSH_TYPES`), so it has to treat `kapay.kachat.app` as a wallet
+  topic, as it does the iPhone wallet's `com.kachat.wallet`, and keep it among its allowed topics.
 
 The registration is re-sent when Address Activity or the spending switch changes and on every
 foreground (skipped when nothing changed), so a new spending slot or Cold Storage account is
@@ -42,7 +41,8 @@ and push is simply off - see the conditional plugin apply in `app/build.gradle.k
    FCM token only works within its own project.
 2. Download `google-services.json` (it lists every app in the project) to `app/google-services.json`.
 
-Nothing else changes on the service for Android: no new topic, key or credential.
+On the service, Android adds one topic, `kapay.kachat.app`, treated like `com.kachat.wallet` (above);
+no new key or credential.
 
 ## In the app
 

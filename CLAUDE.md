@@ -110,8 +110,8 @@ Testnet has no default indexer (blank: no push, .kachat names from the chain), a
 The wallet registers with KaChat's push service only for "Received KAS"
 on its own addresses (`watch_only_addresses`) and .kachat events (`primary_address`, which keeps it
 registered with Address Activity off), with
-`apns_topic` `com.kachat.wallet` (the iPhone wallet's bundle, named outright: the Android package
-differs). FCM needs `app/google-services.json` from KaChat's Firebase project with
+`apns_topic` `kapay.kachat.app` (the app's package; the iPhone wallet sends `com.kachat.wallet`).
+FCM needs `app/google-services.json` from KaChat's Firebase project with
 `kapay.kachat.app` added - the owner's step.
 
 ## Logo
