@@ -74,11 +74,12 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        // KaChat Wallet's own package, the Android side of the iPhone wallet's com.kachat.wallet:
-        // it installs beside KaChat and never shares its storage, keystore entries or push
-        // registration. The Kotlin namespace stays com.kachat.app so the code still lines up
-        // with KaChat-Android's for porting fixes across.
-        applicationId = "com.kachat.wallet"
+        // KaPay's own package, the one registered for it in Play Console (the iPhone wallet's
+        // bundle is com.kachat.wallet; push still names the app that way, see
+        // PushRegistrationManager). It installs beside KaChat and never shares its storage,
+        // keystore entries or push registration. The Kotlin namespace stays com.kachat.app so the
+        // code still lines up with KaChat-Android's for porting fixes across.
+        applicationId = "kapay.kachat.app"
         minSdk = 26
         targetSdk = 36
         // ---- Version ----
@@ -107,26 +108,28 @@ android {
     }
 
     signingConfigs {
-        if (keystorePropertiesFile.exists()) {
+        // Each key is optional on its own: keystore.properties may hold only the Play upload key
+        // (KaPay's does), and then the GitHub APK keeps the debug key.
+        if (keystoreProperties.getProperty("storeFile") != null) {
             create("release") {
                 storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
                 storePassword = keystoreProperties.getProperty("storePassword")
                 keyAlias = keystoreProperties.getProperty("keyAlias")
                 keyPassword = keystoreProperties.getProperty("keyPassword")
             }
-            // The Play upload key, which is NOT the key the GitHub APK is signed with: Play
-            // knows the app by the certificate of its first upload, and an APK already installed
-            // from GitHub can only be updated by something signed the same way as itself. So the
-            // play flavour's release build is signed with this one (see androidComponents below)
-            // and everything else keeps the key above. Optional: a checkout without it still
-            // builds the GitHub APK.
-            if (keystoreProperties.getProperty("uploadStoreFile") != null) {
-                create("upload") {
-                    storeFile = rootProject.file(keystoreProperties.getProperty("uploadStoreFile"))
-                    storePassword = keystoreProperties.getProperty("uploadStorePassword")
-                    keyAlias = keystoreProperties.getProperty("uploadKeyAlias")
-                    keyPassword = keystoreProperties.getProperty("uploadKeyPassword")
-                }
+        }
+        // The Play upload key, which is NOT the key the GitHub APK is signed with: Play
+        // knows the app by the certificate of its first upload, and an APK already installed
+        // from GitHub can only be updated by something signed the same way as itself. So the
+        // play flavour's release build is signed with this one (see androidComponents below)
+        // and everything else keeps the key above. Optional: a checkout without it still
+        // builds the GitHub APK.
+        if (keystoreProperties.getProperty("uploadStoreFile") != null) {
+            create("upload") {
+                storeFile = rootProject.file(keystoreProperties.getProperty("uploadStoreFile"))
+                storePassword = keystoreProperties.getProperty("uploadStorePassword")
+                keyAlias = keystoreProperties.getProperty("uploadKeyAlias")
+                keyPassword = keystoreProperties.getProperty("uploadKeyPassword")
             }
         }
     }
@@ -138,10 +141,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("debug")
-            if (keystorePropertiesFile.exists()) {
-                signingConfig = signingConfigs.getByName("release")
-            }
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
         }
         debug {
             isDebuggable = true
@@ -149,10 +149,10 @@ android {
         }
     }
 
-    // Where a build is handed out from. Same package, same signing key, same code - the one
-    // thing that differs is the launcher name: the GitHub APK calls itself "KaChat Wallet APK"
-    // (see src/github/res) so a person can tell it from the Play Store's "KaChat Wallet".
-    // Installing one over the other still updates in place, since Android sees one package.
+    // Where a build is handed out from. Same package, same code - the launcher name differs:
+    // the GitHub APK calls itself "KaPay APK" (see src/github/res) so a person can tell it from
+    // the Play Store's "KaPay". The keys differ too (Play signs with its own), so one does not
+    // update over the other: switching means uninstalling first.
     // Play builds: bundlePlayRelease. GitHub APK: assembleGithubRelease.
     flavorDimensions += "distribution"
     productFlavors {

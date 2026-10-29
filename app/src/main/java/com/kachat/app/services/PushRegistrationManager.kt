@@ -327,7 +327,10 @@ class PushRegistrationManager @Inject constructor(
         val hiddenSenders = emptyMap<String, List<String>>()
         val watchedGroupIds = emptyList<String>()
         val watchOnlyAddresses = addressActivityNotifierLazy.get().pushWatchOnlyAddresses()
-        val apnsTopic = context.packageName.removeSuffix(".debug")
+        // The push service knows the wallet as com.kachat.wallet, the iPhone wallet's bundle, and
+        // sends such a device only the wallet's pushes. KaPay's Android package is
+        // kapay.kachat.app, so the topic is named outright rather than taken from it.
+        val apnsTopic = WALLET_APNS_TOPIC
         // Nothing to watch: leave the service instead. The main address alone is enough - .kachat
         // name events go to primary_address whether or not Address Activity (the watch-only list)
         // is on, so switching that off must not unregister (iOS wallet 2c59051).
@@ -585,6 +588,9 @@ class PushRegistrationManager @Inject constructor(
     private fun ByteArray.toHex(): String = joinToString("") { "%02x".format(it) }
 
     companion object {
+        /** The wallet's name on the push service (`apns_topic`, PUSH_SERVICE.md). */
+        const val WALLET_APNS_TOPIC = "com.kachat.wallet"
+
         /**
          * The push service this device must leave before registering at [currentBase]: the base
          * it last registered with ([storedBase]), when there is one and it is a different

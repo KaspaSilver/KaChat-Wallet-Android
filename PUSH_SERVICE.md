@@ -21,7 +21,9 @@ wallet's `PUSH_SERVICE.md` for the service side. It asks for only two kinds of p
   and the Cold Storage addresses whose account notifies - at most 200
   (`AddressActivityNotifier.pushWatchOnlyAddresses`). With Address Activity off there is nothing
   to watch there, and the device stays registered for .kachat events through `primary_address`.
-- `apns_topic`: `"com.kachat.wallet"`. FCM delivery doesn't use it; the service reads it to send
+- `apns_topic`: `"com.kachat.wallet"`, the iPhone wallet's bundle, named outright
+  (`PushRegistrationManager.WALLET_APNS_TOPIC`) since the Android package is `kapay.kachat.app`.
+  FCM delivery doesn't use it; the service reads it to send
   a wallet device only `address_activity` and `name_event` pushes (`WALLET_PUSH_TYPES`). The
   service keeps it only when `com.kachat.wallet` is one of its allowed topics.
 
@@ -35,7 +37,7 @@ FCM only works once `app/google-services.json` is in place (gitignored; without 
 and push is simply off - see the conditional plugin apply in `app/build.gradle.kts`).
 
 1. In the Firebase project the push service already sends with (KaChat's), **add an Android app**
-   with package name **`com.kachat.wallet`** - and **`com.kachat.wallet.debug`** for debug builds.
+   with package name **`kapay.kachat.app`** - and **`kapay.kachat.app.debug`** for debug builds.
    It has to be the same project: the service sends with that project's service account, and an
    FCM token only works within its own project.
 2. Download `google-services.json` (it lists every app in the project) to `app/google-services.json`.

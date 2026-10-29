@@ -110,8 +110,9 @@ Testnet has no default indexer (blank: no push, .kachat names from the chain), a
 The wallet registers with KaChat's push service only for "Received KAS"
 on its own addresses (`watch_only_addresses`) and .kachat events (`primary_address`, which keeps it
 registered with Address Activity off), with
-`apns_topic` `com.kachat.wallet`. FCM needs `app/google-services.json` from KaChat's Firebase
-project with `com.kachat.wallet` added - the owner's step.
+`apns_topic` `com.kachat.wallet` (the iPhone wallet's bundle, named outright: the Android package
+differs). FCM needs `app/google-services.json` from KaChat's Firebase project with
+`kapay.kachat.app` added - the owner's step.
 
 ## Logo
 
@@ -133,15 +134,18 @@ The status-bar icon is the vector `drawable/ic_kachat_wallet_notification.xml`.
 
 ## Identifiers
 
-- `applicationId` `com.kachat.wallet` (`com.kachat.wallet.debug` for debug builds). Nothing is
+- `applicationId` `kapay.kachat.app` (`kapay.kachat.app.debug` for debug builds), the package
+  registered in Play Console; the iPhone wallet's bundle is `com.kachat.wallet`. Nothing is
   shared with KaChat (`com.kachat.app`), so the two apps never read each other's storage or keys.
 - URL schemes `kapay` (what KaPost and KaChat open to hand over a payment request:
   `kapay://pay/<address>?...`, the same tail as `kachat://pay/`) and `kachatwallet` (its old name,
   still accepted). No `kachat://` or `https://kachat.app` links and no share target: those belong
   to KaChat.
 - Version: `app/build.gradle.kts` (`versionName`, `versionCode`, `kachatBuildNumber`), from 1.0 (1).
-- Signing: `keystore.properties` and the keystores are gitignored and the owner's; the wallet
-  needs its own upload key for Play.
+- Signing: `keystore.properties` and the keystores are gitignored and the owner's. KaPay's
+  `keystore.properties` holds only the Play upload key (`kapay-upload.jks`, alias `kapay-upload`),
+  which signs `bundlePlayRelease`; the GitHub APK keeps the debug key until a `storeFile` key is
+  added there.
 
 ## Build
 
