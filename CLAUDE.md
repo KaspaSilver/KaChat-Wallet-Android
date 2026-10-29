@@ -111,8 +111,14 @@ The wallet registers with KaChat's push service only for "Received KAS"
 on its own addresses (`watch_only_addresses`) and .kachat events (`primary_address`, which keeps it
 registered with Address Activity off), with
 `apns_topic` `kapay.kachat.app` (the app's package; the iPhone wallet sends `com.kachat.wallet`).
-FCM needs `app/google-services.json` from KaChat's Firebase project with
-`kapay.kachat.app` added - the owner's step.
+FCM needs `app/google-services.json` (gitignored) from KaChat's Firebase project (`kachat-fc22a`),
+where `kapay.kachat.app` and `kapay.kachat.app.debug` are registered.
+
+Claude never changes the server's code. Anything the server needs for the Android apps is handed
+off in the KaChat indexer repo (`/Users/restosaved/KaChat Server/kachat-indexer`,
+`KaspaSilver/KaChat-Indexer`) as one doc per change in its `docs/`, in that repo's format (a dated
+title, "**For:** the indexer session. **From:** ...", the rule, what happens today, a suggested fix,
+how to test), e.g. `docs/ANDROID_APP_TOPICS.md`. Commit only that doc there.
 
 ## Logo
 

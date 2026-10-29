@@ -42,7 +42,9 @@ and push is simply off - see the conditional plugin apply in `app/build.gradle.k
 2. Download `google-services.json` (it lists every app in the project) to `app/google-services.json`.
 
 On the service, Android adds one topic, `kapay.kachat.app`, treated like `com.kachat.wallet` (above);
-no new key or credential.
+no new key or credential. Handed off in the indexer repo as `docs/ANDROID_APP_TOPICS.md`
+(KaChat-Indexer 516d70b); until it ships, the service drops the unknown topic and treats the phone
+as a KaChat device.
 
 ## In the app
 
