@@ -6253,8 +6253,9 @@ fun SettingsScreen(
             if (sectionKey == null) {
                 // Flat hub list (matches iOS): no section titles - just the categories, the
                 // seed-phrase action, and Danger Zone in one card - its top 122 below the
-                // sheet's, as on the iPhone.
-                Spacer(Modifier.height(24.dp))
+                // sheet's, as on the iPhone. The dock tab's card sits right under the large
+                // "Settings" title instead (13 below it on the iPhone, the header's own margin).
+                if (!isDockTab) Spacer(Modifier.height(24.dp))
                 Surface(
                     color = LocalAppColors.current.surface,
                     shape = RoundedCornerShape(26.dp),
@@ -8994,16 +8995,20 @@ fun OtherDomainsDropdown(
     var expanded by remember(resolutions) { mutableStateOf(openByItself) }
     val colors = LocalAppColors.current
     Column(Modifier.fillMaxWidth().padding(top = 6.dp)) {
+        // iOS DisclosureGroup: the label on the left, its chevron at the row's end, pointing right
+        // while closed and turning down when open.
+        val chevronTurn by androidx.compose.animation.core.animateFloatAsState(if (expanded) 90f else 0f, label = "otherDomainsChevron")
         Row(
-            modifier = Modifier.clip(RoundedCornerShape(6.dp)).clickable { expanded = !expanded }.padding(vertical = 4.dp),
+            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(6.dp)).clickable { expanded = !expanded }.padding(vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(stringResource(R.string.other_domains), color = KaspaTeal, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.weight(1f))
             Icon(
-                if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
                 tint = KaspaTeal,
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(22.dp).graphicsLayer { rotationZ = chevronTurn }
             )
         }
         if (expanded) {

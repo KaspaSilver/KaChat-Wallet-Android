@@ -101,7 +101,9 @@ fun AddressResolutionCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(colors.surface)
+            // iOS Color.primary.opacity(0.05): a shade lighter than the card it sits on (the
+            // surface colour itself vanished into it).
+            .background(colors.textPrimary.copy(alpha = 0.05f))
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

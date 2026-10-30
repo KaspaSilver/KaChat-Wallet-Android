@@ -20,6 +20,7 @@ import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Badge
 import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.BubbleChart
 import androidx.compose.material.icons.filled.AlternateEmail
@@ -90,16 +91,17 @@ import androidx.compose.material.icons.filled.CheckCircle
  * Top-level navigation destinations.
  */
 sealed class Screen(val route: String, val label: String, val icon: ImageVector) {
-    // A dock tab in KaPay, Settings last (iOS wallet 040f91a); its gear matches KaChat's (59593af).
-    object Settings    : Screen("settings",     "Settings",     Icons.Outlined.Settings)
+    // A dock tab in KaPay, Settings last (iOS wallet 040f91a). The dock draws filled symbols, as
+    // the iPhone tab bar does (gearshape.fill, wallet.bifold.fill, lock.shield.fill).
+    object Settings    : Screen("settings",     "Settings",     Icons.Filled.Settings)
     object Portfolio   : Screen("portfolio",    "Portfolio",    Icons.Default.PieChart)
     // KaChat Wallet calls it "Wallet" in the dock, with a wallet symbol, like KaPosts' wallet tab
     // (iOS AppTab.profile in the wallet). The route stays "profile".
-    object Profile     : Screen("profile",      "Wallet",       Icons.Outlined.AccountBalanceWallet)
+    object Profile     : Screen("profile",      "Wallet",       Icons.Filled.AccountBalanceWallet)
     // Labeled "Storage" (not "Cold Storage") and always in the default tab set, matching iOS's
     // AppTab.coldStorage — hideable like Portfolio/Swap via Settings > Customization > Menu, but
     // no longer a separate opt-in reached through Portfolio's old "Cold Storage Devices" row.
-    object ColdStorage : Screen("cold_storage", "Storage",      Icons.Default.Security)
+    object ColdStorage : Screen("cold_storage", "Storage",      com.kachat.app.ui.theme.IosSymbols.LockShieldFill)
     // A placeable tab like any other, matching iOS's AppTab.apps - it can sit in the dock or in
     // the Kaspa Hub, and it can be reordered in either. It used to be a hardcoded tile appended
     // to the Hub grid with no Screen behind it, which is exactly why Customize Dock could not

@@ -28,6 +28,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBackIos
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -296,20 +298,19 @@ fun WelcomeScreen(
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
         // Top-right gear (matches iOS OnboardingView's gearshape toolbar button): app-wide
-        // settings that make sense with no account active - see AppSettingsHubScreen.
-        IconButton(
+        // settings that make sense with no account active - see AppSettingsHubScreen. iOS 26
+        // draws a toolbar item on a glass disc, the outlined gear white (the screen is always dark).
+        SheetBarIconButton(
+            icon = Icons.Outlined.Settings,
+            contentDescription = stringResource(R.string.app_settings),
             onClick = onOpenAppSettings,
+            tint = Color.White,
+            iconSize = 22.dp,
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .statusBarsPadding()
-                .padding(top = 8.dp, end = 8.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Settings,
-                contentDescription = stringResource(R.string.app_settings),
-                tint = LocalAppColors.current.textSecondary
-            )
-        }
+                .padding(top = 8.dp, end = 16.dp)
+        )
         // iOS keeps Create and Import 40 above the safe area: the navigation bar (gesture handle
         // or 3-button bar) is cleared first, then the 40 - a fixed chain, nothing swapped in.
         Column(
@@ -421,23 +422,24 @@ fun WelcomeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
+                // iOS: white body text on the accent, the icon plus.circle.fill.
                 colors = ButtonDefaults.buttonColors(
                     containerColor = KaspaTeal,
-                    contentColor = Color.Black // iOS uses black text on teal
+                    contentColor = Color.White
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = Icons.Default.AddCircleOutline,
+                        imageVector = Icons.Default.AddCircle,
                         contentDescription = null,
-                        tint = Color.Black
+                        tint = Color.White
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = stringResource(R.string.create_new_account),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = Color.Black
+                        fontSize = 17.sp,
+                        color = Color.White
                     )
                 }
             }
@@ -454,15 +456,16 @@ fun WelcomeScreen(
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    // iOS: square.and.arrow.down, body text in the primary colour.
                     Icon(
-                        imageVector = Icons.Default.FileDownload,
+                        imageVector = Icons.Outlined.Download,
                         contentDescription = null,
                         tint = LocalAppColors.current.textPrimary
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = stringResource(R.string.import_existing_account),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        fontSize = 17.sp,
                         color = LocalAppColors.current.textPrimary
                     )
                 }
@@ -706,17 +709,19 @@ private fun AccountNameForm(title: String, onBack: () -> Unit, onNext: (String) 
             )
         }
 
+        // iOS .textFieldStyle(.roundedBorder): the page's own background, a hairline border.
         TextField(
             value = accountName,
             onValueChange = { accountName = it },
             placeholder = { Text("Enter account name", color = colors.textSecondary) },
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
+                .clip(RoundedCornerShape(6.dp))
+                .border(0.5.dp, if (colors.isDark) Color(0xFF545458).copy(alpha = 0.65f) else Color(0xFF3C3C43).copy(alpha = 0.29f), RoundedCornerShape(6.dp))
                 .focusRequester(focus),
             colors = TextFieldDefaults.colors(
-                focusedContainerColor = colors.surface,
-                unfocusedContainerColor = colors.surface,
+                focusedContainerColor = colors.background,
+                unfocusedContainerColor = colors.background,
                 focusedTextColor = colors.textPrimary,
                 unfocusedTextColor = colors.textPrimary,
                 cursorColor = KaspaTeal,
@@ -946,6 +951,8 @@ private fun CreateAccountStepScaffold(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                // Below the status bar, as on iOS (edge-to-edge would draw Back under the clock).
+                .statusBarsPadding()
                 .padding(24.dp)
                 // Edge-to-edge: Compose reacts to the keyboard inset itself, so the field and the
                 // button stay above it.
@@ -986,13 +993,14 @@ private fun CreateWalletNextButton(title: String, enabled: Boolean, busy: Boolea
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (busy) {
-                com.kachat.app.ui.theme.IosActivityIndicator(color = Color.Black, strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
+                com.kachat.app.ui.theme.IosActivityIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
             }
+            // iOS: white body text; the whole button dims to 40% while disabled.
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = Color.Black
+                fontSize = 17.sp,
+                color = if (enabled || busy) Color.White else Color.White.copy(alpha = 0.4f)
             )
         }
     }
@@ -1030,13 +1038,13 @@ private fun SeedLengthButton(title: String, chosen: Boolean, enabled: Boolean, o
         Icon(
             imageVector = if (chosen) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
             contentDescription = null,
-            tint = if (chosen) Color.Black else KaspaTeal,
+            tint = if (chosen) Color.White else KaspaTeal,
             modifier = Modifier.size(20.dp)
         )
         Spacer(Modifier.width(8.dp))
         Text(
             text = title,
-            color = if (chosen) Color.Black else KaspaTeal,
+            color = if (chosen) Color.White else KaspaTeal,
             fontWeight = FontWeight.SemiBold,
             style = MaterialTheme.typography.bodyLarge
         )
@@ -1358,10 +1366,11 @@ fun CreateAccountSeedScreen(words: List<String>, onBack: () -> Unit, onNext: () 
             colors = ButtonDefaults.buttonColors(containerColor = KaspaTeal, disabledContainerColor = IosGray),
             shape = RoundedCornerShape(12.dp)
         ) {
+            // iOS: white body text on the accent, or on gray until confirmed.
             Text(
                 text = stringResource(R.string.next),
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = if (hasConfirmedBackup) Color.Black else Color.White
+                fontSize = 17.sp,
+                color = Color.White
             )
         }
     }
@@ -1539,12 +1548,11 @@ private fun PassphraseQuestionStep(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Spacer(Modifier.weight(1f))
-            Icon(
-                Icons.Default.Lock,
-                contentDescription = null,
-                tint = KaspaTeal,
-                modifier = Modifier.size(56.dp),
-            )
+            // iOS lock.shield.fill: a solid accent shield with the lock cut out of it.
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.size(56.dp)) {
+                Icon(Icons.Filled.Shield, contentDescription = null, tint = KaspaTeal, modifier = Modifier.fillMaxSize())
+                Icon(Icons.Filled.Lock, contentDescription = null, tint = colors.background, modifier = Modifier.size(26.dp).offset(y = (-1).dp))
+            }
             Spacer(Modifier.height(20.dp))
             Text(
                 if (mode == PassphraseMode.CREATE) "Do you want to add a passphrase to your account?"
@@ -1571,9 +1579,10 @@ private fun PassphraseQuestionStep(
                 onClick = onYes,
                 enabled = !isBusy,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = KaspaTeal, contentColor = Color.Black),
+                // iOS: .headline, white on the accent.
+                colors = ButtonDefaults.buttonColors(containerColor = KaspaTeal, contentColor = Color.White),
                 shape = RoundedCornerShape(14.dp),
-            ) { Text("Yes", fontWeight = FontWeight.Bold, fontSize = 16.sp) }
+            ) { Text("Yes", fontWeight = FontWeight.SemiBold, fontSize = 17.sp) }
 
             Spacer(Modifier.height(12.dp))
 
@@ -1597,7 +1606,8 @@ private fun PassphraseQuestionStep(
             Spacer(Modifier.height(8.dp))
 
             TextButton(onClick = onExplain, enabled = !isBusy, modifier = Modifier.fillMaxWidth()) {
-                Text("What is a passphrase?", color = colors.textSecondary, fontWeight = FontWeight.SemiBold)
+                // iOS: subheadline semibold in the primary colour.
+                Text("What is a passphrase?", color = colors.textPrimary, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
             }
         }
     }
@@ -1732,16 +1742,22 @@ private fun PassphraseEntryStep(
                 onClick = onSubmit,
                 enabled = passphrase.isNotBlank() && !isBusy,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = KaspaTeal, contentColor = Color.Black),
+                // iOS: .headline, white on the accent, on gray until a passphrase is typed.
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = KaspaTeal,
+                    contentColor = Color.White,
+                    disabledContainerColor = if (isBusy) KaspaTeal else IosGray,
+                    disabledContentColor = Color.White,
+                ),
                 shape = RoundedCornerShape(14.dp),
             ) {
                 if (isBusy) {
-                    com.kachat.app.ui.theme.IosActivityIndicator(color = Color.Black, strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
+                    com.kachat.app.ui.theme.IosActivityIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
                 } else {
                     Text(
                         if (mode == PassphraseMode.CREATE) "Continue" else "Import",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 17.sp,
                     )
                 }
             }
@@ -1877,6 +1893,7 @@ fun ImportSourceWalletScreen(onBack: () -> Unit, onContinue: (WalletSourceFamily
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .statusBarsPadding()
                 .padding(horizontal = 24.dp, vertical = 16.dp)
         ) {
             // iOS 26: the back chevron on a glass disc.
@@ -1970,10 +1987,14 @@ fun ImportSourceWalletScreen(onBack: () -> Unit, onContinue: (WalletSourceFamily
             Spacer(Modifier.height(16.dp))
             Button(
                 onClick = { onContinue(selectedFamily) },
+                // iOS: arrow.right.circle.fill and Continue, .headline, white on the accent.
                 colors = ButtonDefaults.buttonColors(containerColor = KaspaTeal),
-                modifier = Modifier.fillMaxWidth()
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.fillMaxWidth().height(52.dp)
             ) {
-                Text(stringResource(R.string.continue_label), color = Color.Black, fontWeight = FontWeight.Bold)
+                Icon(Icons.Default.ArrowCircleRight, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.continue_label), color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
             }
             Spacer(Modifier.height(8.dp))
         }

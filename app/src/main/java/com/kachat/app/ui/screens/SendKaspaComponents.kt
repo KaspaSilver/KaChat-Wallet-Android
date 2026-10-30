@@ -995,7 +995,16 @@ fun SendContinueButton(
                 .weight(1f)
                 .height(56.dp)
                 .clip(CircleShape)
-                .background(KaspaTeal.copy(alpha = if (isEnabled) 1f else 0.4f))
+                // Disabled, the iPhone draws it gray, not dimmed teal: a disabled plain button
+                // resolves the accent to the system's disabled tint (#3F403F, the text #1F1F1F
+                // on it, measured in dark mode).
+                .background(
+                    when {
+                        isEnabled -> KaspaTeal
+                        colors.isDark -> Color(0xFF3F403F)
+                        else -> Color(0xFFD1D1D6)
+                    }
+                )
                 .clickable(enabled = isEnabled, role = Role.Button) {
                     haptic(com.kachat.app.util.IosHaptic.IMPACT_LIGHT)
                     onClick()
@@ -1003,7 +1012,7 @@ fun SendContinueButton(
         ) {
             Text(
                 title ?: stringResource(R.string.continue_label),
-                color = Color.Black,
+                color = if (isEnabled) Color.Black else Color.Black.copy(alpha = 0.5f),
                 fontSize = 17.sp,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
